@@ -1,7 +1,7 @@
 <?php
 namespace Automatorm\Orm;
 
-use Automatorm\Common;
+use HodgePodge\Common;
 
 class Collection extends Common\Collection
 {
