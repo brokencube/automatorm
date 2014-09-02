@@ -1,0 +1,22 @@
+{
+    "name": "brokencube/automatorm",
+    "description": "Simple schema-led ORM, with no code generation required",
+    "type": "library",
+    "keywords": "ORM, Lightweight",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nik Barham",
+            "email": "nik@automatorm.com",
+            "homepage": "http://www.automatorm.com",
+            "role": "Lead Developer"
+        }    
+    ],
+    "require": {
+        "php": ">=5.4.0",
+        "brokencube/hodgepodge": "1.2.*"
+    },
+    "autoload": {    
+        "psr-0": { "Automatorm": "src" }
+    }
+}
