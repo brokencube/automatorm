@@ -2,7 +2,7 @@
     "name": "brokencube/automatorm",
     "description": "Simple schema-led ORM, with no code generation required",
     "type": "library",
-    "keywords": "ORM, Lightweight",
+    "keywords": ["ORM", "Lightweight"],
     "license": "MIT",
     "authors": [
         {
