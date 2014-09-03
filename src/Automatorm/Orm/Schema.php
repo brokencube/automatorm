@@ -188,7 +188,7 @@ class Schema
             }
         } else {
             // We didn't find an appropriate class - make a Model object using the guessed table name.
-            $class = 'HodgePodge\\Orm\\Model';
+            $class = 'Automatorm\\Orm\\Model';
         }
         
         // We haven't found an entry in the schema for our best guess table name? Boom!
