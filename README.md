@@ -1,4 +1,4 @@
-<img src='http://www.automatorm.com/img/logo.png'>
+<img src='http://www.automatorm.com/img/logo.png?2'>
 
 automatorm
 ==========
