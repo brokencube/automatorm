@@ -109,7 +109,8 @@ class Data
         
         if (key_exists($var, (array) $proto->model['many-to-one']))
         {
-            $ids = $collection->{$var . '_id'}->toArray();
+            // Remove duplicates from the group
+            $ids = array_unique($collection->{$var . '_id'}->toArray());
             
             /* Call Tablename::factory(foreign key id) to get the object we want */
             $table = $proto->model['many-to-one'][$var];
@@ -129,7 +130,7 @@ class Data
             // Use the model factory to find the relevant items
             $results = Model::factory($where + [$column => $ids], $table, $proto->database);
             
-            // If we didn't use a filter, store the relevant results in each oboject
+            // If we didn't use a filter, store the relevant results in each object
             if (!$where)
             {
                 foreach($results as $obj)
