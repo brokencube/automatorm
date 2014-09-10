@@ -1,3 +1,5 @@
+<img src='http://www.automatorm.com/img/logo.png?2'>
+
 automatorm
 ==========
 
