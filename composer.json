@@ -14,7 +14,7 @@
     ],
     "require": {
         "php": ">=5.4.0",
-        "brokencube/hodgepodge": "2.0.*"
+        "brokencube/hodgepodge": "2.*"
     },
     "autoload": {    
         "psr-0": { "Automatorm": "src" }
