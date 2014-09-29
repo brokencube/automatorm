@@ -9,7 +9,7 @@ use HodgePodge\Core\Database;
 
 class Schema
 {
-    const CURRENT_VERSION = 2;
+    const CURRENT_VERSION = 3;
     
     public static $object_list = array();
     
@@ -90,52 +90,67 @@ class Schema
                 } elseif ($row['referenced_column_name'] == 'id') {
                     // if this foreign key points at one 'id' column then this is a usable foreign 'key'
                     if (substr($row['column_name'], -3) == '_id') {
-                        $model[$table_name]['many-to-one'][substr($row['column_name'], 0, -3)] = $ref_table_name;
+                        $column_root = substr($row['column_name'], 0, -3);
+                        $model[$table_name]['many-to-one'][$column_root] = $ref_table_name;
                         
                         // Add the key constraint in reverse, trying to make a sensible name.
-                        if (substr($row['column_name'], 0, -3) == $row['referenced_table_name']) {
+                        // If the column name was derived from the table name, just use the table name.
+                        // (e.g "my_account" table and "my_account_id" -> my_account)
+                        // Otherwise, append the column name to the table name to make sure it is unique.
+                        // (e.g "your_account" table and "my_account_id" -> your_account_my_account)
+                        if ($column_root == $row['referenced_table_name']) {
                             $property_name = self::underscoreCase($table_name);
                         } else {
-                            $property_name = self::underscoreCase($table_name) . '_' . substr($row['column_name'], 0, -3);
+                            $property_name = self::underscoreCase($table_name) . '_' . $column_root;
                         }
+                        
                         $model[$ref_table_name]['one-to-many'][$property_name] = array('table' => $table_name, 'column_name' => $row['column_name']);
                     }
                 }
             }
             
             // Now look for pivot tables 
-            foreach ($model as $pivotname => $pivot) {
+            foreach ($model as $pivottablename => $pivot) {
                 // If we have found a table with only foreign keys then this must be a pivot table
                 if (count($pivot['many-to-one']) > 1 and count($pivot['columns']) == count($pivot['many-to-one'])) {
                     // Grab all foreign keys and rearrange them into arrays.
                     $tableinfo = array();
                     foreach($pivot['many-to-one'] as $column => $tablename) {
-                        $tableinfo[] = array('column' => $column . '_id', 'table' => $tablename);
+                        $tableinfo[] = array('column' => $column, 'column_id' => $column . '_id', 'table' => $tablename);
                     }
-                    
-                    $property_name = Schema::underscoreCase($pivotname);
                     
                     // For each foreign key, store details in the table it point to on how to get to the OTHER table in the "Many to Many" relationship
                     foreach ($tableinfo as $i => $table)
                     {
+                        // If the column name is named based on the foreign table name, then use the pivot table name as the property name
+                        // This is the normal/usual case
+                        if ($table['column_id'] == Schema::underscoreCase($table['table']) . '_id') {
+                            $property_name = Schema::underscoreCase($pivottablename);    
+                        } else {
+                            // Else append the column name to the pivot table name.
+                            // This is mostly for when a pivot table references the same table twice, and so
+                            // needs to have a unique name for at least one of the columns (which is not based on the table name)
+                            $property_name = Schema::underscoreCase($pivottablename) . '_' . $table['column'];
+                        }
+                        
                         // Outersect of tables to create an array of all OTHER foreign keys in this table, for this foreign key.
                         $othertables = array_values(array_diff_assoc($tableinfo, array($i => $table)));
                         
                         $model[ $table['table'] ][ 'many-to-many' ][ $property_name ] = array(
-                            'pivot' => $pivotname,
+                            'pivot' => $pivottablename,
                             'connections' => $othertables,
-                            'id' => $table['column'],
+                            'id' => $table['column_id'],
                         );
                         
                     }
                     
-                    $model[$pivotname]['type'] = 'pivot';
+                    $model[$pivottablename]['type'] = 'pivot';
                     
                     // Remove the M-1 keys for these tables to fully encapsulate the M-M scheme.
                     foreach ($tableinfo as $table)
                     {
                         foreach((array) $model[ $table['table'] ][ 'one-to-many' ] as $key => $val) {
-                            if ($val['table'] == $pivotname) unset ($model[ $table['table'] ][ 'one-to-many' ][$key]);
+                            if ($val['table'] == $pivottablename) unset ($model[ $table['table'] ][ 'one-to-many' ][$key]);
                         }
                     }
                 }
