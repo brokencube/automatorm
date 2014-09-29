@@ -116,7 +116,7 @@ class Schema
                     // Grab all foreign keys and rearrange them into arrays.
                     $tableinfo = array();
                     foreach($pivot['many-to-one'] as $column => $tablename) {
-                        $tableinfo[] = array('column' => $column, 'column_id' => $column . '_id', 'table' => $tablename);
+                        $tableinfo[] = array('column' => $column . '_id', 'column_raw' => $column, 'table' => $tablename);
                     }
                     
                     // For each foreign key, store details in the table it point to on how to get to the OTHER table in the "Many to Many" relationship
@@ -124,13 +124,13 @@ class Schema
                     {
                         // If the column name is named based on the foreign table name, then use the pivot table name as the property name
                         // This is the normal/usual case
-                        if ($table['column_id'] == Schema::underscoreCase($table['table']) . '_id') {
+                        if ($table['column'] == Schema::underscoreCase($table['table']) . '_id') {
                             $property_name = Schema::underscoreCase($pivottablename);    
                         } else {
                             // Else append the column name to the pivot table name.
                             // This is mostly for when a pivot table references the same table twice, and so
                             // needs to have a unique name for at least one of the columns (which is not based on the table name)
-                            $property_name = Schema::underscoreCase($pivottablename) . '_' . $table['column'];
+                            $property_name = Schema::underscoreCase($pivottablename) . '_' . $table['column_raw'];
                         }
                         
                         // Outersect of tables to create an array of all OTHER foreign keys in this table, for this foreign key.
@@ -139,7 +139,7 @@ class Schema
                         $model[ $table['table'] ][ 'many-to-many' ][ $property_name ] = array(
                             'pivot' => $pivottablename,
                             'connections' => $othertables,
-                            'id' => $table['column_id'],
+                            'id' => $table['column'],
                         );
                         
                     }

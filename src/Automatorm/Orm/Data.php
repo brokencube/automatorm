@@ -413,12 +413,15 @@ class Data
         $origin_id = new SqlString('@id');
         
         // Foreign tables
-        foreach ($this->external as $table => $value) {
+        foreach ($this->external as $property_name => $value) {
             // Skip property if this isn't an M-M table (M-1 and 1-M tables are dealt with in other ways)
-            if (!$pivot = $this->model['many-to-many'][$table]) continue;
+            if (!$pivot = $this->model['many-to-many'][$property_name]) continue;
             
             // We can only do updates support simple connection access for 2 key pivots.
             if (count($pivot['connections']) != 1) continue;
+            
+            // Get the table name of the pivot table for this property
+            $table = Schema::underscoreCase($pivot['pivot']);
             
             // Clear out any existing data for this object - this is safe because we are in an atomic transaction.
             $query->sql("Delete from $table where {$pivot['id']} = @id");
