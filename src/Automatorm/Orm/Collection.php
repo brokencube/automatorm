@@ -9,8 +9,7 @@ class Collection extends Common\Collection
     {
         $list = array();
         
-        if ($this->container[0] instanceof Model and $this->container[0]->_data->externalKeyExists($parameter))
-        {
+        if ($this->container[0] instanceof Model and $this->container[0]->_data->externalKeyExists($parameter)) {
             return Data::groupJoin($this, $parameter);
         }
         
@@ -34,8 +33,7 @@ class Collection extends Common\Collection
             $this->container[0] instanceof Model
             and !method_exists($this->container[0], $name)
             and $this->container[0]->_data->externalKeyExists($parameter)
-        )
-        {
+        ) {
             return Data::groupJoin($this, $name, $arguments);
         }
         
@@ -68,18 +66,25 @@ class Collection extends Common\Collection
         if (!count($this->container)) return array();
         
         // If we are dealing with a collection of Model objects then user key/value to extract desired property
-        if ($this->container[0] instanceof Model)
-        {
+        if ($this->container[0] instanceof Model) {
             if(!$value) {
                 foreach($this->container as $item) {
-                    $return[$item->$key] = $item;
+                    if ($key) {
+                        $return[$item->$key] = $item;    
+                    } else {
+                        $return[] = $item;    
+                    }
                 }
                 return $return;            
             }
             else
             {
                 foreach($this->container as $item) {
-                    $return[$item->$key] = $item->$value;
+                    if ($key) {
+                        $return[$item->$key] = $item->$value;    
+                    } else {
+                        $return[] = $item->$value;  
+                    }
                 }
                 return $return;
             }
@@ -95,14 +100,10 @@ class Collection extends Common\Collection
         $copy = $this->container;
         $clobberlist = [];
         
-        foreach($copy as $key => $obj)
-        {
-            if (in_array($obj->id, $clobberlist))
-            {
+        foreach($copy as $key => $obj) {
+            if (in_array($obj->id, $clobberlist)) {
                 unset($copy[$key]);
-            }
-            else
-            {
+            } else {
                 $clobberlist[] = $obj->id;
             }
         }
@@ -119,14 +120,11 @@ class Collection extends Common\Collection
     
     public function natSort($key = null)
     {
-        if (!$key)
-        {
+        if (!$key) {
             return $this->sort(function ($a, $b) {
                 return strnatcmp((string) $a, (string) $b);
             });
-        }
-        else
-        {
+        } else {
             return $this->sort(function ($a, $b) use ($key) {
                 return strnatcmp($a->{$key}, $b->{$key});
             });            
@@ -148,7 +146,7 @@ class Collection extends Common\Collection
     {
         $copy = $this->container;
         
-        if ($array instanceof Collection) $array = $array->toArray();
+        if ($array instanceof Collection) $array = $array->container;
         if (!is_array($array)) throw new \InvalidArgumentException('Orm\Collection->add() expects an array');
         
         $copy = array_values(array_merge($copy, $array));
@@ -166,8 +164,7 @@ class Collection extends Common\Collection
     {
         $copy = $this->container;
         
-        if (is_array($filter))
-        {        
+        if (is_array($filter)) {        
             // Loop over items
             foreach ($copy as $item_key => $item) {
                 // Loop over filters
@@ -183,20 +180,15 @@ class Collection extends Common\Collection
                    }    
                 }
             }
-        }
-        elseif(is_callable($filter))
-        {
+        } elseif(is_callable($filter)) {
             // Loop over items
             foreach ($copy as $item_key => $item) {
                 // Use the closure/callback to filter the item
-                if ($filter($item))
-                {
+                if ($filter($item)) {
                     unset($copy[$item_key]);
                 }
             }            
-        }
-        else
-        {
+        } else {
             throw new \InvalidArgumentException('Orm\Collection->not() expects an array or callable');
         }
         
@@ -215,8 +207,7 @@ class Collection extends Common\Collection
     {
         $copy = $this->container;
         
-        if (is_array($filter))
-        {        
+        if (is_array($filter)) {        
             // Loop over items
             foreach ($copy as $item_key => $item) {
                 // Loop over filters
@@ -234,20 +225,15 @@ class Collection extends Common\Collection
                     unset($copy[$item_key]);
                 }
             }
-        }
-        elseif(is_callable($filter))
-        {
+        } elseif(is_callable($filter)) {
             // Loop over items
             foreach ($copy as $item_key => $item) {
                 // Use the closure/callback to filter the item
-                if (!$filter($item))
-                {
+                if (!$filter($item)) {
                     unset($copy[$item_key]);
                 }
             }            
-        }
-        else
-        {
+        } else {
             throw new \InvalidArgumentException('Orm\Collection->filter() expects an array or callable');
         }
         
