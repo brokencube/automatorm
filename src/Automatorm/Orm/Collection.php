@@ -122,11 +122,11 @@ class Collection extends Common\Collection
     {
         if (!$key) {
             return $this->sort(function ($a, $b) {
-                return strnatcmp((string) $a, (string) $b);
+                return strnatcasecmp((string) $a, (string) $b);
             });
         } else {
             return $this->sort(function ($a, $b) use ($key) {
-                return strnatcmp($a->{$key}, $b->{$key});
+                return strnatcasecmp($a->{$key}, $b->{$key});
             });            
         }
     }
