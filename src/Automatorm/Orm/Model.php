@@ -34,10 +34,39 @@ class Model implements \JsonSerializable
     }
     
     // Find a single(!) object via an arbitary $where clause
-    public static function find($where)
+    public static function find($where, $cacheable = false)
     {
-        $o = new Core\QueryOptions();
-        return static::factory($where, null, null, $o->limit(1), true);
+        // If result is cacheable, look in the cache
+        if ($cacheable)
+        {
+            // Get table/class data
+            if (!$database) $database = static::$dbconnection;
+            $schema = Schema::get($database);
+            list($class, $table) = $schema->guessContext($class_or_table ?: get_called_class());
+            
+            // Hash where clause
+            $key = md5(serialize($where));
+            
+            // Look in cache
+            if (isset(Model::$instance[$database][$table][$key])) {
+                $result = Model::$instance[$database][$table][$key];
+            }
+        }
+        
+        // No cache or cache miss
+        if (!$result)
+        {
+            $o = new Core\QueryOptions();
+            $result = static::factory($where, null, null, $o->limit(1), true);
+            
+            // If caching, store in cache
+            if ($cacheable)
+            {
+                Model::$instance[$database][$table][$key] = $result;
+            }
+        }
+        
+        return $result;
     }
     
     // Find a collection of objects via an arbitary $where clause
