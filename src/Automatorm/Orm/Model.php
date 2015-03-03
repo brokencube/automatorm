@@ -98,14 +98,14 @@ class Model implements \JsonSerializable
         
         foreach($data as $row) {
             // Database data object unique to this object
-            $data_obj = new Data($row, $table, $schema);
+            $data_obj = Data::make($row, $table, $schema);
             
             // Ask the base_class if there is a subclass we should be using.
             $class = call_user_func(array($base_class, '_subclass'), $data_obj);
             
             // Create the object!!
             $obj = new $class($data_obj);
-                        
+            
             // Store it in the object cache.        
             Model::$instance[$database][$table][$row['id']] = $obj;
             
@@ -347,7 +347,7 @@ class Model implements \JsonSerializable
     
     final public function dataUpdate(Data $db)
     {
-        $this->_data = $db->lock();
+        $this->_data = Data::updateCache($db);
     }
     
     final public function dataRefresh()
@@ -356,6 +356,7 @@ class Model implements \JsonSerializable
         
         // Database data object unique to this object
         $this->_data = new Data($data, $this->table, Schema::get($this->database));
+        Data::updateCache($this->_data);
         
         // Call replacement constructor after storing in the cache list (to prevent recursion)
         $this->_init();

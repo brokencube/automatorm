@@ -16,6 +16,32 @@ class Data
     protected $locked = true;      // Can we use __set() - for updates/inserts
     protected $new = false;        // Is this to be a new row? (used with Model::new_db())
     
+    protected static $instance = [];
+    
+    public static function make(array $data, $table, Schema $schema)
+    {
+        $key = $data['id'] . ':' . $table . ':' . $schema->namespace;
+        
+        if (isset(static::$instance[$key]))
+        {
+            $obj = static::$instance[$key];
+        }
+        else
+        {
+            $obj = static::$instance[$key] = new static($data, $table, $schema, true, false);    
+        }
+        
+        return $obj;
+    }
+    
+    public static function updateCache(Data $db)
+    {
+        $db->lock();
+        $key = $db->data['id'] . ':' . $db->table . ':' . $db->schema->namespace;
+        static::$instance[$key] = $db;
+        return $db;
+    }
+    
     public function __construct(array $data, $table, Schema $schema, $locked = true, $new = false)
     {
         $this->database = $schema->database;
