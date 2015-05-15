@@ -68,7 +68,7 @@ class Schema
             // Assemble list of table columns by table
             foreach ($schema as $row) {
                 $table_name = self::normaliseCase($row['table_name']);
-
+                
                 $model[$table_name]['table_name'] = $row['table_name'];
                 // All tables default to type 'table' - can also be 'pivot' or 'foreign' as detected later
                 $model[$table_name]['type'] = 'table';
@@ -163,25 +163,35 @@ class Schema
         return static::$object_list[$dbconnection] = $obj;
     }
 
-    // Normalised an under_scored or CamelCased phrase to "under scored" or "Camel Cased"
+    // Normalised an under_scored or CamelCased phrase to "under scored" or "camel cased"
+    private static $stringCacheN = []; 
     public static function normaliseCase($string)
     {
-        return trim(strtolower(preg_replace('/([A-Z])|_/', ' $1', $string)));
+        if (static::$stringCacheN[$string]) return static::$stringCacheN[$string];
+        return static::$stringCacheN[$string] = trim(strtolower(preg_replace('/([A-Z])|_/', ' $1', $string)));
     }
     
+    private static $stringCacheC = []; 
     public static function camelCase($string)
     {
-        return str_replace(' ', '', ucwords(self::normaliseCase($string)));
+        if (static::$stringCacheC[$string]) return static::$stringCacheC[$string];
+        return static::$stringCacheC[$string] = str_replace(' ', '', ucwords(self::normaliseCase($string)));
     }
     
+    private static $stringCacheU = []; 
     public static function underscoreCase($string)
     {
-        return str_replace(' ', '_', self::normaliseCase($string));
+        if (static::$stringCacheU[$string]) return static::$stringCacheU[$string];
+        return static::$stringCacheU[$string] = str_replace(' ', '_', self::normaliseCase($string));
     }
     
+    protected static $contextCache = []; 
     // Based on supplied data, try and guess the appropriate class and tablename
     public function guessContext($class_or_table)
     {
+        // Return 'cached' result
+        if (static::$contextCache[$class_or_table]) return static::$contextCache[$class_or_table];
+        
         // Namespace classname? Remove that namespace before continuing
         if (strrpos($class_or_table, '\\') !== false) {
             $class_or_table = substr($class_or_table, strrpos($class_or_table, '\\') + 1);
@@ -208,10 +218,10 @@ class Schema
         
         // We haven't found an entry in the schema for our best guess table name? Boom!
         if (!$table) {
-            throw new Exception\Model('NO_SCHEMA', array($class_or_table, $normalised, $class, $table));
+            throw new Exception\Model('NO_SCHEMA', [$class_or_table, $normalised, $class, $table]);
         }
-                
-        return array($class, $table);
+        
+        return static::$contextCache[$class_or_table] = [$class, $table];
     }
     
     public function getTable($table)
