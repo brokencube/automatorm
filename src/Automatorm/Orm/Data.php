@@ -400,7 +400,7 @@ class Data
         }
         
         // Undefined column
-        throw new Exception\Model('MODEL_DATA:UNEXPECTED_COLUMN_NAME', array($var, $value, $this->model));
+        throw new Exception\Model('MODEL_DATA:UNEXPECTED_COLUMN_NAME', array($this->model, $var, $value));
     }
     
     public function commit()

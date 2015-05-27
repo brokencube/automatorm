@@ -23,8 +23,8 @@ use Automatorm\Exception;
 
 class Model implements \JsonSerializable
 {
-    public static $dbconnection = 'default'; // Override database connection associated with this class - for subclasses
-    public static $tablename;                // Override table associated with this class - for subclasses
+    public static $dbconnection = 'default'; // Override database connection associated with this class
+    public static $tablename;                // Override table associated with this class
     protected static $instance;              // An internal store of already created objects so that objects for each row only get created once
     
     /* PUBLIC CONSTRUCTION METHODS */
@@ -85,7 +85,7 @@ class Model implements \JsonSerializable
         
         // Figure out the base class and table we need based on current context
         $schema = Schema::get($database);
-        list($base_class, $table) = $schema->guessContext($class_or_table_name ?: get_called_class());
+        list($class, $table) = $schema->guessContext($class_or_table_name ?: get_called_class());
         
         // Get data from database        
         $data = Model::factoryData($where, $table, $database, $options);
@@ -99,9 +99,6 @@ class Model implements \JsonSerializable
         foreach($data as $row) {
             // Database data object unique to this object
             $data_obj = Data::make($row, $table, $schema);
-            
-            // Ask the base_class if there is a subclass we should be using.
-            $class = call_user_func(array($base_class, '_subclass'), $data_obj);
             
             // Create the object!!
             $obj = new $class($data_obj);
@@ -276,7 +273,7 @@ class Model implements \JsonSerializable
     public function __call($var, $args)
     {
         try {
-            return $this->_data->join($var, $args[0]);
+            return $this->_data->join($var, (array) $args[0]);
         }
         catch (Exception\Model $e)
         {

@@ -67,8 +67,8 @@ class Model extends Generic
                 return 'Property "'.$column.'" represents a list of objects that have a foreign key that refers to this object. To change this, you must update those objects - you cannot alter this relationship from here.';
             
             case 'MODEL_DATA:UNEXPECTED_COLUMN_NAME':
-                list($column, $value, $model) = $data;
-                return 'Property "'.$column.'" does not exist in the schema for this object. Please check the $model for this object, ot look at $obj->var_dump()';
+                list($model, $column, $value) = $data;
+                return 'Property "'.$column.'" does not exist in the schema for this object ('.$model->table_name.'). Please check the $model for this object, or look at $obj->var_dump()';
             
             case 'MODEL_DATA_UPDATE:PIVOT_INCORRECT_OBJECT_TYPE':
                 list($value, $table, $pivot) = $data;
