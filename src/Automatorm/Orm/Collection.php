@@ -142,14 +142,22 @@ class Collection extends Common\Collection
     }
     
     // Merge another array into this collection
-    public function add($array)
+    public function add()
     {
+        $args = func_get_args();
+        
         $copy = $this->container;
         
-        if ($array instanceof Collection) $array = $array->container;
-        if (!is_array($array)) throw new \InvalidArgumentException('Orm\Collection->add() expects an array');
+        $count = 1;
+        foreach($args as $array)
+        {
+            if ($array instanceof Collection) $array = $array->container;
+            if (!is_array($array)) throw new \InvalidArgumentException("Orm\Collection->add() expects argument {$count} to be an array");
+            $merge[] = $array;
+            $count++;
+        }
         
-        $copy = array_values(array_merge($copy, $array));
+        $copy = call_user_func_array('array_merge', $merge);
         
         return new static($copy);
     }
