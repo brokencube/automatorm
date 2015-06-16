@@ -145,8 +145,7 @@ class Collection extends Common\Collection
     public function add()
     {
         $args = func_get_args();
-        
-        $copy = $this->container;
+        $merge = [$this->container];
         
         $count = 1;
         foreach($args as $array)
