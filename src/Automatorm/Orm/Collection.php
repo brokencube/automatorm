@@ -169,48 +169,16 @@ class Collection extends Common\Collection
     // Remove any items in this collection that match filter
     public function not($filter)
     {
-        $copy = $this->container;
-        
-        if (is_array($filter)) {        
-            // Loop over items
-            foreach ($copy as $item_key => $item) {
-                // Loop over filters
-                foreach ($filter as $property => $value_list) {
-                    // Each filter can have several acceptable values -- force single item to array
-                    if (!is_array($value_list)) $value_list = array($value_list);
-                    // Check each value - if we find a matching value than remove this item
-                    foreach ($value_list as $value) {
-                        if ($item->$property == $value) {
-                            unset($copy[$item_key]);
-                            break 2;
-                        }
-                   }    
-                }
-            }
-        } elseif(is_callable($filter)) {
-            // Loop over items
-            foreach ($copy as $item_key => $item) {
-                // Use the closure/callback to filter the item
-                if ($filter($item)) {
-                    unset($copy[$item_key]);
-                }
-            }            
-        } else {
-            throw new \InvalidArgumentException('Orm\Collection->not() expects an array or callable');
-        }
-        
-        $copy = array_values($copy);
-        
-        return new static($copy);
+        return $this->filter($filter, true);
     }
 
     public function remove($filter)
     {
-        return $this->not($filter);
+        return $this->filter($filter, true);
     }
 
     // Only keep items that match filter
-    public function filter($filter)
+    public function filter($filter, $invert_prefix = false)
     {
         $copy = $this->container;
         
@@ -219,17 +187,92 @@ class Collection extends Common\Collection
             foreach ($copy as $item_key => $item) {
                 // Loop over filters
                 foreach ($filter as $property => $value_list) {
+                    // Look for special non-alphanumeric prefixes
+                    preg_match('/^([^a-zA-Z0-9]*)[a-zA-Z0-9]/', $property, $prefix);
+                    $prefix = $prefix[1];
+                    // Strip any prefix off the front of the property name
+                    $property = substr($property, strlen($prefix));
+                    
+                    // Invert prefix for not()
+                    if ($invert_prefix) switch ($prefix) {
+                        case '=': case '==': default:   $prefix = '!';  break;
+                        case '!=': case '!': case '<>': $prefix = '=';  break;
+                        case '<':                       $prefix = '>='; break;
+                        case '<=':                      $prefix = '>';  break;
+                        case '>':                       $prefix = '<='; break;
+                        case '>=':                      $prefix = '<';  break;
+                    }
+                    
                     // Each filter can have several acceptable values -- force single item to array
                     if (!is_array($value_list)) $value_list = array($value_list);
                     // Check each value - if we find a matching value than skip to the next filter.
                     foreach ($value_list as $value) {
-                        if ($item->$property == $value) {
-                            continue 2;
+                        // Compare based on prefix (else == )
+                        switch ($prefix) {
+                            
+                            case '=': case '==': default:
+                                if ($item->$property == $value) {
+                                    // Found match - move on to next filter
+                                    continue 3; // Back to foreach $filter
+                                }
+                            break;
+
+                            case '!=': case '!': case '<>':
+                                if ($item->$property == $value) {
+                                    // Found a negative match, remove this item and move on to next property
+                                    unset($copy[$item_key]);
+                                    continue 4; // Back to foreach $copy
+                                }
+                            break;
+
+                            case '>':
+                                if ($item->$property <= $value) {
+                                    // Found a negative match, remove this item and move on to next property
+                                    unset($copy[$item_key]);
+                                    continue 4; // Back to foreach $copy
+                                }
+                            break;
+
+                            case '>=':
+                                if ($item->$property < $value) {
+                                    // Found a negative match, remove this item and move on to next property
+                                    unset($copy[$item_key]);
+                                    continue 4; // Back to foreach $copy
+                                }
+                            break;
+
+                            case '<':
+                                if ($item->$property >= $value) {
+                                    // Found a negative match, remove this item and move on to next property
+                                    unset($copy[$item_key]);
+                                    continue 4; // Back to foreach $copy
+                                }
+                            break;
+
+                            case '<=':
+                                if ($item->$property > $value) {
+                                    // Found a negative match, remove this item and move on to next property
+                                    unset($copy[$item_key]);
+                                    continue 4; // Back to foreach $copy
+                                }
+                            break;
                         }
                     }
-                    // Failed to break of loop, so the current value matches none of the
-                    // values for the current filter, therefore remove the item
-                    unset($copy[$item_key]);
+                    
+                    switch ($prefix) {
+                        // Negative cases
+                        case '=': case '==': default:
+                            // Failed to break loop, so the current value matches none of the
+                            // values for the current filter, therefore remove the item
+                            unset($copy[$item_key]);
+                            continue 3; // Back to foreach $copy
+                        
+                        // Positive cases
+                        case '<': case '<=': case '>': case '>=': case '!=': case '!': case '<>':
+                            // Failed to break oop, so the current value passes.
+                            // No action, keep this key, continue to next filter
+                            continue 2; // Back to foreach $filter
+                    }
                 }
             }
         } elseif(is_callable($filter)) {

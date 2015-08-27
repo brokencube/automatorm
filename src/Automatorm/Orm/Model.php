@@ -23,6 +23,9 @@ use Automatorm\Exception;
 
 class Model implements \JsonSerializable
 {
+    // Flags
+    const COUNT_ONLY = 1;
+    
     public static $dbconnection = 'default'; // Override database connection associated with this class
     public static $tablename;                // Override table associated with this class
     protected static $instance;              // An internal store of already created objects so that objects for each row only get created once
@@ -183,11 +186,21 @@ class Model implements \JsonSerializable
     }
     
     // Get data from database from which we can construct Model objects
-    final protected static function factoryData($where, $table, $database, Core\QueryOptions $options = null)
+    final public static function factoryData($where, $table, $database, Core\QueryOptions $options = null)
     {
         // Select * from $table where $where
         $query = new Core\Query($database);
         list($data) = $query->select($table, $where, $options)->execute();
+                
+        return $data;
+    }
+
+    // Get data from database from which we can construct Model objects
+    final public static function factoryDataCount($where, $table, $database, Core\QueryOptions $options = null)
+    {
+        // Select * from $table where $where
+        $query = new Core\Query($database);
+        list($data) = $query->count($table, $where, $options)->execute();
                 
         return $data;
     }
@@ -273,6 +286,8 @@ class Model implements \JsonSerializable
     public function __call($var, $args)
     {
         try {
+            if (is_numeric($args[1]) && ($args[1] & Model::COUNT_ONLY))
+                return $this->_data->joinCount($var, (array) $args[0]);
             return $this->_data->join($var, (array) $args[0]);
         }
         catch (Exception\Model $e)

@@ -113,7 +113,7 @@ class Data
         }
     }
     
-    public static function groupJoin(Collection $collection, $var, $where = [])
+    public static function groupJoin(Collection $collection, $var, $where = [], $flags = 0)
     {
         if (!$collection->count()) return $collection;
         
@@ -302,6 +302,76 @@ class Data
             if (!$where) $this->external[$var] = $results;
             
             return $results;
+        }
+        
+        throw new Exception\Model("MODEL_DATA:UNKNOWN_FOREIGN_PROPERTY", ['property' => $var, 'data' => $this]);
+    }
+    
+    public function joinCount($var, $where = [])
+    {
+        if ($this->external[$var]) return $this->external[$var]->filter($where)->count();
+        
+        // If this Model_Data isn't linked to the db yet, then linked values cannot exist
+        if (!$id = $this->data['id']) return 0;
+        
+        /* FOREIGN KEYS */
+        // 1-1, just grab the object - not worth optimising
+        if (key_exists($var, (array) $this->model['one-to-one'])) {
+            /* Call Tablename::factory(foreign key id) to get the object we want */
+            $table = $this->model['one-to-one'][$var];
+            $this->external[$var] = Model::factoryObjectCache($id, $table, $this->database);
+            return $this->external[$var] ? 1 : 0;
+        }
+        
+        // M-1, just grab the object - not worth optimising
+        if (key_exists($var, (array) $this->model['many-to-one'])) {        
+            /* Call Tablename::factory(foreign key id) to get the object we want */
+            $table = $this->model['many-to-one'][$var];
+            $this->external[$var] = Model::factoryObjectCache($this->data[$var . '_id'], $table, $this->database);
+            return $this->external[$var] ? 1 : 0;
+        }
+        
+        /* Look for lists of objects in other tables referencing this one */
+        if (key_exists($var, (array) $this->model['one-to-many'])) {
+            
+            $table = $this->model['one-to-many'][$var]['table'];
+            $column = $this->model['one-to-many'][$var]['column_name'];
+            
+            // Use the model factory to find the relevant items
+            list($data) = Model::factoryDataCount($where + [$column => $id], $table, $this->database);
+            return $data['count'];
+        }
+        
+        if (key_exists($var, (array) $this->model['many-to-many'])) {
+            
+            // Get pivot schema
+            $pivot = $this->model['many-to-many'][$var];
+            
+            // We can only support simple connection access for 2 key pivots.
+            if (count($pivot['connections']) != 1) throw new Exception\Model('MODEL_DATA:CANNOT_CALL_MULTIPIVOT_AS_PROPERTY', array($var));
+            
+            // Get a list of ids linked to this object (i.e. the tablename_id stored in the pivot table)
+            $pivot_schema = $this->schema->getTable($pivot['pivot']);
+            $pivot_tablename = $pivot_schema['table_name'];
+            
+            $query = new Core\Query($this->database);
+            $query_options = new Core\QueryOptions;
+            $query_options->join(Schema::underscoreCase($pivot['connections'][0]['table']).' pivotjoin', ['id' => new SqlString('`pivot`.`' . $pivot['connections'][0]['column'].'`')] + $where);
+            
+            $query->select(
+                $pivot_tablename . ' pivot',
+                [$pivot['id'] => $this->data['id']],
+                $query_options,
+                $pivot['connections'][0]['column']
+            );
+            list($raw) = $query->execute();
+            
+            // Rearrange the list of ids into a flat array
+            $id = array();
+            foreach($raw as $raw_id) $id[] = $raw_id[$pivot['connections'][0]['column']];
+            $dedup = array_unique($id);
+            
+            return count($dedup);
         }
         
         throw new Exception\Model("MODEL_DATA:UNKNOWN_FOREIGN_PROPERTY", ['property' => $var, 'data' => $this]);
