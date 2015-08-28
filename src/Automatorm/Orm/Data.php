@@ -113,7 +113,7 @@ class Data
         }
     }
     
-    public static function groupJoin(Collection $collection, $var, $where = [], $flags = 0)
+    public static function groupJoin(Collection $collection, $var, $where = [])
     {
         if (!$collection->count()) return $collection;
         
@@ -230,6 +230,92 @@ class Data
         }        
     }
 
+    public static function groupJoinCount(Collection $collection, $var, $where = [])
+    {
+        if (!$collection->count()) return $collection;
+        
+        $proto = $collection[0]->_data;
+        
+        $results = new Collection();
+        
+        /* FOREIGN KEYS */
+        if (key_exists($var, (array) $proto->model['one-to-one']))
+        {
+            $ids = $collection->id->toArray();
+            
+            /* Call Tablename::factory(foreign key id) to get the object we want */
+            $table = $proto->model['many-to-one'][$var];
+            
+            list($data) = Model::factoryDataCount(['id' => $ids] + $where, $table, $proto->database);
+            return $data['count'];
+        }
+        
+        if (key_exists($var, (array) $proto->model['many-to-one']))
+        {
+            // Remove duplicates from the group
+            $ids = array_unique($collection->{$var . '_id'}->toArray());
+            
+            /* Call Tablename::factory(foreign key id) to get the object we want */
+            $table = $proto->model['many-to-one'][$var];
+            list($data) = Model::factoryDataCount(['id' => $ids] + $where, $table, $proto->database);
+            return $data['count'];
+        }
+        
+        /* Look for lists of objects in other tables referencing this one */
+        if (key_exists($var, (array) $proto->model['one-to-many'])) {
+            
+            $table = $proto->model['one-to-many'][$var]['table'];
+            $column = $proto->model['one-to-many'][$var]['column_name'];
+            
+            $ids = $collection->id->toArray();
+            
+            // Use the model factory to find the relevant items
+            list($data) = Model::factoryDataCount([$column => $ids] + $where, $table, $proto->database);
+            return $data['count'];
+        }
+        
+        if (key_exists($var, (array) $proto->model['many-to-many'])) {
+            
+            // Get pivot schema
+            $pivot = $proto->model['many-to-many'][$var];
+            
+            $ids = $collection->id->toArray();
+            
+            // We can only support simple connection access for 2 key pivots.
+            if (count($pivot['connections']) != 1) throw new Exception\Model('MODEL_DATA:CANNOT_CALL_MULTIPIVOT_AS_PROPERTY', array($var));
+            
+            // Get a list of ids linked to this object (i.e. the tablename_id stored in the pivot table)
+            $pivot_schema = $proto->schema->getTable($pivot['pivot']);
+            $pivot_tablename = $pivot_schema['table_name'];
+            
+            $query = new Core\Query($proto->database);
+            $query_options = new Core\QueryOptions;
+            $query_options->join(Schema::underscoreCase($pivot['connections'][0]['table']).' pivotjoin', ['id' => new SqlString('`pivot`.`' . $pivot['connections'][0]['column'].'`')] + $where);
+            
+            $query->select(
+                $pivot_tablename . ' pivot',
+                [$pivot['id'] => $ids],
+                $query_options,
+                'pivot.*'
+            );
+            list($raw) = $query->execute();
+            
+            // Rearrange the list of ids into a flat array and an id grouped array
+            $flat_ids = [];
+            foreach($raw as $raw_id)
+            {
+                $flat_ids[] = $raw_id[$pivot['connections'][0]['column']];
+            }
+            
+            // Remove duplicates to make sql call smaller.
+            $flat_ids = array_unique($flat_ids);
+            
+            // Use the model factory to retrieve the objects from the list of ids (using cache first)
+            list($data) = Model::factoryDataCount(['id' => $flat_ids] + $where, $table, $proto->database);
+            return $data['count'];
+        }        
+    }
+
     public function join($var, array $where = [])
     {
         if ($this->external[$var]) return $this->external[$var]->filter($where);
@@ -309,6 +395,7 @@ class Data
     
     public function joinCount($var, $where = [])
     {
+        if (!is_null($this->external[$var]) && !$this->external[$var] instanceof Collection) return 1;
         if ($this->external[$var]) return $this->external[$var]->filter($where)->count();
         
         // If this Model_Data isn't linked to the db yet, then linked values cannot exist

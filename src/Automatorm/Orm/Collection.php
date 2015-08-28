@@ -25,20 +25,23 @@ class Collection extends Common\Collection
         return new static($list);
     }
 
-    public function __call($name, $arguments)
+    public function __call($name, $args)
     {
-        $list = array();
-        
+        // Foreign keys
         if (
             $this->container[0] instanceof Model
             and !method_exists($this->container[0], $name)
-            and $this->container[0]->_data->externalKeyExists($parameter)
+            and $this->container[0]->_data->externalKeyExists($name)
         ) {
-            return Data::groupJoin($this, $name, $arguments);
+            if (is_numeric($args[1]) && ($args[1] & Model::COUNT_ONLY))
+                return Data::groupJoinCount($this, $name, $args[0]);
+            return Data::groupJoin($this, $name, $args[0]);
         }
-        
+
+        // Otherwise...
+        $list = [];
         foreach($this->container as $item) {
-            $value = call_user_func_array([$item, $name], $arguments);
+            $value = call_user_func_array([$item, $name], $args);
             if ($value instanceof Collection) {
                 $list = array_merge($list, $value->toArray());
             } else {
