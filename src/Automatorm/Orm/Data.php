@@ -499,8 +499,10 @@ class Data
             ) {
                 // Special checks for datetimes
                 if ($value instanceof Time) { // Orm\Time is aware of timezones - preferred
-                    $this->data[$var] = $value->mysql();    
-                } elseif (($datetime = strtotime($value)) !== false) {// Fall back to standard strings
+                    $this->data[$var] = $value->mysql();
+                } elseif ($value instanceof \DateTime) { // Fall back to standard DateTime object
+                    $this->data[$var] = $value->format(Time::MYSQL_DATE);
+                } elseif (($datetime = strtotime($value)) !== false) { // Fall back to standard strings
                     $this->data[$var] = date(Time::MYSQL_DATE, $datetime);
                 } elseif (is_null($value)) { // Allow "null"
                     $this->data[$var] = null;
