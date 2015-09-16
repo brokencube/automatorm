@@ -639,6 +639,11 @@ class Data
     {
         return $this->model;
     }
+
+    public function getSchema()
+    {
+        return $this->schema;
+    }
     
     public function externalKeyExists($var)
     {
