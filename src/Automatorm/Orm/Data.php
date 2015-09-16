@@ -315,6 +315,16 @@ class Data
             return $data['count'];
         }        
     }
+    
+    public function hasForeignKey($var)
+    {
+        return (bool) (
+            key_exists($var, (array) $this->model['one-to-one'])
+            or key_exists($var, (array) $this->model['one-to-many'])
+            or key_exists($var, (array) $this->model['many-to-one'])
+            or key_exists($var, (array) $this->model['many-to-many'])
+        );
+    }
 
     public function join($var, array $where = [])
     {

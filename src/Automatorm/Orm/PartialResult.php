@@ -15,6 +15,7 @@ class PartialResult
     protected $database;
     protected $route;
     protected $multiresult = false;
+    protected $resolution = null;
     
     public function __construct(Model $source)
     {
@@ -25,8 +26,18 @@ class PartialResult
         $this->database = $source->_data->getDatabase();
     }
     
+    public function __call($var, $args)
+    {
+        $obj = $this->resolve();
+        
+        return call_user_func_array(array($obj, $var), $args);
+    }
+    
     public function __get($var)
     {
+        if ($this->resolution) return $this->resolution->{$var};
+        if ($var == '_') return $this->resolve();
+        
         if (array_key_exists($var, $this->currentSchema['columns']))
         {
             // We have column data, resolve!
@@ -53,26 +64,31 @@ class PartialResult
     
     public function resolve($var = null)
     {
-        // Resolve down to a real Model object, then call __get on it.
-        $ids = $this->resolveState();
-        
-        $results = Model::factoryObjectCache($ids, $this->currentTable, $this->database);
-        
-        if ($this->multiresult && !$results instanceof Collection)
+        if (!$this->resolution)
         {
-            $results = new Collection([$results]);
+            // Resolve down to a real Model object, then call __get on it.
+            $ids = $this->resolveState();
+            
+            $results = Model::factoryObjectCache($ids, $this->currentTable, $this->database);
+            
+            if ($this->multiresult && !$results instanceof Collection)
+            {
+                $results = new Collection([$results]);
+            }
+            
+            if (!$this->multiresult && $results instanceof Collection && $results->count() == 1)
+            {
+                $results = $results[0];
+            }
+            
+            $this->resolution = $results;
         }
         
-        if (!$this->multiresult && $results instanceof Collection && $results->count() == 1)
-        {
-            $results = $results[0];
-        }
-
         if (!is_null($var))
         {
-            return $results->{$var};    
+            return $this->resolution->{$var};    
         }
-        return $results;
+        return $this->resolution;
     }
     
     protected $joinCount = 0;
@@ -137,8 +153,6 @@ class PartialResult
         $key = 'join_' . $this->joinCount;
         $key2 = 'join_' . ++$this->joinCount;
         $key2a = $key2 . 'a';
-        
-        var_dump($target);
         
         $this->route[] =
             'Join `' . Schema::underscoreCase($target['pivot']) . '` as ' . $key2a . ' on ' . $key . '.id = ' . $key2a . '.`' . $target['id'] . '` ';

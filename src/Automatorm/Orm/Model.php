@@ -272,7 +272,9 @@ class Model implements \JsonSerializable
 
     // Dynamic object properties - Prefer properties set on the model object over column data from the db (Model_Data object)
     public function __get($var)
-    {        
+    {
+        if ($var == '_') return new PartialResult($this);
+        
         // If the property actually exists, then return it rather than looking at the Model_Data object.
         if (property_exists($this, $var)) return $this->{$var};
         
