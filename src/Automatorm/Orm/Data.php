@@ -462,7 +462,6 @@ class Data
             $query_options->join(Schema::underscoreCase($pivot['connections'][0]['table']).' pivotjoin', ['id' => '`pivot`.`' . $pivot['connections'][0]['column'].'`']);
             
             $clauses = [];
-            var_dump($where);
             if ($where) foreach ($where as $clause_column => $clause_value)
             {
                 // Rewrite $where clauses to insert `pivotjoin` table in column name
