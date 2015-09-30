@@ -380,9 +380,15 @@ class Data
             $query_options = new Core\QueryOptions;
             $query_options->join(Schema::underscoreCase($pivot['connections'][0]['table']).' pivotjoin', ['id' => new SqlString('`pivot`.`' . $pivot['connections'][0]['column'].'`')] + $where);
             
+            $clauses = [];
+            if ($where) foreach ($where as $clause_column => $clause_value)
+            {
+                $clauses['`pivotjoin`.`' . $clause_column . '`'] = $clause_value;
+            }
+            
             $query->select(
                 $pivot_tablename . ' pivot',
-                [$pivot['id'] => $this->data['id']],
+                $clauses + [$pivot['id'] => $this->data['id']],
                 $query_options,
                 $pivot['connections'][0]['column']
             );
@@ -455,9 +461,15 @@ class Data
             $query_options = new Core\QueryOptions;
             $query_options->join(Schema::underscoreCase($pivot['connections'][0]['table']).' pivotjoin', ['id' => new SqlString('`pivot`.`' . $pivot['connections'][0]['column'].'`')] + $where);
             
+            $clauses = [];
+            if ($where) foreach ($where as $clause_column => $clause_value)
+            {
+                $clauses['`pivotjoin`.`' . $clause_column . '`'] = $clause_value;
+            }
+            
             $query->select(
                 $pivot_tablename . ' pivot',
-                [$pivot['id'] => $this->data['id']],
+                $clauses + [$pivot['id'] => $this->data['id']],
                 $query_options,
                 $pivot['connections'][0]['column']
             );
