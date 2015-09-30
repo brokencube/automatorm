@@ -378,7 +378,7 @@ class Data
             
             $query = new Core\Query($this->database);
             $query_options = new Core\QueryOptions;
-            $query_options->join(Schema::underscoreCase($pivot['connections'][0]['table']).' pivotjoin', ['id' => '`pivot`.`' . $pivot['connections'][0]['column'].'`']);
+            $query_options->join(Schema::underscoreCase($pivot['connections'][0]['table']).' pivotjoin', ['id' => new SqlString('`pivot`.`' . $pivot['connections'][0]['column'].'`')]);
             
             $clauses = [];
             if ($where) foreach ($where as $clause_column => $clause_value)
@@ -464,7 +464,7 @@ class Data
             
             $query = new Core\Query($this->database);
             $query_options = new Core\QueryOptions;
-            $query_options->join(Schema::underscoreCase($pivot['connections'][0]['table']).' pivotjoin', ['id' => '`pivot`.`' . $pivot['connections'][0]['column'].'`']);
+            $query_options->join(Schema::underscoreCase($pivot['connections'][0]['table']).' pivotjoin', ['id' => new SqlString('`pivot`.`' . $pivot['connections'][0]['column'].'`')]);
             
             $clauses = [];
             if ($where) foreach ($where as $clause_column => $clause_value)
