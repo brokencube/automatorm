@@ -279,10 +279,10 @@ class Model implements \JsonSerializable
         if (property_exists($this, $var)) return $this->{$var};
         
         // If a special property method exists, then call it (again, instead of looking at the Model_Data object).
-        if (method_exists($this, '_property_'.$var)) return call_user_func(array($this, '_property_'.$var));
+        if (method_exists($this, '_property_'.$var)) return $this->{$var} = call_user_func(array($this, '_property_'.$var));
         
         // Nothing special set up, default to looking at the Model_Data object.
-        return $this->_data->{$var};
+        return $this->{$var} = $this->_data->{$var};
     }
     
     public function __call($var, $args)
@@ -325,9 +325,8 @@ class Model implements \JsonSerializable
     public function __sleep()
     {
         $properties = array('id', 'table', 'database');
-        if ($this->cache) {
-            $properties[] = '_data';
-        }
+        if ($this->cache) $properties[] = '_data';
+        
         return $properties;
     }
 
@@ -359,11 +358,25 @@ class Model implements \JsonSerializable
         }
     }
     
+    // Swap out the Data object in this Model for an updated one (i.e. after doing an update)
     final public function dataUpdate(Data $db)
     {
         $this->_data = Data::updateCache($db);
+        $this->dataClearCache();
+    }
+
+    // When updating data object, clear "cached" versions of column data saved in __get()
+    final public function dataClearCache()
+    {
+        $modelschema = $this->_data->getModel();
+        foreach ($modelschema['columns'] as $column => $type)
+        {
+            if ($column != 'id') unset($this->{$column});
+        }
     }
     
+    // Grab a clean version of the Data object based on the current state in the database.
+    // Mostly used for updating foreign key results after updates
     final public function dataRefresh()
     {
         list($data) = Model::factoryData(array('id' => $this->id), $this->table, $this->database);
@@ -373,11 +386,13 @@ class Model implements \JsonSerializable
         Data::updateCache($this->_data);
         
         // Call replacement constructor after storing in the cache list (to prevent recursion)
+        $this->dataClearCache();
         $this->_init();
         
         return $this;        
     }
     
+    // If true, Data object is preserved when serializing this object
     public function cachable($bool = true)
     {
         $this->cache = $bool;
