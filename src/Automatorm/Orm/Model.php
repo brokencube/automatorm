@@ -369,7 +369,40 @@ class Model implements \JsonSerializable
     final public function dataClearCache()
     {
         $modelschema = $this->_data->getModel();
+        
+        // Clean out cached column data
         foreach ($modelschema['columns'] as $column => $type)
+        {
+            if ($column != 'id') unset($this->{$column});
+        }
+        
+        // Clean out cached "dynamic property" data
+        foreach (get_class_methods(get_called_class()) as $methodname)
+        {
+            if (substr($methodname,0,10) == '_property_')
+            {
+                $column = substr($methodname,10);
+                unset($this->{$column});
+            }
+        }
+        
+        // Clean out cached external data
+        foreach ($modelschema['one-to-one'] as $column => $value)
+        {
+            if ($column != 'id') unset($this->{$column});
+        }
+        
+        foreach ($modelschema['one-to-many'] as $column => $value)
+        {
+            if ($column != 'id') unset($this->{$column});
+        }
+
+        foreach ($modelschema['many-to-many'] as $column => $value)
+        {
+            if ($column != 'id') unset($this->{$column});
+        }
+
+        foreach ($modelschema['many-to-one'] as $column => $value)
         {
             if ($column != 'id') unset($this->{$column});
         }

@@ -44,7 +44,7 @@ class Dump
                 if (substr($method, 0, 10) == '_property_')
                 {
                     $key = substr($method, 10);
-                    $value = $this->$key;
+                    $value = $this->$method();
                     $output .= "    " . \Automatorm\Orm\Dump::format($key, $value, $seen);
                     $seen[$key] = true;
                 }
@@ -61,7 +61,7 @@ class Dump
             $output .= "    <span><strong>1-1</strong></span> =>\n";
             if ($schema['one-to-one']) foreach ($schema['one-to-one'] as $key => $contents)
             {
-                $value = $this->$key;
+                $value = $this->_data->$key;
                 
                 $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen);
                 $seen[$key] = true;
@@ -70,7 +70,7 @@ class Dump
             $output .= "    <span><strong>*-1</strong></span> =>\n";
             if ($schema['many-to-one']) foreach ($schema['many-to-one'] as $key => $contents)
             {
-                $value = $this->$key;
+                $value = $this->_data->$key;
                 
                 $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen);
                 $seen[$key] = true;
@@ -79,7 +79,7 @@ class Dump
             $output .= "    <span><strong>1-*</strong></span> =>\n";
             if ($schema['one-to-many']) foreach ($schema['one-to-many'] as $key => $contents)
             {
-                $value = $this->$key;
+                $value = $this->_data->$key;
                 
                 $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen);
                 $seen[$key] = true;
@@ -88,7 +88,7 @@ class Dump
             $output .= "    <span><strong>*-*</strong></span> =>\n";
             if ($schema['many-to-many']) foreach ($schema['many-to-many'] as $key => $contents)
             {
-                $value = $this->$key;
+                $value = $this->_data->$key;
                 
                 $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen);
                 $seen[$key] = true;
