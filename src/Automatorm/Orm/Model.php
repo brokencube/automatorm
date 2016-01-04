@@ -387,24 +387,10 @@ class Model implements \JsonSerializable
         }
         
         // Clean out cached external data
-        foreach ($modelschema['one-to-one'] as $column => $value)
+        $foreignkeys = (array) $modelschema['one-to-one'] + (array) $modelschema['one-to-many'] + (array) $modelschema['many-to-many'] + (array) $modelschema['many-to-one'];
+        foreach ($foreignkeys as $column => $value)
         {
-            if ($column != 'id') unset($this->{$column});
-        }
-        
-        foreach ($modelschema['one-to-many'] as $column => $value)
-        {
-            if ($column != 'id') unset($this->{$column});
-        }
-
-        foreach ($modelschema['many-to-many'] as $column => $value)
-        {
-            if ($column != 'id') unset($this->{$column});
-        }
-
-        foreach ($modelschema['many-to-one'] as $column => $value)
-        {
-            if ($column != 'id') unset($this->{$column});
+            if ($column && $column != 'id') unset($this->{$column});
         }
     }
     
