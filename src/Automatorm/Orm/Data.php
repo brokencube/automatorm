@@ -138,11 +138,27 @@ class Data
             // Remove duplicates from the group
             $ids = array_unique($collection->{$var . '_id'}->toArray());
             
-            /* Call Tablename::factory(foreign key id) to get the object we want */
+            /* Call Tablename::factoryObjectCache(foreign key ids) to makes sure all the objects we want are in the instance cache */
             $table = $proto->model['many-to-one'][$var];
-            $results = Model::factoryObjectCache($ids, $table, $proto->database);
-            
-            return $results;
+
+            if (!$where)
+            {
+                $results = Model::factoryObjectCache($ids, $table, $proto->database);
+                
+                // Store the object results on the relevant objects
+                foreach ($collection as $obj)
+                {
+                    $obj->_data->external[$var] = Model::factoryObjectCache($obj->{$var . '_id'}, $table, $proto->database);
+                }
+                
+                return $results;
+            }
+            else
+            {
+                $results = Model::factory($where + ['id' => $ids], $table, $proto->database);
+                
+                return $results;
+            }
         }
         
         /* Look for lists of objects in other tables referencing this one */
