@@ -373,7 +373,7 @@ class Model implements \JsonSerializable
         // Clean out cached column data
         foreach ($modelschema['columns'] as $column => $type)
         {
-            if ($column != 'id') unset($this->{$column});
+            if ($column != 'id' && property_exists($this, $column)) unset($this->{$column});
         }
         
         // Clean out cached "dynamic property" data
