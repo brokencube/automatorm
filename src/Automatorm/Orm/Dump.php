@@ -7,7 +7,9 @@ use HodgePodge\Core;
 use Automatorm\Exception;
 
 class Dump
-{   
+{
+    static $url_prefix = null;
+    
     public static function dump(Model $model)
     {
         $dump = new static();
@@ -110,12 +112,19 @@ class Dump
             case $value instanceof Model:
                 $namespace = explode('\\', get_class($value));
                 $class = array_pop($namespace);
+                $table = $value::$tablename;
 
                 $type = 'Model';
                 $display1 = implode('\\', $namespace) . '\\';
-                $display2 = $class;                
-                $display3 = " ".$value->id;
-                if (method_exists($value, '__toString')) $display4 = ' (' . (string) $value . ')';
+                $display2 = $class;
+                if (static::$url_prefix) {
+                    $table = $value->_data->getTable();
+                    $display3 = " <a href='".static::$url_prefix."/{$table}/{$value->id}'>".$value->id."</a>";
+                } else {
+                    $display3 = " ".$value->id;
+                }
+                
+                if (method_exists($value, '__toString')) $display4 = ' (' . \Automatorm\Orm\Dump::safeTruncate($value) . ')';
                 
             break;
 
@@ -123,7 +132,13 @@ class Dump
                 $ids = [];
                 foreach ($value as $obj)
                 {
-                    $ids[] = $obj->id;
+                    if ($obj instanceof Model && static::$url_prefix) {
+                        $table = $obj->_data->getTable();
+                        $ids[] = "<a href='".static::$url_prefix."/{$table}/{$obj->id}'>".$obj->id."</a>";
+                    } else {
+                        $ids[] = $obj->id;
+                    }
+                    
                 }
                 
                 if ($ids)
@@ -133,9 +148,9 @@ class Dump
                     $display1 = implode('\\', $namespace) . '\\';
                     $display2 = $class;
                     $display3 = " [".implode(',', $ids)."]";
-                    if (method_exists($obj, '__toString'))
+                    if (method_exists($obj, '__toString') && count($ids) < 30)
                     {                        
-                        foreach ($value as $obj) $objstrings[] = (string) $obj;
+                        foreach ($value as $obj) $objstrings[] = \Automatorm\Orm\Dump::safeTruncate($obj);
                         $display4 = ' (' . implode(',', $objstrings) . ')';
                     }
                 }
@@ -206,5 +221,11 @@ class Dump
             "<span style='color: #007700;'>$display4</span>".
             "\n";
         }
+    }
+    
+    public static function safeTruncate($string, $length = 50)
+    {
+        if (strlen($string) > $length) return htmlspecialchars(substr($string,0,$length)) . '...';
+        return htmlspecialchars($string);        
     }
 }
