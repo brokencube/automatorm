@@ -640,7 +640,7 @@ class Data
             $query->sql("SELECT last_insert_id() into @id");
         } else {
             $query->update($this->table, $this->data, array('id' => $this->data['id']));
-            $query->sql("SELECT ".$this->data['id']." into @id");        
+            $query->sql("SELECT ".$this->data['id']." into @id");
         }
         
         $origin_id = new SqlString('@id');

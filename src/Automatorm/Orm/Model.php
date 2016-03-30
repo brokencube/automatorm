@@ -191,7 +191,7 @@ class Model implements \JsonSerializable
         // Select * from $table where $where
         $query = new Core\Query($database);
         list($data) = $query->select($table, $where, $options)->execute();
-                
+        
         return $data;
     }
 
