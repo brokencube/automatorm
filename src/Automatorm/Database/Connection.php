@@ -77,7 +77,7 @@ class Connection implements \Psr\Log\LoggerAwareInterface
                 \PDO::ATTR_PERSISTENT => true,
                 \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION
             ];
-            $this->type = $details['type'];
+            $this->type = $details['type'] ?: 'mysql';
             return;
         }
         
