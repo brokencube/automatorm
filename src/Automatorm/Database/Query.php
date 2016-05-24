@@ -49,7 +49,7 @@ class Query implements \Psr\Log\LoggerAwareInterface
     }
     
     // Add arbitary SQL to the query queue
-    public function query($sql, $data = [])
+    public function sql($sql, $data = [])
     {
         if ($sql instanceof QueryBuilder) {
             $this->sql[] = Sql::build($sql);
