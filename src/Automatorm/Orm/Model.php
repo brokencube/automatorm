@@ -59,7 +59,7 @@ class Model implements \JsonSerializable
         // No cache or cache miss
         if (!$result)
         {
-            $result = static::factory($where, null, null, ['limit' => 1, 'offset' => null, 'sort' => null], true);
+            $result = static::factory($where, null, null, ['limit' => 1], true);
             
             // If caching, store in cache
             if ($cacheable)
@@ -72,9 +72,9 @@ class Model implements \JsonSerializable
     }
     
     // Find a collection of objects via an arbitary $where clause
-    public static function findAll($where = array(), $limit = null, $offset = 0, $sort = null)
+    public static function findAll($where = [], $options = [])
     {
-        return static::factory($where, null, null, ['limit' => $limit, 'offset' => $offset, 'sort' => $sort]);
+        return static::factory($where, null, null, $options);
     }
     
     /* FACTORY METHODS */    
@@ -142,8 +142,7 @@ class Model implements \JsonSerializable
             }
             
             /* Cache miss, so create new object */
-            $o = ['limit' => 1, 'offset' => null, 'sort' => null];
-            return static::factory(array('id' => $ids), $class_or_table, $database, $o, true);
+            return static::factory(['id' => $ids], $class_or_table, $database, ['limit' => 1], true);
         
         // Else if we have an array of ids
         } elseif (is_array($ids)) {
@@ -170,7 +169,7 @@ class Model implements \JsonSerializable
             // For any ids we failed to pull out the cache, pull them from the database instead
             if (count($ids) > 0)
             {
-                $newresults = static::factory(array('id' => $ids), $class_or_table, $database);
+                $newresults = static::factory(['id' => $ids], $class_or_table, $database);
                 $collection = $collection->merge($newresults);
             }
             
@@ -198,10 +197,17 @@ class Model implements \JsonSerializable
             }
             
             // Sort
-            if (key_exists('sort', $options) && key_exists('dir', $options)) {
-                $build->sortBy($options['sort'], $options['dir']);
-            } elseif (key_exists('sort', $options)) {
-                $build->sortBy($options['sort']);
+            if (key_exists('sort', $options)) {
+                if (is_array($options['sort'])) {
+                    foreach ($options['sort'] as $sortby)
+                    {
+                        list ($sort, $dir) = explode(' ', $sortby, 2);
+                        $build->sortBy($sort, $dir);
+                    }
+                } else {
+                    list ($sort, $dir) = explode(' ', $options['sort'], 2);
+                    $build->sortBy($sort, $dir);
+                }
             }
         }
         
@@ -224,13 +230,6 @@ class Model implements \JsonSerializable
             } elseif (key_exists('limit', $options)) {
                 $build->limit($options['limit']);
             }
-            
-            // Sort
-            if (key_exists('sort', $options) && key_exists('dir', $options)) {
-                $build->sortBy($options['sort'], $options['dir']);
-            } elseif (key_exists('sort', $options)) {
-                $build->sortBy($options['sort']);
-            }
         }
         
         $query = new Query($database);
@@ -248,12 +247,12 @@ class Model implements \JsonSerializable
         list($class, $table) = $schema->guessContext(get_called_class());
         
         // Make a new blank data object
-        $model_data = new Data(array(), $table, $schema, false, true);
+        $model_data = new Data([], $table, $schema, false, true);
         
         $table_schema = $schema->getTable($table);
         // "Foreign" tables use a "parent" table for their primary key. We need that parent object for it's id.
         if ($table_schema['type'] == 'foreign') {
-            if (!$parent_object) throw new Exception\Model('NO_PARENT_OBJECT', array($database, $class, $table, static::$tablename));
+            if (!$parent_object) throw new Exception\Model('NO_PARENT_OBJECT', [$database, $class, $table, static::$tablename]);
             $model_data->id = $parent_object->id;
         }
         
@@ -313,7 +312,7 @@ class Model implements \JsonSerializable
         if (property_exists($this, $var)) return $this->{$var};
         
         // If a special property method exists, then call it (again, instead of looking at the Model_Data object).
-        if (method_exists($this, '_property_'.$var)) return $this->{$var} = call_user_func(array($this, '_property_'.$var));
+        if (method_exists($this, '_property_'.$var)) return $this->{$var} = call_user_func([$this, '_property_'.$var]);
         
         // Nothing special set up, default to looking at the Model_Data object.
         return $this->{$var} = $this->_data->{$var};
@@ -358,7 +357,7 @@ class Model implements \JsonSerializable
     
     public function __sleep()
     {
-        $properties = array('id', 'table', 'database');
+        $properties = ['id', 'table', 'database'];
         if ($this->cache) $properties[] = '_data';
         
         return $properties;
@@ -432,7 +431,7 @@ class Model implements \JsonSerializable
     // Mostly used for updating foreign key results after updates
     final public function dataRefresh()
     {
-        list($data) = Model::factoryData(array('id' => $this->id), $this->table, $this->database);
+        list($data) = Model::factoryData(['id' => $this->id], $this->table, $this->database);
         
         // Database data object unique to this object
         $this->_data = new Data($data, $this->table, Schema::get($this->database));
