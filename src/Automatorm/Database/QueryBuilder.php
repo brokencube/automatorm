@@ -431,16 +431,21 @@ class QueryBuilder
         $second = count($column) == 4 ? $column[3] : '';
         $third = count($column) == 5 ? $column[4] : '';
         
+        if ($first && $first != '*') $first = $q . $first . $q;
+        if ($second && $second != '*') $second = $q . $second . $q;
+        if ($third && $third != '*') $third = $q . $third . $q;
+        if ($alias) $alias = $q . $alias . $q;
+        
         // Create column
         if ($third) {
-            if ($alias) return $q . $first . $q . '.' . $q . $second . $q . '.' . $q . $third . $q . ' as ' . $q . $alias . $q;
-            return $q . $first . $q . '.' . $q . $second . $q . '.' . $q . $third . $q;
+            if ($alias) return $first . '.' . $second .  '.' .  $third . ' as ' . $alias;
+            return $first . '.' .  $second .  '.' .  $third;
         } elseif ($second) {
-            if ($alias) return $q . $first . $q . '.' . $q . $second . $q . ' as ' . $q . $alias . $q;
-            return $q . $first . $q . '.' . $q . $second . $q;
+            if ($alias) return $first . '.' . $second . ' as ' . $alias;
+            return $first . '.' .  $second;
         } elseif ($first) {
-            if ($alias) return $q . $first . $q . ' as ' . $q . $alias . $q;
-            return $q . $first . $q;
+            if ($alias) return $first . ' as ' . $alias;
+            return $first;
         }
     }
 }
