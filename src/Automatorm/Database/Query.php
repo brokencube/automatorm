@@ -28,7 +28,8 @@ class Query implements \Psr\Log\LoggerAwareInterface
     
     static public function run($sql, $connection = 'default')
     {
-        return static::create($connection, $sql)->execute();
+        $query = new static($connection, $sql);
+        return $query->execute();
     }
     
     // Create a new query container
