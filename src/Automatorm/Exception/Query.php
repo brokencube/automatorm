@@ -1,11 +1,11 @@
 <?php
 namespace Automatorm\Exception;
 
-use Automatorm\Database;
+use Automatorm\Database\Query as Q;
 
 class Query extends Database
 {
-	public function __construct(Database\Query $query, \Exception $previous_exception = null)
+	public function __construct(Q $query, \Exception $previous_exception = null)
 	{
 		parent::__construct('Query error: '.$query->error, $query, $previous_exception);
 	}
