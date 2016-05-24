@@ -389,7 +389,7 @@ class QueryBuilder
         $string = ' ORDER BY ';
         foreach ($this->sortBy as $sort)
         {
-            $string .= $this->escapeColumn($sort['sort']) . ' ' . $sort['dir'];
+            if ($sort['sort']) $string .= $this->escapeColumn($sort['sort']) . ' ' . $sort['dir'];
         }
         
         return $string;
