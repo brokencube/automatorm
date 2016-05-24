@@ -37,7 +37,7 @@ class Query implements \Psr\Log\LoggerAwareInterface
         if ($connection instanceof Connection) {
             $this->db = $connection;
         } elseif (is_string($connection)) {
-            $this->db = Connection::autoconnect($connection_name);
+            $this->db = Connection::autoconnect($connection);
         } else {
             throw new Ex\Database('Unknown connection', $connection);
         }
@@ -45,7 +45,7 @@ class Query implements \Psr\Log\LoggerAwareInterface
         if ($sql) $this->sql($sql);
         
         // Default Logger
-        $this->logger = $connection->getLogger();
+        $this->logger = $this->db->getLogger();
     }
     
     // Add arbitary SQL to the query queue
