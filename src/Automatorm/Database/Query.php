@@ -7,7 +7,7 @@ class Query implements \Psr\Log\LoggerAwareInterface
 {
     use \Psr\Log\LoggerAwareTrait;
     
-    protected $db;      // Connection object
+    protected $connection;      // Connection object
     
     protected $sql = []; // Array of SQL queries to run
     protected $lock = false;
@@ -35,9 +35,9 @@ class Query implements \Psr\Log\LoggerAwareInterface
     public function __construct($connection = 'default', $sql = null)
     {
         if ($connection instanceof Connection) {
-            $this->db = $connection;
+            $this->connection = $connection;
         } elseif (is_string($connection)) {
-            $this->db = Connection::autoconnect($connection);
+            $this->connection = Connection::get($connection);
         } else {
             throw new Ex\Database('Unknown connection', $connection);
         }
@@ -45,7 +45,7 @@ class Query implements \Psr\Log\LoggerAwareInterface
         if ($sql) $this->sql($sql);
         
         // Default Logger
-        $this->logger = $this->db->getLogger();
+        $this->logger = $this->connection->getLogger();
     }
     
     // Add arbitary SQL to the query queue
@@ -79,21 +79,26 @@ class Query implements \Psr\Log\LoggerAwareInterface
     
     public function escape($string)
     {
-        return $this->db->quote($string);
+        $pdo = $this->connection->connect();
+        return $pdo->quote($string);
     }
     
     public function transaction()
     {
-        $this->db->beginTransaction();
+        $pdo = $this->connection->connect();
+        $pdo->beginTransaction();
     }
     
     public function commit()
     {
-        $this->db->commit();
+        $pdo = $this->connection->connect();
+        $pdo->commit();
     }
     
     public function execute()
     {
+        $pdo = $this->connection->connect();
+        
         // We are only allowed to execute each Query object once!
         if ($this->lock) throw new Exception\Database('QUERY_LOCKED', "This query has already been executed", $this);
         $this->lock = true;
@@ -104,7 +109,7 @@ class Query implements \Psr\Log\LoggerAwareInterface
         try {
             foreach($this->sql as $query) {
                 $time = microtime(true);
-                $result = $query->execute($this->db);
+                $result = $query->execute($pdo);
                 if ($result->columnCount()) {
                     $return[$count] = $result->fetchAll(\PDO::FETCH_ASSOC);    
                 } else {
@@ -112,7 +117,7 @@ class Query implements \Psr\Log\LoggerAwareInterface
                 }
                 
                 // Store some useful data about this set of results
-                $this->debug[$count]['insert_id'] = $this->db->lastInsertId();
+                $this->debug[$count]['insert_id'] = $pdo->lastInsertId();
                 $this->debug[$count]['affected_rows'] = $result->rowCount();
                 $this->debug[$count]['time'] = microtime(true) - $time;
                 $count++;
