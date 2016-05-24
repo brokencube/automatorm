@@ -214,19 +214,19 @@ class QueryBuilder
                 $columns = $this->resolveCount();
                 $join = $this->resolveJoins();
                 $where = $this->resolveWhere();
-                $limit = $this->resolveLimit();
                 $sort = $this->resolveSort();
+                $limit = $this->resolveLimit();
                 
-                return ["SELECT $columns FROM $table{$join}{$where}{$limit}{$sort};", $this->data];
+                return ["SELECT $columns FROM $table{$join}{$where}{$sort}{$limit};", $this->data];
                 
             case 'select':
                 $columns = $this->resolveColumns();
                 $join = $this->resolveJoins();
                 $where = $this->resolveWhere();
-                $limit = $this->resolveLimit();
                 $sort = $this->resolveSort();
+                $limit = $this->resolveLimit();
                 
-                return ["SELECT $columns FROM $table{$join}{$where}{$limit}{$sort};", $this->data];
+                return ["SELECT $columns FROM $table{$join}{$where}{$sort}{$limit};", $this->data];
             
             case 'insert':
                 $join = $this->resolveJoins();
