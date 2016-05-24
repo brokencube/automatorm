@@ -1,10 +1,8 @@
 <?php
 namespace Automatorm\Orm;
 
-use HodgePodge\Common;
-use HodgePodge\Core;
-use HodgePodge\Core\Query;
 use Automatorm\Exception;
+use Automatorm\Database\Query;
 
 class PartialResult
 {

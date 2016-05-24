@@ -1,9 +1,12 @@
 <?php
 namespace Automatorm\Orm;
 
-use HodgePodge\Common\SqlString;
-use HodgePodge\Core;
+use Automatorm\Database\Query;
+use Automatorm\Database\QueryBuilder;
+use Automatorm\Database\SqlString;
 use Automatorm\Exception;
+
+use HodgePodge\Core;
 
 class Data
 {
@@ -203,17 +206,14 @@ class Data
             $pivot_schema = $proto->schema->getTable($pivot['pivot']);
             $pivot_tablename = $pivot_schema['table_name'];
             
-            $query = new Core\Query($proto->database);
-            $query_options = new Core\QueryOptions;
-            $query_options->join(Schema::underscoreCase($pivot['connections'][0]['table']).' pivotjoin', ['id' => new SqlString('`pivot`.`' . $pivot['connections'][0]['column'].'`')] + $where);
-            
-            $query->select(
-                $pivot_tablename . ' pivot',
-                [$pivot['id'] => $ids],
-                $query_options,
-                'pivot.*'
-            );
-            list($raw) = $query->execute();
+            $q = QueryBuilder::select([$pivot_tablename => 'pivot'], ['pivot.*'])
+                ->where([$pivot['id'] => $ids])
+                ->join([Schema::underscoreCase($pivot['connections'][0]['table']) => 'pivotjoin'])
+                ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"])
+                ->joinWhere($where);
+                
+            $query = new Query($proto->database);
+            list($raw) = $query->sql($q)->execute();
             
             // Rearrange the list of ids into a flat array and an id grouped array
             $flat_ids = [];
@@ -304,18 +304,15 @@ class Data
             $pivot_schema = $proto->schema->getTable($pivot['pivot']);
             $pivot_tablename = $pivot_schema['table_name'];
             
-            $query = new Core\Query($proto->database);
-            $query_options = new Core\QueryOptions;
-            $query_options->join(Schema::underscoreCase($pivot['connections'][0]['table']).' pivotjoin', ['id' => new SqlString('`pivot`.`' . $pivot['connections'][0]['column'].'`')] + $where);
-            
-            $query->select(
-                $pivot_tablename . ' pivot',
-                [$pivot['id'] => $ids],
-                $query_options,
-                'pivot.*'
-            );
-            list($raw) = $query->execute();
-            
+            $q = QueryBuilder::select([$pivot_tablename => 'pivot'], ['pivot.*'])
+                ->where([$pivot['id'] => $ids])
+                ->join([Schema::underscoreCase($pivot['connections'][0]['table']) => 'pivotjoin'])
+                ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"])
+                ->joinWhere($where);
+                
+            $query = new Query($proto->database);
+            list($raw) = $query->sql($q)->execute();
+
             // Rearrange the list of ids into a flat array and an id grouped array
             $flat_ids = [];
             foreach($raw as $raw_id)
@@ -391,32 +388,30 @@ class Data
             // Get a list of ids linked to this object (i.e. the tablename_id stored in the pivot table)
             $pivot_schema = $this->schema->getTable($pivot['pivot']);
             $pivot_tablename = $pivot_schema['table_name'];
-            
-            $query = new Core\Query($this->database);
-            $query_options = new Core\QueryOptions;
-            $query_options->join(Schema::underscoreCase($pivot['connections'][0]['table']).' pivotjoin', ['id' => new SqlString('`pivot`.`' . $pivot['connections'][0]['column'].'`')]);
-            
+
             $clauses = [];
             if ($where) foreach ($where as $clause_column => $clause_value)
             {
                 // Rewrite $where clauses to insert `pivotjoin` table in column name
-                preg_match('/^([!=<>]*)([^!=<>]+)([!=<>]*)$/', $clause_column, $parts);
+                preg_match('/^([!=<>%]*)(.+?)([!=<>%]*)$/', $clause_column, $parts);
                 $prefix = $parts[1] ?: $parts[3];
                 $clause_column = $parts[2];
                 
                 $clauses['`pivotjoin`.`' . $clause_column . '`' . $prefix] = $clause_value;
             }
             
-            $query->select(
-                $pivot_tablename . ' pivot',
-                $clauses + [$pivot['id'] => $this->data['id']],
-                $query_options,
-                $pivot['connections'][0]['column']
-            );
-            list($raw) = $query->execute();
-            
+            // Build Query
+            $q = QueryBuilder::select([$pivot_tablename => 'pivot'], ['pivot.*'])
+                ->where([$pivot['id'] => $ids])
+                ->join([Schema::underscoreCase($pivot['connections'][0]['table']) => 'pivotjoin'])
+                ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"])
+                ->where($clauses);
+                
+            $query = new Query($this->database);
+            list($raw) = $query->sql($q)->execute();
+
             // Rearrange the list of ids into a flat array
-            $id = array();
+            $id = [];
             foreach($raw as $raw_id) $id[] = $raw_id[$pivot['connections'][0]['column']];
             
             // Use the model factory to retrieve the objects from the list of ids (using cache first)
@@ -478,28 +473,26 @@ class Data
             $pivot_schema = $this->schema->getTable($pivot['pivot']);
             $pivot_tablename = $pivot_schema['table_name'];
             
-            $query = new Core\Query($this->database);
-            $query_options = new Core\QueryOptions;
-            $query_options->join(Schema::underscoreCase($pivot['connections'][0]['table']).' pivotjoin', ['id' => new SqlString('`pivot`.`' . $pivot['connections'][0]['column'].'`')]);
-            
             $clauses = [];
             if ($where) foreach ($where as $clause_column => $clause_value)
             {
                 // Rewrite $where clauses to insert `pivotjoin` table in column name
-                preg_match('/^([!=<>]*)([^!=<>]+)([!=<>]*)$/', $clause_column, $parts);
+                preg_match('/^([!=<>%]*)(.+?)([!=<>%]*)$/', $clause_column, $parts);
                 $prefix = $parts[1] ?: $parts[3];
                 $clause_column = $parts[2];
                 
                 $clauses['`pivotjoin`.`' . $clause_column . '`' . $prefix] = $clause_value;
             }
             
-            $query->select(
-                $pivot_tablename . ' pivot',
-                $clauses + [$pivot['id'] => $this->data['id']],
-                $query_options,
-                $pivot['connections'][0]['column']
-            );
-            list($raw) = $query->execute();
+            // Build Query
+            $q = QueryBuilder::select([$pivot_tablename => 'pivot'], ['pivot.*'])
+                ->where([$pivot['id'] => $ids])
+                ->join([Schema::underscoreCase($pivot['connections'][0]['table']) => 'pivotjoin'])
+                ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"])
+                ->where($clauses);
+                
+            $query = new Query($this->database);
+            list($raw) = $query->sql($q)->execute();
             
             // Rearrange the list of ids into a flat array
             $id = array();
@@ -613,7 +606,7 @@ class Data
     public function commit()
     {
         // Create a new query
-        $query = new Core\Query($this->database);        
+        $query = new Query($this->database);        
         $this->buildQuery($query);
         $values = $query->execute(true);
         
@@ -636,11 +629,11 @@ class Data
         
         // Insert/Update the data, and store the insert id into a variable
         if ($this->new) {
-            $query->insert($this->table, $this->data);
-            $query->sql("SELECT last_insert_id() into @id");
+            $q = QueryBuilder::insert($this->table, $this->data);
+            $query->sql($q)->sql("SELECT last_insert_id() into @id");
         } else {
-            $query->update($this->table, $this->data, array('id' => $this->data['id']));
-            $query->sql("SELECT ".$this->data['id']." into @id");
+            $q = QueryBuilder::insert($this->table, $this->data)->where(['id' => $this->data['id']]);
+            $query->sql($q)->sql("SELECT ".$this->data['id']." into @id");
         }
         
         $origin_id = new SqlString('@id');
@@ -660,14 +653,12 @@ class Data
             $query->sql("Delete from $table where {$pivot['id']} = @id");
             
             // Loops through the list of objects to link to this table
-            foreach ($value as $object) {                    
-                $query->insert(
-                    $table,                              // Pivot table
-                    array(
-                        $pivot['id'] => $origin_id,      // Id of this object
-                        $pivot['connections'][0]['column'] => $object->id  // Id of object linked to this object
-                    )
-                );
+            foreach ($value as $object) {
+                $newdata = [
+                    $pivot['id'] => $origin_id,      // Id of this object
+                    $pivot['connections'][0]['column'] => $object->id  // Id of object linked to this object
+                ];
+                $query->sql(QueryBuilder::insert($table, $newdata));
             }
         }
     }

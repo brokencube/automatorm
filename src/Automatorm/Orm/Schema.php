@@ -3,9 +3,10 @@
 namespace Automatorm\Orm;
 
 use Automatorm\Exception;
-use HodgePodge\Core\Query;
+use Automatorm\Database\Query;
+use Automatorm\Database\Connection;
+
 use HodgePodge\Core\Cache;
-use HodgePodge\Core\Database;
 
 class Schema
 {
@@ -38,7 +39,7 @@ class Schema
     {
         Cache::lifetime(60 * 60 * 24 * 7, 'model'); // Cache model weekly
         
-        $db = Database::get($dbconnection);
+        $db = Connection::get($dbconnection);
         $cache = new Cache('schema_' . md5($dbconnection . $namespace . $db->database . static::CURRENT_VERSION), 'model');
         
         $obj = $cache();

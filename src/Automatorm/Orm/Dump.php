@@ -2,10 +2,6 @@
 
 namespace Automatorm\Orm;
 
-use HodgePodge\Common;
-use HodgePodge\Core;
-use Automatorm\Exception;
-
 class Dump
 {
     static $url_prefix = null;

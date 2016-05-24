@@ -1,9 +1,9 @@
 <?php
 namespace Automatorm\Orm;
 
-use HodgePodge\Common;
-use HodgePodge\Core;
 use Automatorm\Exception;
+use Automatorm\Database\Query;
+use Automatorm\Database\QueryBuilder;
 
 /* MVC Model Class giving a lightweight ORM interface with an indirect active record pattern.
  * The rationale for this superclass is to make it trivial to create an object representing a single row in a database table (and a class
@@ -59,8 +59,7 @@ class Model implements \JsonSerializable
         // No cache or cache miss
         if (!$result)
         {
-            $o = new Core\QueryOptions();
-            $result = static::factory($where, null, null, $o->limit(1), true);
+            $result = static::factory($where, null, null, ['limit' => 1, 'offset' => null, 'sort' => null], true);
             
             // If caching, store in cache
             if ($cacheable)
@@ -75,13 +74,12 @@ class Model implements \JsonSerializable
     // Find a collection of objects via an arbitary $where clause
     public static function findAll($where = array(), $limit = null, $offset = 0, $sort = null)
     {
-        $o = new Core\QueryOptions();
-        return static::factory($where, null, null, $o->limit($limit, $offset)->sort($sort));
+        return static::factory($where, null, null, ['limit' => $limit, 'offset' => $offset, 'sort' => $sort]);
     }
     
     /* FACTORY METHODS */    
     // Build an appropriate Model object based on id and class/table name
-    final public static function factory($where, $class_or_table_name = null, $database = null, Core\QueryOptions $options = null, $single_result = false)
+    final public static function factory($where, $class_or_table_name = null, $database = null, array $options = null, $single_result = false)
     {
         // Some defaults
         if (!$database) $database = static::$dbconnection;
@@ -144,7 +142,7 @@ class Model implements \JsonSerializable
             }
             
             /* Cache miss, so create new object */
-            $o = new Core\QueryOptions();
+            $o = ['limit' => 1, 'offset' => null, 'sort' => null];
             return static::factory(array('id' => $ids), $class_or_table, $database, $o->limit(1), true);
         
         // Else if we have an array of ids
@@ -186,22 +184,54 @@ class Model implements \JsonSerializable
     }
     
     // Get data from database from which we can construct Model objects
-    final public static function factoryData($where, $table, $database, Core\QueryOptions $options = null)
+    final public static function factoryData($where, $table, $database, array $options = [])
     {
         // Select * from $table where $where
-        $query = new Core\Query($database);
-        list($data) = $query->select($table, $where, $options)->execute();
+        $build = QueryBuilder::select($table)->where($where);
+        
+        // Limit
+        if (key_exists('limit', $options) && key_exists('offset', $options)) {
+            $build->limit($options['limit'], $options['offset']);
+        } elseif (key_exists('limit', $options)) {
+            $build->limit($options['limit']);
+        }
+        
+        // Sort
+        if (key_exists('sort', $options) && key_exists('dir', $options)) {
+            $build->sortBy($options['sort'], $options['dir']);
+        } elseif (key_exists('sort', $options)) {
+            $build->sortBy($options['sort']);
+        }
+        
+        $query = new Query($database);
+        list($data) = $query->sql($build)->execute();
         
         return $data;
     }
 
     // Get data from database from which we can construct Model objects
-    final public static function factoryDataCount($where, $table, $database, Core\QueryOptions $options = null)
+    final public static function factoryDataCount($where, $table, $database, array $options = [])
     {
         // Select * from $table where $where
-        $query = new Core\Query($database);
-        list($data) = $query->count($table, $where, $options)->execute();
-                
+        $build = QueryBuilder::count($table)->where($where);
+        
+        // Limit
+        if (key_exists('limit', $options) && key_exists('offset', $options)) {
+            $build->limit($options['limit'], $options['offset']);
+        } elseif (key_exists('limit', $options)) {
+            $build->limit($options['limit']);
+        }
+        
+        // Sort
+        if (key_exists('sort', $options) && key_exists('dir', $options)) {
+            $build->sortBy($options['sort'], $options['dir']);
+        } elseif (key_exists('sort', $options)) {
+            $build->sortBy($options['sort']);
+        }
+        
+        $query = new Query($database);
+        list($data) = $query->sql($build)->execute();
+        
         return $data;
     }
     
