@@ -144,7 +144,7 @@ class Query implements \Psr\Log\LoggerAwareInterface
         $count = 0;
         foreach($query->sql as $sql)
         {
-            $preview = Log::format(substr($sql->sql,0,100),true);
+            $preview = preg_replace('/\s+/m', ' ', substr($sql->sql,0,100));
             $time = number_format($query->debug[0]['time'] * 1000, 2);
             
             $message = "{$time}ms Con:{$query->name} | $preview";
