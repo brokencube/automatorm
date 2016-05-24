@@ -147,8 +147,10 @@ class QueryBuilder
     
     public function limit($limit, $offset = null)
     {
-        $this->limit = intval($limit);
-        $this->offset = is_null($offset) ? null : intval($offset);
+        if (!is_null($limit)) {
+            $this->limit = intval($limit);
+            $this->offset = is_null($offset) ? null : intval($offset);
+        }
         return $this;
     }
     
