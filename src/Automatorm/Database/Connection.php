@@ -78,6 +78,7 @@ class Connection implements \Psr\Log\LoggerAwareInterface
                 \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION
             ];
             $this->type = $details['type'];
+            return;
         }
         
         throw new Ex\Database("Not enough details to construct Database object", $details);
