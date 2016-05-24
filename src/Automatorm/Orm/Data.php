@@ -632,7 +632,7 @@ class Data
             $q = QueryBuilder::insert($this->table, $this->data);
             $query->sql($q)->sql("SELECT last_insert_id() into @id");
         } else {
-            $q = QueryBuilder::insert($this->table, $this->data)->where(['id' => $this->data['id']]);
+            $q = QueryBuilder::update($this->table, $this->data)->where(['id' => $this->data['id']]);
             $query->sql($q)->sql("SELECT ".$this->data['id']." into @id");
         }
         
