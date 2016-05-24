@@ -143,7 +143,7 @@ class Model implements \JsonSerializable
             
             /* Cache miss, so create new object */
             $o = ['limit' => 1, 'offset' => null, 'sort' => null];
-            return static::factory(array('id' => $ids), $class_or_table, $database, $o->limit(1), true);
+            return static::factory(array('id' => $ids), $class_or_table, $database, $o, true);
         
         // Else if we have an array of ids
         } elseif (is_array($ids)) {
