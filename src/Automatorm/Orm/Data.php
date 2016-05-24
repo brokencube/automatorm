@@ -111,7 +111,7 @@ class Data
             return $this->join($var);
         }
         catch (Exception\Model $e) {
-            if ($e->getLabel() == 'MODEL_DATA:UNKNOWN_FOREIGN_PROPERTY') return null;
+            if ($e->code == 'MODEL_DATA:UNKNOWN_FOREIGN_PROPERTY') return null;
             throw $e;
         }
     }

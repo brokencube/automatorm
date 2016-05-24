@@ -3,8 +3,10 @@ namespace Automatorm\Exception;
 
 class Model extends BaseException
 {
+    public $code;
     public function __construct($code, $data = null, \Exception $previous_exception = null)
     {
+        $this->code = $code;
         parent::__construct(
             $this->make_message($code, $data),
             $data,
