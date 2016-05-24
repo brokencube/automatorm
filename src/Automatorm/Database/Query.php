@@ -139,7 +139,7 @@ class Query implements \Psr\Log\LoggerAwareInterface
     
     public function logQuery(Query $query)
     {
-        if ($this->disabled) return;
+        if (!$this->logger) return;
         
         $count = 0;
         foreach($query->sql as $sql)
