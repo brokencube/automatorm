@@ -1,7 +1,7 @@
 <?php
-namespace automatorm\Database;
+namespace Automatorm\Database;
 
-use automatorm\Exception as Ex;
+use Automatorm\Exception as Ex;
 
 class Connection implements \Psr\Log\LoggerAwareInterface
 {

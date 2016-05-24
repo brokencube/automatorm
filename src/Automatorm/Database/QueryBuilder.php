@@ -1,7 +1,7 @@
 <?php
-namespace automatorm\Database;
+namespace Automatorm\Database;
 
-use automatorm\Exception;
+use Automatorm\Exception;
 
 class QueryBuilder
 {

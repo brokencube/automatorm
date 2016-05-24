@@ -1,5 +1,5 @@
 <?php
-namespace automatorm\Database;
+namespace Automatorm\Database;
 
 class Sql
 {
