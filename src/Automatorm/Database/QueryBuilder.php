@@ -154,7 +154,7 @@ class QueryBuilder
     
     public function sortBy($sort, $dir = 'desc')
     {
-        $this->sortBy[] = ['sort' => $sort, 'dir' => $dir == 'desc' ? 'desc' : 'asc'];
+        if ($sort) $this->sortBy[] = ['sort' => $sort, 'dir' => $dir == 'desc' ? 'desc' : 'asc'];
         return $this;
     }
     
