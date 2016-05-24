@@ -53,8 +53,7 @@ class Query implements \Psr\Log\LoggerAwareInterface
     {
         if ($sql instanceof QueryBuilder) {
             $this->sql[] = Sql::build($sql);
-        }
-        if ($sql instanceof Sql) {
+        } elseif ($sql instanceof Sql) {
             $this->sql[] = $sql;
         } else {
             $this->sql[] = new Sql(trim($sql), $data);    
