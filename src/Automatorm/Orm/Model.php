@@ -184,23 +184,25 @@ class Model implements \JsonSerializable
     }
     
     // Get data from database from which we can construct Model objects
-    final public static function factoryData($where, $table, $database, array $options = [])
+    final public static function factoryData($where, $table, $database, array $options = null)
     {
         // Select * from $table where $where
         $build = QueryBuilder::select($table)->where($where);
         
-        // Limit
-        if (key_exists('limit', $options) && key_exists('offset', $options)) {
-            $build->limit($options['limit'], $options['offset']);
-        } elseif (key_exists('limit', $options)) {
-            $build->limit($options['limit']);
-        }
-        
-        // Sort
-        if (key_exists('sort', $options) && key_exists('dir', $options)) {
-            $build->sortBy($options['sort'], $options['dir']);
-        } elseif (key_exists('sort', $options)) {
-            $build->sortBy($options['sort']);
+        if (is_array($options)) {
+            // Limit
+            if (key_exists('limit', $options) && key_exists('offset', $options)) {
+                $build->limit($options['limit'], $options['offset']);
+            } elseif (key_exists('limit', $options)) {
+                $build->limit($options['limit']);
+            }
+            
+            // Sort
+            if (key_exists('sort', $options) && key_exists('dir', $options)) {
+                $build->sortBy($options['sort'], $options['dir']);
+            } elseif (key_exists('sort', $options)) {
+                $build->sortBy($options['sort']);
+            }
         }
         
         $query = new Query($database);
