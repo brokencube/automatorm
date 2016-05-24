@@ -207,7 +207,7 @@ class Data
             $pivot_tablename = $pivot_schema['table_name'];
             
             $q = QueryBuilder::select([$pivot_tablename => 'pivot'], ['pivot.*'])
-                ->where([$pivot['id'] => $ids])
+                ->where(['`pivot`'.$pivot['id'] => $ids])
                 ->join([Schema::underscoreCase($pivot['connections'][0]['table']) => 'pivotjoin'])
                 ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"])
                 ->joinWhere($where);
@@ -305,7 +305,7 @@ class Data
             $pivot_tablename = $pivot_schema['table_name'];
             
             $q = QueryBuilder::select([$pivot_tablename => 'pivot'], ['pivot.*'])
-                ->where([$pivot['id'] => $ids])
+                ->where(['`pivot`'.$pivot['id'] => $ids])
                 ->join([Schema::underscoreCase($pivot['connections'][0]['table']) => 'pivotjoin'])
                 ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"])
                 ->joinWhere($where);
@@ -402,7 +402,7 @@ class Data
             
             // Build Query
             $q = QueryBuilder::select([$pivot_tablename => 'pivot'], ['pivot.*'])
-                ->where([$pivot['id'] => $ids])
+                ->where(['`pivot`'.$pivot['id'] => $this->data['id']])
                 ->join([Schema::underscoreCase($pivot['connections'][0]['table']) => 'pivotjoin'])
                 ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"])
                 ->where($clauses);
@@ -486,7 +486,7 @@ class Data
             
             // Build Query
             $q = QueryBuilder::select([$pivot_tablename => 'pivot'], ['pivot.*'])
-                ->where([$pivot['id'] => $ids])
+                ->where(['`pivot`'.$pivot['id'] => $this->data['id']])
                 ->join([Schema::underscoreCase($pivot['connections'][0]['table']) => 'pivotjoin'])
                 ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"])
                 ->where($clauses);
