@@ -313,8 +313,8 @@ class QueryBuilder
     {
         $column = [];
         foreach ($this->set as $col => $value) {
-            if (is_array($value)) {
-                
+            if ($value instanceof SqlString) {
+                $column[] = $this->escapeColumn($col) .  ' = ' . $value;
             } else {
                 $column[] = $this->escapeColumn($col) .  ' = ?';
                 $this->data[] = $this->resolveValue($value);
