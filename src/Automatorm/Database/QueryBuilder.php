@@ -386,15 +386,16 @@ class QueryBuilder
 
     public function resolveSort()
     {
-        if (!$this->sortBy) return '';
-        
-        $string = ' ORDER BY ';
-        foreach ($this->sortBy as $sort)
-        {
-            if ($sort['sort']) $string .= $this->escapeColumn($sort['sort']) . ' ' . $sort['dir'];
+        $sortlist = [];
+        foreach ($this->sortBy as $sort) {
+            if ($sort['sort']) $sortlist[] = $this->escapeColumn($sort['sort']) . ' ' . $sort['dir'];
         }
         
-        return $string;
+        if ($sortlist) {
+            return ' ORDER BY ' . implode(', ', $sortlist);
+        }
+        
+        return '';
     }
     
     public function escapeTable($table)
