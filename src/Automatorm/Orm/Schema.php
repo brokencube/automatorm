@@ -43,9 +43,9 @@ class Schema
 
     public static function generate($dbconnection = 'default', $namespace = 'models', $cachebust = false)
     {
+        $db = Connection::get($dbconnection);
         $key = 'schema_' . md5($dbconnection . $namespace . $db->database . static::CURRENT_VERSION);
         
-        $db = Connection::get($dbconnection);
         if (is_object(static::$cache)) {
             $cache = static::$cache;
         } else {
