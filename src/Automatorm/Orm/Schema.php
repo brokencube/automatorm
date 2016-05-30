@@ -10,10 +10,18 @@ use HodgePodge\Core\Cache;
 
 class Schema
 {
-    const CURRENT_VERSION = 3;
+    const CURRENT_VERSION = 4;
+
+    // Cache Bridge
+    protected static $cache = '\\Automatorm\\Cache\\HodgePodgeCache';
+    public static function registerCache($cache)
+    {
+        static::$cache = $cache;
+    }
     
-    public static $object_list = array();
-    
+    // Singleton
+    public static $object_list = [];
+    public static $namespaces = [];
     public static function get($dbconnection)
     {
         if (!static::$object_list[$dbconnection]) {
@@ -22,6 +30,35 @@ class Schema
         
         return static::$object_list[$dbconnection];
     }
+
+    public static function generate($dbconnection = 'default', $namespace = 'models', $cachebust = false)
+    {
+        // Register namespace with connection
+        static::$namespaces[$namespace] = $dbconnection;
+        
+        // Get schema from cache
+        $cache = is_object(static::$cache) ? static::$cache : new static::$cache();
+        $key = 'schema_' . md5($dbconnection . $namespace . static::CURRENT_VERSION);
+        $obj = $cache->get($key);
+        
+        // Expire old versions of Schema
+        if ($obj && $obj->version != static::CURRENT_VERSION)
+        {
+            unset($obj);
+        }
+        
+        // If no cache, generate the schema
+        if ($cachebust or !$obj) {
+            $model = static::generateSchema($dbconnection);
+            $obj = new static($model, $dbconnection, $namespace);
+            $cache->put($key, $obj, 60 * 60 * 24 * 7);
+        }
+        
+        // Return schema object
+        return static::$object_list[$dbconnection] = $obj;
+    }
+    
+    ///////////////////////////////////////////////////////////////////////////
     
     protected $model;
     protected $database;
@@ -34,40 +71,8 @@ class Schema
         $this->namespace = $namespace;
         $this->version = static::CURRENT_VERSION;
     }
-
-    protected static $cache = '\\Automatorm\\Cache\\HodgePodgeCache';
-    public static function registerCache($cache)
-    {
-        static::$cache = $cache;
-    }
-
-    public static function generate($dbconnection = 'default', $namespace = 'models', $cachebust = false)
-    {
-        $db = Connection::get($dbconnection);
-        $key = 'schema_' . md5($dbconnection . $namespace . $db->database . static::CURRENT_VERSION);
-        
-        if (is_object(static::$cache)) {
-            $cache = static::$cache;
-        } else {
-            $cache = new static::$cache;
-        }
-        
-        $obj = $cache->get($key);
-        
-        if ($obj && $obj->version != static::CURRENT_VERSION)
-        {
-            unset($obj);
-        }
-        
-        if ($cachebust or !$obj) {
-            $model = static::generateSchema($dbconnection);
-            $obj = new static($model, $dbconnection, $namespace);
-            $cache->put($key, $obj, 60 * 60 * 24 * 7);
-        }
-        
-        return static::$object_list[$dbconnection] = $obj;
-    }
     
+    // Generate Schema
     public static function generateSchema($dbconnection)
     {
         $model = [];
