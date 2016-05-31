@@ -8,7 +8,7 @@ class Query implements \Psr\Log\LoggerAwareInterface
     use \Psr\Log\LoggerAwareTrait;
     
     protected $connection;      // Connection object
-    
+    protected $error;
     protected $sql = []; // Array of SQL queries to run
     protected $lock = false;
     protected $debug;
@@ -16,8 +16,8 @@ class Query implements \Psr\Log\LoggerAwareInterface
     // Readonly access to object properties
     public function __get($var) {
         switch($var) {
-            case 'name':
-            case 'mysql':
+            case 'connection':
+            case 'error':
             case 'sql':
             case 'debug':
             case 'lock':
@@ -125,7 +125,7 @@ class Query implements \Psr\Log\LoggerAwareInterface
         }
         catch (\PDOException $e) {
             $this->debug[$count]['time'] = microtime(true) - $time;
-            
+            $this->error = $e->getMessage();
             throw new Exception\Query($this, $e);
         }
         finally {
