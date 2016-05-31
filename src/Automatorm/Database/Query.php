@@ -40,7 +40,7 @@ class Query implements \Psr\Log\LoggerAwareInterface
         } elseif (is_string($connection)) {
             $this->connection = Connection::get($connection);
         } else {
-            throw new Ex\Database('Unknown connection', $connection);
+            throw new Exception\Database('Unknown connection', $connection);
         }
         
         if ($sql) $this->sql($sql);
