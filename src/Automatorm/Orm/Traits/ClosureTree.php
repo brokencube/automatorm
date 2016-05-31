@@ -1,5 +1,5 @@
 <?php
-namespace Automatorm\Orm\Trait;
+namespace Automatorm\Orm\Traits;
 
 use Automatorm\Database\Query;
 use Automatorm\Database\QueryBuilder;
