@@ -82,19 +82,21 @@ trait ClosureTree
 		// Root Folder Id
 		$rootid = $root[0]['id'];
 		
-		// "Find" all folders in this tree to so all folder objects are in instance cache
+		// "Find" all nodes in this tree to so all node objects are in instance cache
 		$ids = [$rootid];
 		foreach ($results as $row) $ids[] = $row['child_id'];
-		static::findAll(['id' => $ids]);
+		
+		// Reset children and parents arrays on all nodes
+		foreach (static::findAll(['id' => $ids]) as $node) {
+			$node->children = new Collection();
+			$node->parents = new Collection();
+		}
 		
 		// Foreach child/parent relationship, set the children/parents properties on the relevant objects.
 		foreach ($results as $row) {
 			$parent = static::get($row['parent_id']);
 			$child = static::get($row['child_id']);
-			
-			if (!isset($parent->children)) $parent->children = new Collection();
 			$parent->children[] = $child;
-			if (!isset($child->parents)) $child->parents = new Collection();
 			$child->parents[] = $parent;
 		}
 		
