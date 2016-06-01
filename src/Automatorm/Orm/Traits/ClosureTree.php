@@ -68,19 +68,22 @@ trait ClosureTree
 		// Query to find root node, and all direct child/parent relationships
 		$query = new Query(static::getConnection());
 		$query->sql("
-			SELECT parent_id FROM $table WHERE child_id = {$this->id} ORDER BY depth DESC LIMIT 1;
+			SELECT parent_id as id FROM $table WHERE child_id = {$this->id} ORDER BY depth DESC LIMIT 1;
 		");
 		$query->sql("
-			SELECT parent_id, child_id, depth FROM $table WHERE parent_id IN (
+			SELECT parent_id, child_id FROM $table as t WHERE t.parent_id IN (
 				SELECT child_id FROM $table WHERE parent_id = (
 					SELECT parent_id FROM $table WHERE child_id = {$this->id} ORDER BY depth DESC LIMIT 1
 				)
-			) AND depth = 1;
+			) AND t.depth = 1;
 		");
 		list($root, $results) = $query->execute();
 		
-		// Get all folders in tree to get all folder objects into instance cache
-		$ids = [$root['parent_id']];
+		// Root Folder Id
+		$rootid = $root[0]['id'];
+		
+		// "Find" all folders in this tree to so all folder objects are in instance cache
+		$ids = [$rootid];
 		foreach ($results as $row) $ids[] = $row['child_id'];
 		static::findAll(['id' => $ids]);
 		
@@ -89,14 +92,14 @@ trait ClosureTree
 			$parent = static::get($row['parent_id']);
 			$child = static::get($row['child_id']);
 			
-			if (!isset($parent->children)) $parent->children = new Collection;
+			if (!isset($parent->children)) $parent->children = new Collection();
 			$parent->children[] = $child;
-			if (!isset($childe->parents)) $child->parents = new Collection;
+			if (!isset($child->parents)) $child->parents = new Collection();
 			$child->parents[] = $parent;
 		}
 		
 		// Return the root node
-		return static::get($root['parent_id']);
+		return static::get($rootid);
 	}
 	
 	public function changeParent(self $oldparent, self $newparent)
