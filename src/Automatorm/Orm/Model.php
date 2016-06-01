@@ -48,28 +48,9 @@ class Model implements \JsonSerializable
     }
 
     // Find a single(!) object via an arbitary $where clause
-    public static function find($where, $cacheable = false)
+    public static function find($where)
     {
-        if (!$cacheable) return static::factory($where, null, null, ['limit' => 1], true);
-        
-        // If result is cacheable, look in the cache
-        $dbconnection = static::getConnection();
-        $schema = Schema::get($dbconnection);
-        list($class, $table) = $schema->guessContext($class_or_table ?: get_called_class());
-        
-        // Hash where clause
-        $key = md5(serialize($where));
-        
-        // Look in cache, and return a result if we find one
-        if (isset(Model::$instance[$dbconnection][$table][$key])) {
-            if ($result = Model::$instance[$dbconnection][$table][$key])
-                return $result;
-        }
-        
-        // Generate and save result
-        $result = static::factory($where, null, null, ['limit' => 1], true);
-        Model::$instance[$dbconnection][$table][$key] = $result;
-        return $result;
+        return static::factory($where, null, null, ['limit' => 1], true);
     }
     
     // Find a collection of objects via an arbitary $where clause
@@ -99,17 +80,19 @@ class Model implements \JsonSerializable
         $collection = new Collection();
         
         foreach($data as $row) {
-            // Database data object unique to this object
-            $data_obj = Data::make($row, $table, $schema);
-            
-            // Create the object!!
-            $obj = new $class($data_obj);
-            
-            // Store it in the object cache.        
-            Model::$instance[$dbconnection][$table][$row['id']] = $obj;
-            
-            // Call Model objects _init() function - this is to avoid recursion issues with object's natural constructor and the cache above
-            $obj->_init();
+            if (!$obj = Model::$instance[$dbconnection][$table][$row['id']]) {
+                // Database data object unique to this object
+                $data_obj = Data::make($row, $table, $schema);
+                
+                // Create the object!!
+                $obj = new $class($data_obj);
+                
+                // Store it in the object cache.        
+                Model::$instance[$dbconnection][$table][$row['id']] = $obj;
+                
+                // Call Model objects _init() function - this is to avoid recursion issues with object's natural constructor and the cache above
+                $obj->_init();
+            }
             
             // If we only wanted one object then shortcut and return now that we have it!
             if ($single_result) return $obj;
