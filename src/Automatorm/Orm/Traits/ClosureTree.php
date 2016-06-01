@@ -3,6 +3,7 @@ namespace Automatorm\Orm\Traits;
 
 use Automatorm\Database\Query;
 use Automatorm\Database\QueryBuilder;
+use Automatorm\Orm\Collection;
 /**
  * Expected closureTable structure:
  * Create Table closure (
@@ -59,6 +60,44 @@ trait ClosureTree
 		");
 		$query->execute();
 	}
+
+	public function getFullTree()
+	{
+		$table = $this->closureTable;
+		
+		// Query to find root node, and all direct child/parent relationships
+		$query = new Query(static::getConnection());
+		$query->sql("
+			SELECT parent_id FROM $table WHERE child_id = {$this->id} ORDER BY depth DESC LIMIT 1;
+		");
+		$query->sql("
+			SELECT parent_id, child_id, depth FROM $table WHERE parent_id IN (
+				SELECT child_id FROM $table WHERE parent_id = (
+					SELECT parent_id FROM $table WHERE child_id = {$this->id} ORDER BY depth DESC LIMIT 1
+				)
+			) AND depth = 1;
+		");
+		list($root, $results) = $query->execute();
+		
+		// Get all folders in tree to get all folder objects into instance cache
+		$ids = [$root['parent_id']];
+		foreach ($results as $row) $ids[] = $row['child_id'];
+		static::findAll(['id' => $ids]);
+		
+		// Foreach child/parent relationship, set the children/parents properties on the relevant objects.
+		foreach ($results as $row) {
+			$parent = static::get($row['parent_id']);
+			$child = static::get($row['child_id']);
+			
+			if (!isset($parent->children)) $parent->children = new Collection;
+			$parent->children[] = $child;
+			if (!isset($childe->parents)) $child->parents = new Collection;
+			$child->parents[] = $parent;
+		}
+		
+		// Return the root node
+		return static::get($root['parent_id']);
+	}
 	
 	public function changeParent(self $oldparent, self $newparent)
 	{
@@ -68,6 +107,7 @@ trait ClosureTree
 	
 	public function _property_parents()
 	{
+		// Find all direct parent/child relationships
 		$query = new Query(static::getConnection());
 		$query->sql(
 			QueryBuilder::select($this->closureTable, ['parent_id'])->where(['child_id' => $this->id, 'depth' => 1])
@@ -82,6 +122,7 @@ trait ClosureTree
 	
 	public function _property_children()
 	{
+		// Find all direct child/parent relationships
 		$query = new Query(static::getConnection());
 		$query->sql(
 			QueryBuilder::select($this->closureTable, ['child_id'])->where(['parent_id' => $this->id, 'depth' => 1])
