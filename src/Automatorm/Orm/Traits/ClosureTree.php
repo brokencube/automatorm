@@ -110,7 +110,7 @@ trait ClosureTree
 		$this->addParent($newparent);
 	}
 	
-	public function _property_parents()
+	public function getParents()
 	{
 		// Find all direct parent/child relationships
 		$query = new Query(static::getConnection());
@@ -125,7 +125,7 @@ trait ClosureTree
 		return static::findAll(['id' => $parents]);
 	}
 	
-	public function _property_children()
+	public function getChildren()
 	{
 		// Find all direct child/parent relationships
 		$query = new Query(static::getConnection());
@@ -138,6 +138,16 @@ trait ClosureTree
 		foreach ($results as $row) $children[] = $row['child_id'];
 		
 		return static::findAll(['id' => $children]);		
+	}
+	
+	public function _property_parents()
+	{
+		return static::getParents();
+	}
+	
+	public function _property_children()
+	{
+		return static::getChildren();
 	}
 }
 
