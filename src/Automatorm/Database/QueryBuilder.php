@@ -382,6 +382,8 @@ class QueryBuilder
                         list($column, $comp, $value) = $where;
                         if (is_null($value)) {
                             $clauses[] = $this->escapeColumn($column) . ' ' . $comp;
+                        } elseif ($value instanceof SqlString) {
+                            $clauses[] = $this->escapeColumn($column) . " $comp " . $value;
                         } elseif (is_array($value)) {
                             $count = count($value);
                             $clauses[] = $this->escapeColumn($column) . ' ' . $comp . ' ' . '(' . implode(',', array_fill(0, $count, '?')) . ')';
@@ -403,7 +405,11 @@ class QueryBuilder
                         $clauses[] = (string) $where;
                     } else {
                         list($column, $comp, $value) = $where;
-                        $clauses[] = $this->escapeColumn($column) . ' ' . $comp . ' ' . $this->escapeColumn($value);
+                        if ($value instanceof SqlString) {
+                            $clauses[] = $this->escapeColumn($column) . " $comp " . $value;
+                        } else {
+                            $clauses[] = $this->escapeColumn($column) . ' ' . $comp . ' ' . $this->escapeColumn($value);    
+                        }
                     }
                 }
             }
