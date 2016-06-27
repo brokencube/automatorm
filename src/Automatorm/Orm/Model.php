@@ -31,11 +31,35 @@ class Model implements \JsonSerializable
     protected static $instance;     // An internal store of already created objects so that objects for each row only get created once
     
     /* PUBLIC CONSTRUCTION METHODS */
+    /**
+     * Get an object for a single row in the database, based on id
+     *
+     * @param int $id Id of row
+     * @param bool $force_refresh Get a fresh copy of data from the database
+     * @return self
+     */
     public static function get($id, $force_refresh = false)
     {
         return static::factoryObjectCache($id, null, null, $force_refresh);
     }
+
+    /**
+     * Get objects from the the database, based on list of ids
+     *
+     * @param int[] $ids Ids of rows
+     * @param bool $force_refresh Get a fresh copy of data from the database
+     * @return Automatorm\Orm\Collection
+     */
+    public static function getAll(array $ids, $force_refresh = false)
+    {
+        return static::factoryObjectCache($ids, null, null, $force_refresh);
+    }
     
+    /**
+     * Get name of database connection for this object
+     *
+     * @return string
+     */
     public static function getConnection()
     {
         if (static::$dbconnection) return static::$dbconnection;
@@ -47,13 +71,24 @@ class Model implements \JsonSerializable
         return 'default';
     }
 
-    // Find a single(!) object via an arbitary $where clause
+    /**
+     * Find a single(!) object via an arbitary $where clause
+     *
+     * @param mixed[] $where Where clause to search for
+     * @return self
+     */
     public static function find($where)
     {
         return static::factory($where, null, null, ['limit' => 1], true);
     }
     
-    // Find a collection of objects via an arbitary $where clause
+    /**
+     * Find a collection of objects via an arbitary $where clause
+     *
+     * @param mixed[] $where Where clause to search for
+     * @param mixed[] $options Options to pass: limit => int, offeset => int, sort => "column direction"
+     * @return Automatorm\Orm\Collection
+     */
     public static function findAll($where = [], $options = [])
     {
         return static::factory($where, null, null, $options);
