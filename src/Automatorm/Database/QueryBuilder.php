@@ -34,7 +34,7 @@ class QueryBuilder
     /**
      * Build a "SELECT" query
      *
-     * @param string $table Name of table to select from
+     * @param mixed $table Name of table (string of [table => alias]) to select from
      * @param mixed[] $columns List of select clauses/columns
      * @return Automatorm\Database\QueryBuilder
      */
@@ -50,7 +50,7 @@ class QueryBuilder
     /**
      * Build a "DELETE" query
      *
-     * @param string $table Name of table to delete from
+     * @param mixed $table Name of table (string of [table => alias]) to delete from
      * @param mixed[] $where Where clause array
      * @return Automatorm\Database\QueryBuilder
      */
@@ -66,7 +66,7 @@ class QueryBuilder
     /**
      * Build a "SELECT count() FROM" query
      *
-     * @param string $table Name of table to select from
+     * @param mixed $table Name of table (string of [table => alias]) to select from
      * @param string $column The column to count - for most uses, this should be '*'
      * @return Automatorm\Database\QueryBuilder
      */
@@ -82,7 +82,7 @@ class QueryBuilder
     /**
      * Build a "INSERT" query
      *
-     * @param string $table Name of table to insert into
+     * @param mixed $table Name of table (string of [table => alias]) to insert into
      * @param mixed[] $columndata List of column => data to insert
      * @return Automatorm\Database\QueryBuilder
      */
@@ -98,7 +98,7 @@ class QueryBuilder
     /**
      * Build a "UPDATE" query
      *
-     * @param string $table Name of table to update
+     * @param mixed $table Name of table (string of [table => alias]) to update
      * @param mixed[] $columndata List of column => data to update
      * @return Automatorm\Database\QueryBuilder
      */
@@ -114,7 +114,7 @@ class QueryBuilder
     /**
      * Build a "REPLACE" query
      *
-     * @param string $table Name of table to replace into
+     * @param mixed $table Name of table (string of [table => alias]) to replace into
      * @param mixed[] $columndata List of column => data to replace
      * @return Automatorm\Database\QueryBuilder
      */
