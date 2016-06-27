@@ -458,9 +458,11 @@ class QueryBuilder
                 list($column, $comp, $value) = $where;
                 if (is_null($value)) {
                     $clauses[] = $this->escapeColumn($column) . " $comp";
+                } elseif ($value instanceof SqlString) {
+                    $clauses[] = $this->escapeColumn($column) . " $comp " . $value;
                 } elseif (is_array($value)) {
                     $count = count($value);
-                    $clauses[] = $this->escapeColumn($column) . ' ' . $comp . ' ' . '(' . implode(',', array_fill(0, $count, '?')) . ')';
+                    $clauses[] = $this->escapeColumn($column) . " $comp (" . implode(',', array_fill(0, $count, '?')) . ")";
                     foreach ($value as $val) {
                         $this->data[] = $this->resolveValue($val);
                     }
@@ -475,7 +477,10 @@ class QueryBuilder
     
     public function resolveValue($value)
     {
-        # [FIXME] Date values
+        if ($value instanceof \DateTime) {
+            # [FIXME] Non Mysql Date values
+            return $value->format('Y-m-d H:i:s');
+        }
         return $value;
     }
     
