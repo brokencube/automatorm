@@ -511,7 +511,7 @@ class QueryBuilder
         if (!count($this->groupBy)) return '';
         
         $columns = array_map([$this, 'escapeColumn'], $this->groupBy);
-        return ' GROUP BY ' . implode(', ' . $columns);
+        return ' GROUP BY ' . implode(', ', $columns);
     }
     
     public function resolveLimit()
