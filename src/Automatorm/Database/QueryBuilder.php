@@ -1,4 +1,10 @@
 <?php
+/**
+ * Query Builder - build SQL queries programatically
+ *
+ * @package Automatorm\Database
+ */
+
 namespace Automatorm\Database;
 
 use Automatorm\Exception;
@@ -24,6 +30,13 @@ class QueryBuilder
     protected $data = [];
     
     // ENTRY POINTS
+    /**
+     * Build a "SELECT" query
+     *
+     * @param string $table Name of table to select from
+     * @param mixed[] $columns List of select clauses/columns
+     * @return Automatorm\Database\QueryBuilder
+     */
     public static function select($table, array $columns = ['*'])
     {
         $query = new static('select');
@@ -33,6 +46,13 @@ class QueryBuilder
         return $query;
     }
 
+    /**
+     * Build a "DELETE" query
+     *
+     * @param string $table Name of table to delete from
+     * @param mixed[] $where Where clause array
+     * @return Automatorm\Database\QueryBuilder
+     */
     public static function delete($table, $where = [])
     {
         $query = new static('delete');
@@ -42,6 +62,13 @@ class QueryBuilder
         return $query;
     }
 
+    /**
+     * Build a "SELECT count() FROM" query
+     *
+     * @param string $table Name of table to select from
+     * @param string $column The column to count - for most uses, this should be '*'
+     * @return Automatorm\Database\QueryBuilder
+     */
     public static function count($table, $column = '*')
     {
         $query = new static('count');
@@ -51,6 +78,13 @@ class QueryBuilder
         return $query;
     }
 
+    /**
+     * Build a "INSERT" query
+     *
+     * @param string $table Name of table to insert into
+     * @param mixed[] $columndata List of column => data to insert
+     * @return Automatorm\Database\QueryBuilder
+     */
     public static function insert($table, array $columndata = [])
     {
         $query = new static('insert');
@@ -60,6 +94,13 @@ class QueryBuilder
         return $query;
     }
 
+    /**
+     * Build a "UPDATE" query
+     *
+     * @param string $table Name of table to update
+     * @param mixed[] $columndata List of column => data to update
+     * @return Automatorm\Database\QueryBuilder
+     */
     public static function update($table, array $columndata = [])
     {
         $query = new static('update');
@@ -69,6 +110,13 @@ class QueryBuilder
         return $query;        
     }
 
+    /**
+     * Build a "REPLACE" query
+     *
+     * @param string $table Name of table to replace into
+     * @param mixed[] $columndata List of column => data to replace
+     * @return Automatorm\Database\QueryBuilder
+     */
     public static function replace($table, array $columndata = [])
     {
         $query = new static('replace');
@@ -84,13 +132,25 @@ class QueryBuilder
 
     
     // BUILDER FUNCTIONS
+    /**
+     * Set columns for "SELECT" style queries
+     *
+     * @param mixed[] $columns List of select clauses/columns
+     * @return self
+     */
     public function columns(array $columns)
     {
         $this->columns = $columns;
         return $this;
     }
     
-    public function where($clauses)
+    /**
+     * Add where clauses to the query
+     *
+     * @param mixed[] $clauses List of where clauses to add
+     * @return self
+     */
+    public function where(array $clauses)
     {
         foreach ($clauses as $key => $value)
         {
@@ -145,6 +205,13 @@ class QueryBuilder
         return [$column, $comparitor, $value];
     }
     
+    /**
+     * Add a limit clause to the query
+     *
+     * @param int $limit Limit to x results
+     * @param int $offset Offset x results - null implies 0
+     * @return self
+     */
     public function limit($limit, $offset = null)
     {
         if (!is_null($limit)) {
@@ -154,12 +221,36 @@ class QueryBuilder
         return $this;
     }
     
+    /**
+     * Add an Order by clause to the query
+     *
+     * @param string $sort Column to sort by
+     * @param string $dir asc or desc - desc by default
+     * @return self
+     */
     public function sortBy($sort, $dir = 'desc')
     {
         if ($sort) $this->sortBy[] = ['sort' => $sort, 'dir' => $dir == 'desc' ? 'desc' : 'asc'];
         return $this;
     }
+
+    /**
+     * Add an Order by clause to the query
+     *
+     * @param string $sort Column to sort by
+     * @param string $dir asc or desc - desc by default
+     * @return self
+     */
+    public function orderBy($sort, $dir = 'desc') { return $this->sortBy($sort, $dir); }
     
+    /**
+     * Join a table to this query
+     *
+     * @param string $table Name of table to select from
+     * @param mixed[] $columnclauses List of on clauses in the format column = column
+     * @param mixed[] $valueclauses List of on clauses in the format column = value
+     * @return self
+     */
     public function join($table, $columnclauses = [], $valueclauses = [])
     {
         $this->joins[] = ['table' => $table, 'where' => [], 'on' => []];
@@ -170,6 +261,12 @@ class QueryBuilder
         return $this;
     }
     
+    /**
+     * For the last defined join, add some "on" clauses (Join)
+     *
+     * @param mixed[] $columnclauses List of on clauses in the format column = column
+     * @return self
+     */
     public function joinOn($columnclauses = [])
     {
         end($this->joins);
@@ -186,6 +283,12 @@ class QueryBuilder
         return $this;
     }
 
+    /**
+     * For the last defined join, add some "on" clauses (Where)
+     *
+     * @param mixed[] $columnclauses List of on clauses in the format column = value
+     * @return self
+     */
     public function joinWhere($columnclauses = [])
     {
         end($this->joins);
@@ -204,6 +307,11 @@ class QueryBuilder
     }
     
     // RESOLVER FUNCTIONS
+    /**
+     * Resolve object into the SQL string and Parameterised data
+     *
+     * @return mixed[] Returns [$sql, $data] for parameterised queries
+     */
     public function resolve()
     {
         $table = $this->resolveTable();
