@@ -26,6 +26,7 @@ class QueryBuilder
     protected $limit;
     protected $offset;
     protected $sortBy = [];
+    protected $groupBy = [];
     
     protected $data = [];
     
@@ -306,6 +307,19 @@ class QueryBuilder
         return $this;
     }
     
+    /**
+     * Add an Group by clause to the query
+     *
+     * @param string $group Column to sort by
+     * @return self
+     */
+    public function groupBy($group)
+    {
+        if ($group) $this->groupBy[] = $group;
+        return $this;
+    }
+    
+    
     // RESOLVER FUNCTIONS
     /**
      * Resolve object into the SQL string and Parameterised data
@@ -322,19 +336,21 @@ class QueryBuilder
                 $columns = $this->resolveCount();
                 $join = $this->resolveJoins();
                 $where = $this->resolveWhere();
+                $group = $this->resolveGroup();
                 $sort = $this->resolveSort();
                 $limit = $this->resolveLimit();
                 
-                return ["SELECT $columns FROM $table{$join}{$where}{$sort}{$limit};", $this->data];
+                return ["SELECT $columns FROM $table{$join}{$where}{$group}{$sort}{$limit};", $this->data];
                 
             case 'select':
                 $columns = $this->resolveColumns();
                 $join = $this->resolveJoins();
                 $where = $this->resolveWhere();
+                $group = $this->resolveGroup();
                 $sort = $this->resolveSort();
                 $limit = $this->resolveLimit();
                 
-                return ["SELECT $columns FROM $table{$join}{$where}{$sort}{$limit};", $this->data];
+                return ["SELECT $columns FROM $table{$join}{$where}{$group}{$sort}{$limit};", $this->data];
             
             case 'insert':
                 $join = $this->resolveJoins();
@@ -490,6 +506,14 @@ class QueryBuilder
         return $value;
     }
     
+    public function resolveGroup()
+    {
+        if (!count($this->groupBy)) return '';
+        
+        $columns = array_map([$this, 'escapeColumn'], $this->groupBy);
+        return ' GROUP BY ' . implode(', ' . $columns);
+    }
+    
     public function resolveLimit()
     {
         if (is_null($this->limit) && is_null($this->offset))
@@ -536,6 +560,9 @@ class QueryBuilder
 
     public function escapeColumn($rawcolumn)
     {
+        // Cowardly refuse to process SqlStrings
+        if ($rawcolumn instanceof SqlString) return $rawcolumn;
+        
         # [FIXME] Alternative engines
         $q = '`';
         $alias = '';
