@@ -364,7 +364,7 @@ class QueryBuilder
                 $sort = $this->resolveSort();
                 $limit = $this->resolveLimit();
                 
-                return ["SELECT $columns FROM $table{$join}{$where}{$group}{$sort}{$limit};", $this->data];
+                return ["SELECT $columns FROM $table{$join}{$where}{$group}{$having}{$sort}{$limit};", $this->data];
                 
             case 'select':
                 $columns = $this->resolveColumns();
@@ -375,7 +375,7 @@ class QueryBuilder
                 $sort = $this->resolveSort();
                 $limit = $this->resolveLimit();
                 
-                return ["SELECT $columns FROM $table{$join}{$where}{$group}{$sort}{$limit};", $this->data];
+                return ["SELECT $columns FROM $table{$join}{$where}{$group}{$having}{$sort}{$limit};", $this->data];
             
             case 'insert':
                 $join = $this->resolveJoins();
