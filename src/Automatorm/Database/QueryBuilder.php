@@ -271,17 +271,25 @@ class QueryBuilder
      * Join a table to this query
      *
      * @param string $table Name of table to select from
-     * @param mixed[] $columnclauses List of on clauses in the format column = column
-     * @param mixed[] $valueclauses List of on clauses in the format column = value
      * @return self
      */
-    public function join($table, $columnclauses = [], $valueclauses = [])
+    public function join($table)
     {
         $this->joins[] = ['table' => $table, 'where' => [], 'on' => []];
         
-        if ($columnclauses) $this->joinOn($columnclauses);
-        if ($valueclauses) $this->joinWhere($valueclauses);
-        
+        return $this;
+    }
+
+    /**
+     * Join a subquery as a derived table to this query
+     *
+     * @param mixed $subquery String or QueryBuilder object representing subquery
+     * @param string $alias Alias for the derived table
+     * @return self
+     */
+    public function joinSubquery($subquery, $alias)
+    {
+        $this->joins[] = ['table' => null, 'subquery' => $subquery, 'alias' => $alias, 'where' => [], 'on' => []];
         return $this;
     }
     
@@ -364,7 +372,7 @@ class QueryBuilder
                 $sort = $this->resolveSort();
                 $limit = $this->resolveLimit();
                 
-                return ["SELECT $columns FROM $table{$join}{$where}{$group}{$having}{$sort}{$limit};", $this->data];
+                return ["SELECT $columns FROM $table{$join}{$where}{$group}{$having}{$sort}{$limit}", $this->data];
                 
             case 'select':
                 $columns = $this->resolveColumns();
@@ -375,14 +383,14 @@ class QueryBuilder
                 $sort = $this->resolveSort();
                 $limit = $this->resolveLimit();
                 
-                return ["SELECT $columns FROM $table{$join}{$where}{$group}{$having}{$sort}{$limit};", $this->data];
+                return ["SELECT $columns FROM $table{$join}{$where}{$group}{$having}{$sort}{$limit}", $this->data];
             
             case 'insert':
                 $join = $this->resolveJoins();
                 $data = $this->resolveColumnData();
                 $limit = $this->resolveLimit();
                 
-                return ["INSERT INTO $table{$join}{$data}{$limit};", $this->data];
+                return ["INSERT INTO $table{$join}{$data}{$limit}", $this->data];
 
             case 'update':
                 $join = $this->resolveJoins();
@@ -390,13 +398,13 @@ class QueryBuilder
                 $where = $this->resolveWhere();
                 $limit = $this->resolveLimit();
                 
-                return ["UPDATE $table{$join}{$data}{$where}{$limit};", $this->data];
+                return ["UPDATE $table{$join}{$data}{$where}{$limit}", $this->data];
 
             case 'delete':
                 $where = $this->resolveWhere();
                 $limit = $this->resolveLimit();
                 
-                return ["DELETE FROM $table{$where}{$limit};", $this->data];
+                return ["DELETE FROM $table{$where}{$limit}", $this->data];
         }
     }
     
@@ -410,10 +418,19 @@ class QueryBuilder
         if (!$this->joins) return '';
         
         $joinstring = '';
+        
         foreach ($this->joins as $join)
         {
-            $clauses = [];
-            $joinstring .= ' JOIN ' . $this->escapeTable($join['table']);
+            if ($join['table']) {
+                $clauses = [];
+                $joinstring .= ' JOIN ' . $this->escapeTable($join['table']);
+            } elseif ($join['subquery']) {
+                $sql = $join['subquery'];
+                if ($sql instanceof QueryBuilder) $sql = $join['subquery']->resolve();    
+                
+                $joinstring .= " JOIN ($sql) as {$join['alias']}";
+            }
+            
             if ($join['where'])
             {
                 foreach ($join['where'] as $where) {
