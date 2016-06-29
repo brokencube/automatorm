@@ -23,6 +23,7 @@ class QueryBuilder
     protected $set = [];
     protected $joins = [];
     protected $where = [];
+    protected $having = [];
     protected $limit;
     protected $offset;
     protected $sortBy = [];
@@ -164,11 +165,25 @@ class QueryBuilder
         return $this;
     }
     
+    public function having(array $clauses)
+    {
+        foreach ($clauses as $key => $value)
+        {
+            if (is_numeric($key) && $value instanceof SqlString) {
+                $this->having[] = $value;
+            } else {
+                $this->having[] = $this->extractWhereColumn($key, $value);    
+            }
+        }
+        return $this;
+    }
+
     public function extractWhereColumn($column, $value, $onclause = false)
     {
         $comparitor = '=';
+        $special = null;
         
-        preg_match('/^([!=<>%]*)([^!=<>%]+)([!=<>%]*)$/', $column, $parts);
+        preg_match('/^([!=<>%#]*)([^!=<>%#]+)([!=<>%#]*)$/', $column, $parts);
         $affix = $parts[1] ?: $parts[3];
         $column = $parts[2];
         
@@ -190,6 +205,14 @@ class QueryBuilder
             }
         }
         
+        // Special case for # "count" clause
+        if (strpos($affix, '#') !== false)
+        {
+            // Excise the # from the affix
+            $affix = substr($affix, 0, strpos($affix, '#')) . substr($affix, strpos($affix, '#') + 1);
+            $special = 'count';
+        }
+        
         switch ($affix) {
             case '=':   $comparitor = '=';        break;
             case '!':   $comparitor = '!=';       break;
@@ -203,7 +226,7 @@ class QueryBuilder
             case '%!':  $comparitor = 'not like'; break;                    
         }
         
-        return [$column, $comparitor, $value];
+        return [$column, $comparitor, $value, $special];
     }
     
     /**
@@ -337,6 +360,7 @@ class QueryBuilder
                 $join = $this->resolveJoins();
                 $where = $this->resolveWhere();
                 $group = $this->resolveGroup();
+                $having = $this->resolveHaving();
                 $sort = $this->resolveSort();
                 $limit = $this->resolveLimit();
                 
@@ -347,6 +371,7 @@ class QueryBuilder
                 $join = $this->resolveJoins();
                 $where = $this->resolveWhere();
                 $group = $this->resolveGroup();
+                $having = $this->resolveHaving();
                 $sort = $this->resolveSort();
                 $limit = $this->resolveLimit();
                 
@@ -392,25 +417,7 @@ class QueryBuilder
             if ($join['where'])
             {
                 foreach ($join['where'] as $where) {
-                    if ($where instanceof SqlString) {
-                        $clauses[] = (string) $where;
-                    } else {
-                        list($column, $comp, $value) = $where;
-                        if (is_null($value)) {
-                            $clauses[] = $this->escapeColumn($column) . ' ' . $comp;
-                        } elseif ($value instanceof SqlString) {
-                            $clauses[] = $this->escapeColumn($column) . " $comp " . $value;
-                        } elseif (is_array($value)) {
-                            $count = count($value);
-                            $clauses[] = $this->escapeColumn($column) . ' ' . $comp . ' ' . '(' . implode(',', array_fill(0, $count, '?')) . ')';
-                            foreach ($value as $val) {
-                                $this->data[] = $this->resolveValue($val);
-                            }
-                        } else {
-                            $clauses[] = $this->escapeColumn($column) . ' ' . $comp . ' ?';
-                            $this->data[] = $this->resolveValue($value);
-                        }
-                    }
+                    $clauses[] = $this->resolveWhereClause($where);
                 }
             }
 
@@ -430,13 +437,45 @@ class QueryBuilder
                 }
             }
             
-            
             if ($clauses) {
                 $joinstring .= ' ON ' . implode(' AND ', $clauses);    
             }
         }
         
         return $joinstring;
+    }
+    
+    public function resolveWhereClause($where)
+    {
+        if ($where instanceof SqlString) {
+            return (string) $where;
+        } else {
+            list($column, $comp, $value, $special) = $where;
+            if (is_null($value)) {
+                return $this->escapeColumn($column) . ' ' . $comp;
+            } elseif ($value instanceof SqlString) {
+                return $this->escapeColumn($column) . " $comp " . $value;
+            } elseif (is_array($value)) {
+                $count = count($value);
+                foreach ($value as $val) {
+                    $this->data[] = $this->resolveValue($val);
+                }
+                if ($special == 'count') {
+                    $col = 'count('.$this->escapeColumn($column).')';
+                } else {
+                    $col = $this->escapeColumn($column);
+                }
+                return $col . ' ' . $comp . ' ' . '(' . implode(',', array_fill(0, $count, '?')) . ')';
+            } else {
+                $this->data[] = $this->resolveValue($value);
+                if ($special == 'count') {
+                    $col = 'count('.$this->escapeColumn($column).')';
+                } else {
+                    $col = $this->escapeColumn($column);
+                }
+                return $col . ' ' . $comp . ' ?';
+            }
+        }
     }
     
     public function resolveColumnData()
@@ -474,25 +513,7 @@ class QueryBuilder
         if (!$this->where) return '';
         $clauses = [];
         foreach ($this->where as $where) {
-            if ($where instanceof SqlString) {
-                $clauses[] = (string) $where;
-            } else {
-                list($column, $comp, $value) = $where;
-                if (is_null($value)) {
-                    $clauses[] = $this->escapeColumn($column) . " $comp";
-                } elseif ($value instanceof SqlString) {
-                    $clauses[] = $this->escapeColumn($column) . " $comp " . $value;
-                } elseif (is_array($value)) {
-                    $count = count($value);
-                    $clauses[] = $this->escapeColumn($column) . " $comp (" . implode(',', array_fill(0, $count, '?')) . ")";
-                    foreach ($value as $val) {
-                        $this->data[] = $this->resolveValue($val);
-                    }
-                } else {
-                    $clauses[] = $this->escapeColumn($column) . " $comp ?";
-                    $this->data[] = $this->resolveValue($value);
-                }
-            }
+            $clauses[] = $this->resolveWhereClause($where);
         }
         return ' WHERE ' . implode(' AND ', $clauses);
     }
@@ -512,6 +533,16 @@ class QueryBuilder
         
         $columns = array_map([$this, 'escapeColumn'], $this->groupBy);
         return ' GROUP BY ' . implode(', ', $columns);
+    }
+    
+    public function resolveHaving()
+    {
+        if (!$this->having) return '';
+        $clauses = [];
+        foreach ($this->having as $where) {
+            $clauses[] = $this->resolveWhereClause($where);
+        }
+        return ' HAVING ' . implode(' AND ', $clauses);
     }
     
     public function resolveLimit()
@@ -574,27 +605,36 @@ class QueryBuilder
             list($rawcolumn) = array_keys($rawcolumn);
         }
 
-        // Regex out parts
+        // Regex out parts - Matching Examples:
+        // column                    => "column"
+        // `column`                  => "column"
+        // table.column              => "table","column"
+        // `table`.`column`          => "table","column"
+        // `schema`.`table`.`column` => "schema","table","column"
+        // `column.column`           => "column.column"
+        // table.`column.column`     => "table","column.column"
         preg_match('/^(?:`(.+?)`|(.+?))(?:\.`?(.+?)`?)?(?:\.`?(.+?)`?)?$/', $rawcolumn, $column);
         $first = $column[1] ?: $column[2];
         $second = count($column) == 4 ? $column[3] : '';
         $third = count($column) == 5 ? $column[4] : '';
         
-        if ($first && $first != '*') $first = $q . $first . $q;
+        // Quote parts
+        if ($first && $first != '*')   $first =  $q . $first  . $q;
         if ($second && $second != '*') $second = $q . $second . $q;
-        if ($third && $third != '*') $third = $q . $third . $q;
-        if ($alias) $alias = $q . $alias . $q;
+        if ($third && $third != '*')   $third =  $q . $third  . $q;
+        if ($alias)                    $alias =  $q . $alias  . $q;
         
         // Create column
         if ($third) {
-            if ($alias) return $first . '.' . $second .  '.' .  $third . ' as ' . $alias;
-            return $first . '.' .  $second .  '.' .  $third;
+            $return = $first . '.' .  $second .  '.' .  $third;
         } elseif ($second) {
-            if ($alias) return $first . '.' . $second . ' as ' . $alias;
-            return $first . '.' .  $second;
+            $return = $first . '.' .  $second;
         } elseif ($first) {
-            if ($alias) return $first . ' as ' . $alias;
-            return $first;
+            $return = $first;
         }
+        
+        if ($alias) $return .= ' as ' . $alias;
+        
+        return $return;
     }
 }
