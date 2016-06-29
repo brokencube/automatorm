@@ -426,7 +426,10 @@ class QueryBuilder
                 $joinstring .= ' JOIN ' . $this->escapeTable($join['table']);
             } elseif ($join['subquery']) {
                 $sql = $join['subquery'];
-                if ($sql instanceof QueryBuilder) $sql = $join['subquery']->resolve();    
+                if ($sql instanceof QueryBuilder) {
+                    list ($sql, $subdata) = $join['subquery']->resolve();
+                    $this->data = array_merge($this->data, $subdata);
+                }
                 
                 $joinstring .= " JOIN ($sql) as {$join['alias']}";
             }
