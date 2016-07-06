@@ -576,9 +576,7 @@ class QueryBuilder
     
     public function resolveCount()
     {
-        if ($this->count == '*') return 'count(*) as count';
-        return 'count(*) as count';
-        $this->columns[] = $this->count;
+        return 'COUNT('.$this->escapeColumn($col).') as count';
     }
     
     public function resolveColumns()
