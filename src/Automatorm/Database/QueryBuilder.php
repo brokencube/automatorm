@@ -273,9 +273,24 @@ class QueryBuilder
      * @param string $table Name of table to select from
      * @return self
      */
-    public function join($table)
+    public function join($table, $rawtype = null)
     {
-        $this->joins[] = ['table' => $table, 'where' => [], 'on' => []];
+        $type = 'JOIN';
+        if ($rawtype) switch (strtolower($rawtype)) {
+            case 'left':
+                $type = 'LEFT JOIN';
+                break;
+            case 'left outer':
+                $type = 'LEFT OUTER JOIN';
+                break;
+            case 'cross':
+                $type = 'CROSS JOIN';
+                break;
+            default:
+               throw new Exception\Query('Unknown Join Type');
+        }
+        
+        $this->joins[] = ['table' => $table, 'type' => $type, 'where' => [], 'on' => []];
         
         return $this;
     }
@@ -287,9 +302,24 @@ class QueryBuilder
      * @param string $alias Alias for the derived table
      * @return self
      */
-    public function joinSubquery($subquery, $alias)
+    public function joinSubquery($subquery, $alias, $rawtype = null)
     {
-        $this->joins[] = ['table' => null, 'subquery' => $subquery, 'alias' => $alias, 'where' => [], 'on' => []];
+        $type = 'JOIN';
+        if ($rawtype) switch (strtolower($rawtype)) {
+            case 'left':
+                $type = 'LEFT JOIN';
+                break;
+            case 'left outer':
+                $type = 'LEFT OUTER JOIN';
+                break;
+            case 'cross':
+                $type = 'CROSS JOIN';
+                break;
+            default:
+               throw new Exception\Query('Unknown Join Type');
+        }
+        
+        $this->joins[] = ['table' => null, 'subquery' => $subquery, 'type' => $type, 'alias' => $alias, 'where' => [], 'on' => []];
         return $this;
     }
     
@@ -410,6 +440,12 @@ class QueryBuilder
     
     public function resolveTable()
     {
+        if ($this->table instanceof QueryBuilder)
+        {
+            list($sql, $subdata) = $this->table->resolve();
+            $this->data = array_merge($this->data, $subdata);
+            return '(' . $this->table->resolve . ') AS subquery';
+        }
         return $this->escapeTable($this->table);
     }
     
@@ -423,7 +459,7 @@ class QueryBuilder
         {
             if ($join['table']) {
                 $clauses = [];
-                $joinstring .= ' JOIN ' . $this->escapeTable($join['table']);
+                $joinstring .= " {$join['type']} " . $this->escapeTable($join['table']);
             } elseif ($join['subquery']) {
                 $sql = $join['subquery'];
                 if ($sql instanceof QueryBuilder) {
@@ -431,7 +467,7 @@ class QueryBuilder
                     $this->data = array_merge($this->data, $subdata);
                 }
                 
-                $joinstring .= " JOIN ($sql) as {$join['alias']}";
+                $joinstring .= " {$join['type']} ($sql) as {$join['alias']}";
             }
             
             if ($join['where'])
