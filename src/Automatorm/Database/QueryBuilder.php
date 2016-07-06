@@ -389,8 +389,9 @@ class QueryBuilder
      */
     public function resolve()
     {
-        $table = $this->resolveTable();
+        $this->data = [];
         
+        $table = $this->resolveTable();
         switch ($this->type)
         {
             case 'count':
