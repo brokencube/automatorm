@@ -45,7 +45,7 @@ class QueryBuilder
         $query = new static('select');
         $query->columns = $columns;
         if ($table instanceof QueryBuilder) {
-            $query->table_subquery = $this->table->resolve();
+            $query->table_subquery = $table->resolve();
         } else {
             $query->table = $table;
         }
@@ -65,7 +65,7 @@ class QueryBuilder
         $query = new static('delete');
         $query->where($where);
         if ($table instanceof QueryBuilder) {
-            $query->table_subquery = $this->table->resolve();
+            $query->table_subquery = $table->resolve();
         } else {
             $query->table = $table;
         }
@@ -85,7 +85,7 @@ class QueryBuilder
         $query = new static('count');
         $query->count = $column;
         if ($table instanceof QueryBuilder) {
-            $query->table_subquery = $this->table->resolve();
+            $query->table_subquery = $table->resolve();
         } else {
             $query->table = $table;
         }
@@ -105,7 +105,7 @@ class QueryBuilder
         $query = new static('insert');
         $query->set = $columndata;
         if ($table instanceof QueryBuilder) {
-            $query->table_subquery = $this->table->resolve();
+            $query->table_subquery = $table->resolve();
         } else {
             $query->table = $table;
         }
@@ -125,7 +125,7 @@ class QueryBuilder
         $query = new static('update');
         $query->set = $columndata;
         if ($table instanceof QueryBuilder) {
-            $query->table_subquery = $this->table->resolve();
+            $query->table_subquery = $table->resolve();
         } else {
             $query->table = $table;
         }
@@ -144,7 +144,7 @@ class QueryBuilder
     {
         $query = new static('replace');
         if ($table instanceof QueryBuilder) {
-            $query->table_subquery = $this->table->resolve();
+            $query->table_subquery = $table->resolve();
         } else {
             $query->table = $table;
         }
