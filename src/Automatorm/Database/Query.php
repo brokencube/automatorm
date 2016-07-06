@@ -153,7 +153,8 @@ class Query implements \Psr\Log\LoggerAwareInterface
                 [
                     'query' => $sql->sql,
                     'data' => $sql->data,
-                    'debug' => $query->debug[$count]
+                    'debug' => $query->debug[$count],
+                    'error' => $query->error
                 ]
             );
         }
