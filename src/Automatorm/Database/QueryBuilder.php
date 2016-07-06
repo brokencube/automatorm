@@ -444,7 +444,7 @@ class QueryBuilder
         {
             list($sql, $subdata) = $this->table->resolve();
             $this->data = array_merge($this->data, $subdata);
-            return '(' . $this->table->resolve . ') AS subquery';
+            return '(' . $sql . ') AS subquery';
         }
         return $this->escapeTable($this->table);
     }
