@@ -18,6 +18,7 @@ class QueryBuilder
     protected $type;
     protected $table;
     protected $table_alias;
+    protected $table_subquery;
     protected $columns = [];
     protected $count;
     protected $set = [];
@@ -43,7 +44,11 @@ class QueryBuilder
     {
         $query = new static('select');
         $query->columns = $columns;
-        $query->table = $table;
+        if ($table instanceof QueryBuilder) {
+            $query->table_subquery = $this->table->resolve();
+        } else {
+            $query->table = $table;
+        }
         
         return $query;
     }
@@ -58,8 +63,12 @@ class QueryBuilder
     public static function delete($table, $where = [])
     {
         $query = new static('delete');
-        $query->table = $table;
         $query->where($where);
+        if ($table instanceof QueryBuilder) {
+            $query->table_subquery = $this->table->resolve();
+        } else {
+            $query->table = $table;
+        }
         
         return $query;
     }
@@ -75,7 +84,11 @@ class QueryBuilder
     {
         $query = new static('count');
         $query->count = $column;
-        $query->table = $table;
+        if ($table instanceof QueryBuilder) {
+            $query->table_subquery = $this->table->resolve();
+        } else {
+            $query->table = $table;
+        }
         
         return $query;
     }
@@ -91,8 +104,12 @@ class QueryBuilder
     {
         $query = new static('insert');
         $query->set = $columndata;
-        $query->table = $table;
-
+        if ($table instanceof QueryBuilder) {
+            $query->table_subquery = $this->table->resolve();
+        } else {
+            $query->table = $table;
+        }
+        
         return $query;
     }
 
@@ -107,7 +124,11 @@ class QueryBuilder
     {
         $query = new static('update');
         $query->set = $columndata;
-        $query->table = $table;
+        if ($table instanceof QueryBuilder) {
+            $query->table_subquery = $this->table->resolve();
+        } else {
+            $query->table = $table;
+        }
 
         return $query;        
     }
@@ -122,7 +143,11 @@ class QueryBuilder
     public static function replace($table, array $columndata = [])
     {
         $query = new static('replace');
-        $query->table = $table;
+        if ($table instanceof QueryBuilder) {
+            $query->table_subquery = $this->table->resolve();
+        } else {
+            $query->table = $table;
+        }
 
         return $query;                
     }
@@ -441,9 +466,9 @@ class QueryBuilder
     
     public function resolveTable()
     {
-        if ($this->table instanceof QueryBuilder)
+        if ($this->table_subquery)
         {
-            list($sql, $subdata) = $this->table->resolve();
+            list($sql, $subdata) = $this->table_subquery;
             $this->data = array_merge($this->data, $subdata);
             return '(' . $sql . ') AS subquery';
         }
