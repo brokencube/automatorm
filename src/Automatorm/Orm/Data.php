@@ -539,12 +539,12 @@ class Data
                 or $this->model['columns'][$var] == 'date'
             ) {
                 // Special checks for datetimes
-                if ($value instanceof Time) { // Orm\Time is aware of timezones - preferred
-                    $this->data[$var] = $value->mysql();
-                } elseif ($value instanceof \DateTime) { // Fall back to standard DateTime object
-                    $this->data[$var] = $value->format(Time::MYSQL_DATE);
+                if ($value instanceof Time) { 
+                    $this->data[$var] = $value;
+                } elseif ($value instanceof \DateTime) { 
+                    $this->data[$var] = new Time($value->format(Time::MYSQL_DATE), new \DateTimeZone('UTC'));
                 } elseif (($datetime = strtotime($value)) !== false) { // Fall back to standard strings
-                    $this->data[$var] = date(Time::MYSQL_DATE, $datetime);
+                    $this->data[$var] = new Time(date(Time::MYSQL_DATE, $datetime), new \DateTimeZone('UTC'));
                 } elseif (is_null($value)) { // Allow "null"
                     $this->data[$var] = null;
                 } else { 
