@@ -100,6 +100,9 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
 
     public function __call($name, $args)
     {
+        // If we use Model::COUNT_ONLY on empty container, return 0
+        if (count($this->container) == 0 && is_numeric($args[1]) && ($args[1] & Model::COUNT_ONLY)) return 0;
+        
         // Foreign keys
         if (
             $this->container[0] instanceof Model
@@ -110,7 +113,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                 return Data::groupJoinCount($this, $name, $args[0]);
             return Data::groupJoin($this, $name, $args[0]);
         }
-
+        
         // Otherwise...
         $list = [];
         foreach($this->container as $item) {
@@ -122,7 +125,13 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
             }
         }
         
-        return new static($list);
+        // Return new list or count depending on options passed
+        if (is_numeric($args[1]) && ($args[1] & Model::COUNT_ONLY)) {
+            return count($list);
+        } else {
+            return new static($list);
+        }
+        
     }
 
     public function __construct($array = null)
