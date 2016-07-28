@@ -190,6 +190,12 @@ class QueryBuilder
         return $this;
     }
     
+    /**
+     * Add having clauses to the query
+     *
+     * @param mixed[] $clauses List of where clauses to add
+     * @return self
+     */
     public function having(array $clauses)
     {
         foreach ($clauses as $key => $value)
@@ -203,57 +209,6 @@ class QueryBuilder
         return $this;
     }
 
-    public function extractWhereColumn($column, $value, $onclause = false)
-    {
-        $comparitor = '=';
-        $special = null;
-        
-        preg_match('/^([!=<>%#]*)([^!=<>%#]+)([!=<>%#]*)$/', $column, $parts);
-        $affix = $parts[1] ?: $parts[3];
-        $column = $parts[2];
-        
-        // Special cases for null values in where clause
-        if (is_null($value)) {
-            if ($affix == '!') return [$column, "is not null", null];
-            return [$column, "is null", null];
-        }
-        
-        // Special case for in clauses
-        if (is_array($value) && !$onclause) {
-            // Special case for empty in clauses
-            if (!count($value)) return $affix == '!' ? [$column, "=", 'true'] : [$column, "=", 'false'];
-            
-            if ($affix == '!') {
-                return [$column, "not in", $value];
-            } else {
-                return [$column, "in", $value];
-            }
-        }
-        
-        // Special case for # "count" clause
-        if (strpos($affix, '#') !== false)
-        {
-            // Excise the # from the affix
-            $affix = substr($affix, 0, strpos($affix, '#')) . substr($affix, strpos($affix, '#') + 1);
-            $special = 'count';
-        }
-        
-        switch ($affix) {
-            case '=':   $comparitor = '=';        break;
-            case '!':   $comparitor = '!=';       break;
-            case '!=':  $comparitor = '!=';       break;
-            case '>':   $comparitor = '>';        break;
-            case '<':   $comparitor = '<';        break;
-            case '>=':  $comparitor = '>=';       break;
-            case '<=':  $comparitor = '<=';       break;
-            case '%':   $comparitor = 'like';     break;
-            case '!%':  $comparitor = 'not like'; break;
-            case '%!':  $comparitor = 'not like'; break;                    
-        }
-        
-        return [$column, $comparitor, $value, $special];
-    }
-    
     /**
      * Add a limit clause to the query
      *
@@ -405,6 +360,65 @@ class QueryBuilder
         return $this;
     }
     
+    // Preprocess Functions
+    /**
+     * Extract features from "where" clauses 
+     *
+     * @param string $column Column name as given by user
+     * @param mixed $value Value to compare column to
+     * @param bool $onclause Processing is different for "on clauses", clauses of the form column = column
+     * @return mixed[] Returns [$column, $comparitor, $value, $special] for future internal use when resolving
+     */    
+    protected function extractWhereColumn($column, $value, $onclause = false)
+    {
+        $comparitor = '=';
+        $special = null;
+        
+        preg_match('/^([!=<>%#]*)([^!=<>%#]+)([!=<>%#]*)$/', $column, $parts);
+        $affix = $parts[1] ?: $parts[3];
+        $column = $parts[2];
+        
+        // Special cases for null values in where clause
+        if (is_null($value)) {
+            if ($affix == '!') return [$column, "is not null", null];
+            return [$column, "is null", null];
+        }
+        
+        // Special case for in clauses
+        if (is_array($value) && !$onclause) {
+            // Special case for empty in clauses
+            if (!count($value)) return $affix == '!' ? [$column, "=", 'true'] : [$column, "=", 'false'];
+            
+            if ($affix == '!') {
+                return [$column, "not in", $value];
+            } else {
+                return [$column, "in", $value];
+            }
+        }
+        
+        // Special case for # "count" clause
+        if (strpos($affix, '#') !== false)
+        {
+            // Excise the # from the affix
+            $affix = substr($affix, 0, strpos($affix, '#')) . substr($affix, strpos($affix, '#') + 1);
+            $special = 'count';
+        }
+        
+        switch ($affix) {
+            case '=':   $comparitor = '=';        break;
+            case '!':   $comparitor = '!=';       break;
+            case '!=':  $comparitor = '!=';       break;
+            case '>':   $comparitor = '>';        break;
+            case '<':   $comparitor = '<';        break;
+            case '>=':  $comparitor = '>=';       break;
+            case '<=':  $comparitor = '<=';       break;
+            case '%':   $comparitor = 'like';     break;
+            case '!%':  $comparitor = 'not like'; break;
+            case '%!':  $comparitor = 'not like'; break;                    
+        }
+        
+        return [$column, $comparitor, $value, $special];
+    }
     
     // RESOLVER FUNCTIONS
     /**
