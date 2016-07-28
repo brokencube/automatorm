@@ -324,7 +324,7 @@ class Data
             $flat_ids = array_unique($flat_ids);
             
             // Use the model factory to retrieve the objects from the list of ids (using cache first)
-            list($data) = Model::factoryDataCount(['id' => $flat_ids] + $where, $table, $proto->database);
+            list($data) = Model::factoryDataCount(['id' => $flat_ids] + $where, $pivot['connections'][0]['table'], $proto->database);
             return $data['count'];
         }        
     }
