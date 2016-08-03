@@ -2,6 +2,7 @@
 
 namespace Automatorm\UnitTest\Database;
 use Automatorm\Database\QueryBuilder;
+use Automatorm\Exception\QueryBuilder as QueryBuilderException;
 
 class QueryBuilderTest extends \PHPUnit_Framework_TestCase
 {
@@ -105,19 +106,34 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
     {
         $qb = QueryBuilder::select(['schema', 'test' => 't'], ['id']);
         list($sql, $data) = $qb->resolve();
-
+        
         $this->assertEquals('SELECT `id` FROM `schema`.`test` as `t`', $sql);
         $this->assertEquals(0, count($data));
-        
     }
 
     public function testMoreComplexTableName()
     {
         $qb = QueryBuilder::select(['database', 'schema', 'test' => 't'], ['id']);
         list($sql, $data) = $qb->resolve();
-
+        
         $this->assertEquals('SELECT `id` FROM `database`.`schema`.`test` as `t`', $sql);
         $this->assertEquals(0, count($data));
     }
+
+    public function testComplexTableNameException()
+    {
+        $this->expectException(QueryBuilderException::class);
+        
+        $qb = QueryBuilder::select(['undefined', 'database', 'schema', 'test' => 't'], ['id']);
+        list($sql, $data) = $qb->resolve();
+    }
+
+    public function testUnknownJoinType()
+    {
+        $this->expectException(QueryBuilderException::class);
+        
+        $qb = QueryBuilder::select('test', ['id'])
+            ->join('join_table', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+        list($sql, $data) = $qb->resolve();
+    }
 }
-    
