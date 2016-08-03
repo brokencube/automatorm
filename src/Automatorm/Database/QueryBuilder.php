@@ -681,6 +681,12 @@ class QueryBuilder
             if (is_numeric($key2)) return '`' . $table[$key] . '`.`' . $table[$key2] . '`';
             return '`' . $table[$key] . '`.`' . $key2 . '` as `' . $table[$key2] . '`';
         }
+
+        if (count($table) == 3) {
+            list($key, $key2, $key3) = array_keys($table);
+            if (is_numeric($key3)) return '`' . $table[$key] . '`.`' . $table[$key2] . '`.`' . $table[$key3] . '`';
+            return '`' . $table[$key] . '`.`' . $table[$key2] . '`.`' . $key3 . '` as `' . $table[$key3] . '`';
+        }
     }
 
     public function escapeColumn($rawcolumn)
