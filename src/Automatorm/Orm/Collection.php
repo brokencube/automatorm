@@ -61,18 +61,33 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
         return current($this->container) !== false;
     }
     
+    /**
+     * Return number of items in array
+     * @return int Number of items in array 
+     */
+    
     public function count()
     {
         return count($this->container);
     }
     
+    /**
+     * Return first item specified in array (regardless of key) or null if empty array
+     * @return mixed First item or null
+     */
     public function first()
     {
+        if (!count($this->container)) return null;
         return array_slice($this->container, 0, 1)[0];
     }
 
+    /**
+     * Return last item specified in array (regardless of key) or null if empty array
+     * @return mixed Last item or null
+     */
     public function last()
     {
+        if (!count($this->container)) return null;
         return array_slice($this->container, count($this->container) - 1, 1)[0];
     }
     
@@ -143,14 +158,25 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
         $this->container = $array;
     }
     
+    
+    /**
+     * Return a plain PHP array version of the internal container
+     * Additional options for the normal case of a Collection of Model objects
+     *
+     * @param $value For Collections of Models, return the specified property name instead of the Model object as the "Value"
+     * @param $key For Collections of Models, return the specified property name as the "Key"
+     * @return array Plain Array version of collection
+     */
     public function toArray($value = null, $key = 'id')
     {
-        $return = array();
-        
         // Empty array?
-        if (!count($this->container)) return array();
+        if (!count($this->container)) return [];
+        
+        // If we are not dealing with a collection of Model objects, just return the internal container
+        if (!$this->container[0] instanceof Model) return $this->container;
         
         // If we are dealing with a collection of Model objects then user key/value to extract desired property
+        $return = [];
         if ($this->container[0] instanceof Model) {
             if(!$value) {
                 foreach($this->container as $item) {
@@ -180,29 +206,55 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
     }
     
     //////// Collection modifiers ////////
+    /**
+     * Return a new Collection containing one copy of each unique value in the original Container
+     *
+     * @return self New Collection containing only the unique values available in the original container
+     */
     public function unique()
     {
         $copy = $this->container;
         $clobberlist = [];
+        $modelclobberlist = [];
         
-        foreach($copy as $key => $obj) {
-            if (in_array($obj->id, $clobberlist)) {
-                unset($copy[$key]);
+        foreach ($copy as $key => $obj) {
+            if ($obj instanceof Model) {
+                if (in_array($obj->id, $modelclobberlist)) {
+                    unset($copy[$key]);
+                } else {
+                    $modelclobberlist[] = $obj->id;
+                }
             } else {
-                $clobberlist[] = $obj->id;
+                if (in_array($obj, $clobberlist)) {
+                    unset($copy[$key]);
+                } else {
+                    $clobberlist[] = $obj;
+                }
             }
         }
         
         return new static($copy);
     }
     
-    public function sort($function)
+    /**
+     * Return a new sorted Collection using provided sort function (through uasort())
+     *
+     * @param callable $function Callable to use to sort the array
+     * @return self New Collection containing the sorted items
+     */
+    public function sort(callable $function)
     {
         $copy = $this->container;
         uasort($copy, $function);
         return new static($copy);
     }
-    
+
+    /**
+     * Return a new sorted Collection using provided sort function (through uasort() + strnatcasecmp())
+     *
+     * @param callable $key Specify the property on the Collection items to sort by - otherwise, objects will be sorted by their toString representation
+     * @return self New Collection containing the sorted items
+     */
     public function natSort($key = null)
     {
         if (!$key) {
