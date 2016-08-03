@@ -267,7 +267,7 @@ class QueryBuilder
                 $type = 'CROSS JOIN';
                 break;
             default:
-               throw new Exception\Query('Unknown Join Type');
+               throw new Exception\QueryBuilder('Unknown Join Type');
         }
         
         $this->joins[] = ['table' => $table, 'type' => $type, 'where' => [], 'on' => []];
@@ -296,7 +296,7 @@ class QueryBuilder
                 $type = 'CROSS JOIN';
                 break;
             default:
-               throw new Exception\Query('Unknown Join Type');
+               throw new Exception\QueryBuilder('Unknown Join Type');
         }
         
         $this->joins[] = ['table' => null, 'subquery' => $subquery, 'type' => $type, 'alias' => $alias, 'where' => [], 'on' => []];
@@ -687,6 +687,8 @@ class QueryBuilder
             if (is_numeric($key3)) return '`' . $table[$key] . '`.`' . $table[$key2] . '`.`' . $table[$key3] . '`';
             return '`' . $table[$key] . '`.`' . $table[$key2] . '`.`' . $key3 . '` as `' . $table[$key3] . '`';
         }
+        
+        throw new Exception\QueryBuilder('Cannot resolve table name', $table);
     }
 
     public function escapeColumn($rawcolumn)
