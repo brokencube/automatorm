@@ -3,7 +3,7 @@
 namespace Automatorm\UnitTest\Database;
 use Automatorm\Database\QueryBuilder;
 
-class QueryBuilderTest extends \PHPUnit\Framework\TestCase
+class QueryBuilderTest extends \PHPUnit_Framework_TestCase
 {
     public function testSimplestCase()
     {
