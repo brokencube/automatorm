@@ -313,6 +313,13 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
     {
         return $this->filter($filter, true);
     }
+    
+    public function map(callable $function)
+    {
+        $copy = $this->container;
+        array_walk($copy, $function);
+        return new static($copy);
+    }
 
     // Only keep items that match filter
     public function filter($filter, $invert_prefix = false)
