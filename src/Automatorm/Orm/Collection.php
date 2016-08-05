@@ -316,9 +316,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
     
     public function map(callable $function)
     {
-        $copy = $this->container;
-        array_walk($copy, $function);
-        return new static($copy);
+        return new static(array_map($function, $this->container));
     }
 
     // Only keep items that match filter
