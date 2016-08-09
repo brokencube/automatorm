@@ -692,4 +692,12 @@ class Data
         if (key_exists($var, (array) $this->model['many-to-many'])) return 'many-to-many';
         return null;
     }
+    
+    // By default, hide most of the schema internals of Data objects when var_dumping them!
+    public function __debugInfo()
+    {
+        $return = get_object_vars($this);
+        unset($return['schema']);
+        unset($return['model']);
+    }    
 }
