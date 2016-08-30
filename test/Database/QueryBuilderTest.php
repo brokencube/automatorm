@@ -136,4 +136,35 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
             ->join('join_table', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
         list($sql, $data) = $qb->resolve();
     }
+    
+    public function testInClause()
+    {
+        $qb = QueryBuilder::select(['database', 'schema', 'test' => 't'], ['id']);
+        $qb->where(['t.data' => [1,2,3]]);
+        list($sql, $data) = $qb->resolve();
+        
+        $this->assertEquals('SELECT `id` FROM `database`.`schema`.`test` as `t` WHERE `t`.`data` in (?,?,?)', $sql);
+        $this->assertEquals(3, count($data));
+    }
+
+    public function testInBlankClause()
+    {
+        $qb = QueryBuilder::select(['database', 'schema', 'test' => 't'], ['id']);
+        $qb->where(['t.data' => []]);
+        list($sql, $data) = $qb->resolve();
+        
+        $this->assertEquals('SELECT `id` FROM `database`.`schema`.`test` as `t` WHERE false', $sql);
+        $this->assertEquals(0, count($data));
+    }
+
+    public function testNotInBlankClause()
+    {
+        $qb = QueryBuilder::select(['database', 'schema', 'test' => 't'], ['id']);
+        $qb->where(['!t.data' => []]);
+        list($sql, $data) = $qb->resolve();
+        
+        $this->assertEquals('SELECT `id` FROM `database`.`schema`.`test` as `t` WHERE true', $sql);
+        $this->assertEquals(0, count($data));
+    }
+    
 }

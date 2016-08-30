@@ -380,19 +380,19 @@ class QueryBuilder
         
         // Special cases for null values in where clause
         if (is_null($value)) {
-            if ($affix == '!') return [$column, "is not null", null];
-            return [$column, "is null", null];
+            if ($affix == '!') return [$column, "is not null", null, null];
+            return [$column, "is null", null, null];
         }
         
         // Special case for in clauses
         if (is_array($value) && !$onclause) {
             // Special case for empty in clauses
-            if (!count($value)) return $affix == '!' ? [$column, "=", 'true'] : [$column, "=", 'false'];
+            if (!count($value)) return $affix == '!' ? [null, null, null, "true"] : [null, null, null, "false"];
             
             if ($affix == '!') {
-                return [$column, "not in", $value];
+                return [$column, "not in", $value, null];
             } else {
-                return [$column, "in", $value];
+                return [$column, "in", $value, null];
             }
         }
         
@@ -547,7 +547,11 @@ class QueryBuilder
             return (string) $where;
         } else {
             list($column, $comp, $value, $special) = $where;
-            if (is_null($value)) {
+            if ($special == 'true') {
+                return 'true';
+            } elseif ($special == 'false') {
+                return 'false';
+            } elseif (is_null($value)) {
                 return $this->escapeColumn($column) . ' ' . $comp;
             } elseif ($value instanceof SqlString) {
                 return $this->escapeColumn($column) . " $comp " . $value;
