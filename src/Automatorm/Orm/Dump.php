@@ -6,13 +6,38 @@ class Dump
 {
     static $url_prefix = null;
     
-    public static function dump(Model $model)
+    public static function dump($var)
     {
-        $dump = new static();
-        return $dump->_dump($model);
+        // Use specialised function to dump Orm objects
+        if (is_object($var)) {
+            
+            if ($var instanceof Model) {
+                return "<pre>" . static::_dump($var) . "</pre>\n";
+            }
+            
+            if ($var instanceof Collection) {
+                
+                // First object in collection is a model - declare this and preview first object in Model
+                if ($var->first() instanceof Model) {
+                    return "<pre><strong>Collection object of ".$var->count()." objects - dumping first object:</strong>\n" .
+                        static::_dump($var->first()) .
+                        "</pre>\n";
+                }
+                
+                // Otherwise, output Collection as standard array
+                ob_start();
+                var_dump($var->toArray());
+                return "<pre>Collection object:</pre>\n" . ob_get_clean();
+            }
+        }
+        
+        // Fall back to var_dump for everything else
+        ob_start();
+        var_dump($var);
+        return ob_get_clean();
     }
     
-    public function _dump(Model $model)
+    public static function _dump(Model $model)
     {
         $data_access = function ($var) {
             return $this->$var;
@@ -23,8 +48,7 @@ class Dump
             $schema = $data('model');
             $seen = [];
             
-            $output = "<pre>";
-            $output .= "<span><strong>".get_class()."</strong></span>\n";
+            $output = "<span><strong>".get_class()."</strong></span>\n";
             $output .= "  <span><strong>id</strong></span> => ".$this->id."\n";
             $output .= "  <span><strong>connection</strong></span> => ".$this->database."\n";
             $output .= "  <span><strong>table</strong></span> => ".$this->table."\n";
@@ -91,8 +115,6 @@ class Dump
                 $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen);
                 $seen[$key] = true;
             }
-            
-            $output .= "</pre>\n";
             
             return $output;
         };
