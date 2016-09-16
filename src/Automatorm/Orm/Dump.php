@@ -28,7 +28,12 @@ class Dump
     
     public static function _dumpCollection(Collection $collection)
     {
-        $output = "<span><strong>Collection of ".get_class($collection->first())." objects</strong></span>\n";
+        if (is_object($collection->first()) and $collection->first() instanceof Model) {
+            $output = "<span><strong>Collection of ".get_class($collection->first())." Models</strong></span>\n";    
+        } else {
+            $output = "<span><strong>Collection object:</strong></span>\n";
+        }
+        
         foreach ($collection as $key => $value) {
             $output .= "  " . \Automatorm\Orm\Dump::format($key, $value);
         }
