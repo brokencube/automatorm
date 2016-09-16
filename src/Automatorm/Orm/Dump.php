@@ -16,18 +16,7 @@ class Dump
             }
             
             if ($var instanceof Collection) {
-                
-                // First object in collection is a model - declare this and preview first object in Model
-                if ($var->first() instanceof Model) {
-                    return "<pre><strong>Collection object of ".$var->count()." objects - dumping first object:</strong>\n" .
-                        static::_dump($var->first()) .
-                        "</pre>\n";
-                }
-                
-                // Otherwise, output Collection as standard array
-                ob_start();
-                var_dump($var->toArray());
-                return "<pre><strong>Collection object:</strong>\n" . ob_get_clean() . "</pre>\n";
+                return "<pre>" . static::_dumpCollection($var) . "</pre>\n";
             }
         }
         
@@ -35,6 +24,15 @@ class Dump
         ob_start();
         var_dump($var);
         return "<pre>" . ob_get_clean() . "</pre>\n";
+    }
+    
+    public static function _dumpCollection(Collection $collection)
+    {
+        $output = "<span><strong>Collection of ".get_class($collection->first())." objects</strong></span>\n";
+        foreach ($collection as $key => $value) {
+            $output .= "  " . \Automatorm\Orm\Dump::format($key, $value);
+        }
+        return $output;
     }
     
     public static function _dump(Model $model)
@@ -123,7 +121,7 @@ class Dump
         return $c();    
     }
     
-    public static function format($key, $value, $seen)
+    public static function format($key, $value, $seen = [])
     {
         switch (true)
         {                
