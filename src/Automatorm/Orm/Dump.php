@@ -27,14 +27,14 @@ class Dump
                 // Otherwise, output Collection as standard array
                 ob_start();
                 var_dump($var->toArray());
-                return "<pre>Collection object:</pre>\n" . ob_get_clean();
+                return "<pre><strong>Collection object:</strong>\n" . ob_get_clean() . "</pre>\n";
             }
         }
         
         // Fall back to var_dump for everything else
         ob_start();
         var_dump($var);
-        return ob_get_clean();
+        return "<pre>" . ob_get_clean() . "</pre>\n";
     }
     
     public static function _dump(Model $model)
