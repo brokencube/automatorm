@@ -83,6 +83,9 @@ class Model extends BaseException
                 list($column, $value) = $data;
                 return 'MODEL_DATA:CANNOT_CALL_MULTIPIVOT_AS_PROPERTY: Property "'.$column.'" represents a M-M (Pivot) relationship with more than two keys. As we don\'t know which type of object to return (as there are multiple choices), you can\'t call this link as a simple property. Use the $model->property([\$where]) syntax instead.';
             
+            case 'MODEL_DATA:CANNOT_DELETE_UNCOMMITED_DATA';
+                return 'MODEL_DATA:CANNOT_DELETE_UNCOMMITED_DATA: You cannot mark a Data object for deletion if it does not represent an existing row in the database.';
+            
             default:
                 return "Unknown error code ({$code})";
         }

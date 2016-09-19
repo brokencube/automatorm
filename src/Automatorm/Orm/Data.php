@@ -18,6 +18,7 @@ class Data
     protected $model;              // Fragment of Schema object for this table
     protected $locked = true;      // Can we use __set() - for updates/inserts
     protected $new = false;        // Is this to be a new row? (used with Model::new_db())
+    protected $delete = false;     // Row is marked for deletion
     
     protected static $instance = [];
     
@@ -82,6 +83,7 @@ class Data
     {
         $clone = clone $this;
         $clone->new = true;
+        $clone->delete = false;
         unset($clone->data['id']);
         return $clone;
     }
@@ -89,6 +91,13 @@ class Data
     public function lock()
     {
         $this->locked = true;
+        return $this;
+    }
+    
+    public function delete()
+    {
+        if ($this->new) throw new Exception\Model('MODEL_DATA:CANNOT_DELETE_UNCOMMITED_DATA');
+        $this->delete = true;
         return $this;
     }
     
@@ -610,16 +619,19 @@ class Data
         $this->buildQuery($query);
         $values = $query->execute(true);
         
-        // Get the id we just inserted/updated
+        // Don't return anything if we just deleted this row.
+        if ($this->delete) {
+            return null;  
+        } 
+
+        // Get the id we just inserted
         if ($this->new) {
-            $id = $query->insertId(0);
             $this->new = false;
-        } else {
-            $id = $this->data['id'];
+            return $query->insertId(0);
         }
         
-        // Return the id for the object we just created/updated
-        return $id;
+        // Else return the esiting id.
+        return $this->data['id'];
     }
     
     protected function buildQuery(&$query)
@@ -628,7 +640,10 @@ class Data
         // Log says "Fixed major overwriting problem in commit()" but what was getting overwritten?
         
         // Insert/Update the data, and store the insert id into a variable
-        if ($this->new) {
+        if ($this->delete) {
+            $q = QueryBuilder::delete($this->table, ['id' => $this->data['id']]);
+            $query->sql($q);
+        } elseif ($this->new) {
             $q = QueryBuilder::insert($this->table, $this->data);
             $query->sql($q)->sql("SELECT last_insert_id() into @id");
         } else {
@@ -636,29 +651,31 @@ class Data
             $query->sql($q)->sql("SELECT ".$this->data['id']." into @id");
         }
         
-        $origin_id = new SqlString('@id');
-        
-        // Foreign tables
-        foreach ($this->external as $property_name => $value) {
-            // Skip property if this isn't an M-M table (M-1 and 1-M tables are dealt with in other ways)
-            if (!$pivot = $this->model['many-to-many'][$property_name]) continue;
+        if (!$this->delete) {
+            $origin_id = new SqlString('@id');
             
-            // We can only do updates support simple connection access for 2 key pivots.
-            if (count($pivot['connections']) != 1) continue;
-            
-            // Get the table name of the pivot table for this property
-            $table = Schema::underscoreCase($pivot['pivot']);
-            
-            // Clear out any existing data for this object - this is safe because we are in an atomic transaction.
-            $query->sql("Delete from $table where {$pivot['id']} = @id");
-            
-            // Loops through the list of objects to link to this table
-            foreach ($value as $object) {
-                $newdata = [
-                    $pivot['id'] => $origin_id,      // Id of this object
-                    $pivot['connections'][0]['column'] => $object->id  // Id of object linked to this object
-                ];
-                $query->sql(QueryBuilder::insert($table, $newdata));
+            // Foreign tables
+            foreach ($this->external as $property_name => $value) {
+                // Skip property if this isn't an M-M table (M-1 and 1-M tables are dealt with in other ways)
+                if (!$pivot = $this->model['many-to-many'][$property_name]) continue;
+                
+                // We can only do updates support simple connection access for 2 key pivots.
+                if (count($pivot['connections']) != 1) continue;
+                
+                // Get the table name of the pivot table for this property
+                $table = Schema::underscoreCase($pivot['pivot']);
+                
+                // Clear out any existing data for this object - this is safe because we are in an atomic transaction.
+                $query->sql("Delete from $table where {$pivot['id']} = @id");
+                
+                // Loops through the list of objects to link to this table
+                foreach ($value as $object) {
+                    $newdata = [
+                        $pivot['id'] => $origin_id,      // Id of this object
+                        $pivot['connections'][0]['column'] => $object->id  // Id of object linked to this object
+                    ];
+                    $query->sql(QueryBuilder::insert($table, $newdata));
+                }
             }
         }
     }
