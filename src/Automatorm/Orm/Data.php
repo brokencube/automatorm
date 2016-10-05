@@ -716,5 +716,6 @@ class Data
         $return = get_object_vars($this);
         unset($return['schema']);
         unset($return['model']);
+        return $return;
     }    
 }
