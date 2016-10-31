@@ -139,7 +139,7 @@ class Data
             $ids = $collection->id->toArray();
             
             /* Call Tablename::factory(foreign key id) to get the object we want */
-            $table = $proto->model['many-to-one'][$var];
+            $table = $proto->model['one-to-one'][$var];
             $results = Model::factoryObjectCache($ids, $table, $proto->database);
             
             return $results;
