@@ -140,11 +140,6 @@ class Model implements \JsonSerializable
         return $collection;
     }
     
-    protected static function _subclass(Data $data)
-    {
-        return get_called_class();
-    }
-    
     final public static function factoryObjectCache($ids, $class_or_table = null, $dbconnection = null, $force_refresh = false)
     {
         if (!$dbconnection) $dbconnection = static::getConnection();
