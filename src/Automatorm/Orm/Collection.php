@@ -1,6 +1,8 @@
 <?php
 namespace Automatorm\Orm;
 
+use Automatorm\Exception;
+
 class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable
 {
     // From Hodgepodge
@@ -320,7 +322,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
     }
 
     // Only keep items that match filter
-    public function filter($filter, $invert_prefix = false)
+    public function filter($filter, $invert_affix = false)
     {
         $copy = $this->container;
         
@@ -329,28 +331,37 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
             foreach ($copy as $item_key => $item) {
                 // Loop over filters
                 foreach ($filter as $property => $value_list) {
-                    // Look for special non-alphanumeric prefixes
-                    preg_match('/^([^a-zA-Z0-9]*)[a-zA-Z0-9]/', $property, $prefix);
-                    $prefix = $prefix[1];
-                    // Strip any prefix off the front of the property name
-                    $property = substr($property, strlen($prefix));
+                    // Look for special non-alphanumeric affixes
+                    preg_match('/^([!=<>%#]*)([^!=<>%#]+)([!=<>%#]*)$/', $column, $parts);
+                    $affix = $parts[1] ?: $parts[3];
+                    // Strip any affix from the property name
+                    $property = $parts[2];
                     
-                    // Invert prefix for not()
-                    if ($invert_prefix) switch ($prefix) {
-                        case '=': case '==': default:   $prefix = '!';  break;
-                        case '!=': case '!': case '<>': $prefix = '=';  break;
-                        case '<':                       $prefix = '>='; break;
-                        case '<=':                      $prefix = '>';  break;
-                        case '>':                       $prefix = '<='; break;
-                        case '>=':                      $prefix = '<';  break;
+                    // Invert affix for not()
+                    if ($invert_affix) switch ($affix) {
+                        case '=': case '==': default:   $affix = '!';  break;
+                        case '!=': case '!': case '<>': $affix = '=';  break;
+                        case '<':                       $affix = '>='; break;
+                        case '<=':                      $affix = '>';  break;
+                        case '>':                       $affix = '<='; break;
+                        case '>=':                      $affix = '<';  break;
+                    }
+                    
+                    // These affixes only work in SQL land
+                    switch ($affix) {
+                        case '%':
+                        case '!%':
+                        case '%!':
+                        case '#':
+                            throw new Exception\BaseException('UNSUPPORTED_AFFIX_TYPE');
                     }
                     
                     // Each filter can have several acceptable values -- force single item to array
                     if (!is_array($value_list)) $value_list = array($value_list);
                     // Check each value - if we find a matching value than skip to the next filter.
                     foreach ($value_list as $value) {
-                        // Compare based on prefix (else == )
-                        switch ($prefix) {
+                        // Compare based on affix (else == )
+                        switch ($affix) {
                             
                             case '=': case '==': default:
                                 if ($item->$property == $value) {
@@ -401,7 +412,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                         }
                     }
                     
-                    switch ($prefix) {
+                    switch ($affix) {
                         // Negative cases
                         case '=': case '==': default:
                             // Failed to break loop, so the current value matches none of the
