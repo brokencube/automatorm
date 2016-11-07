@@ -332,7 +332,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                 // Loop over filters
                 foreach ($filter as $property => $value_list) {
                     // Look for special non-alphanumeric affixes
-                    preg_match('/^([!=<>%#]*)([^!=<>%#]+)([!=<>%#]*)$/', $column, $parts);
+                    preg_match('/^([!=<>%#]*)([^!=<>%#]+)([!=<>%#]*)$/', $property, $parts);
                     $affix = $parts[1] ?: $parts[3];
                     // Strip any affix from the property name
                     $property = $parts[2];
