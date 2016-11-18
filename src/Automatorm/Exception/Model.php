@@ -73,7 +73,10 @@ class Model extends BaseException
             
             case 'MODEL_DATA:UNEXPECTED_COLUMN_NAME':
                 list($model, $column, $value) = $data;
-                return 'MODEL_DATA:UNEXPECTED_COLUMN_NAME: Property "'.$column.'" does not exist in the schema for this object ('.$model->table_name.'). Please check the $model for this object, or look at $obj->var_dump()';
+                if ($model['columns'][$column . '_id']) {
+                    return 'MODEL_DATA:UNEXPECTED_COLUMN_NAME: Property "'.$column.'" does not exist in the schema for this object ('.$model['table_name'].'), but "'.$column.'_id" does. You probably haven\'t set up the foreign key for this column!';
+                }
+                return 'MODEL_DATA:UNEXPECTED_COLUMN_NAME: Property "'.$column.'" does not exist in the schema for this object ('.$model['table_name'].'). Please check the $model for this object, or look at $obj->var_dump()';
             
             case 'MODEL_DATA_UPDATE:PIVOT_INCORRECT_OBJECT_TYPE':
                 list($value, $table, $pivot) = $data;
@@ -84,9 +87,12 @@ class Model extends BaseException
                 list($column, $value) = $data;
                 return 'MODEL_DATA:CANNOT_CALL_MULTIPIVOT_AS_PROPERTY: Property "'.$column.'" represents a M-M (Pivot) relationship with more than two keys. As we don\'t know which type of object to return (as there are multiple choices), you can\'t call this link as a simple property. Use the $model->property([\$where]) syntax instead.';
             
-            case 'MODEL_DATA:CANNOT_DELETE_UNCOMMITED_DATA';
+            case 'MODEL_DATA:CANNOT_DELETE_UNCOMMITED_DATA':
                 return 'MODEL_DATA:CANNOT_DELETE_UNCOMMITED_DATA: You cannot mark a Data object for deletion if it does not represent an existing row in the database.';
             
+            case 'MODEL_DATA:INCORRECT_MODEL_FOR_RELATIONSHIP':
+                list($column, $supplied_table, $expected_table) = $data;
+                return 'MODEL_DATA:INCORRECT_MODEL_FOR_RELATIONSHIP: Property "'.$column.'" expected a Model relating to table "'.$expected_table.'" but a Model for "'.$supplied_table.'" was given instead.';
             default:
                 return "Unknown error code ({$code})";
         }

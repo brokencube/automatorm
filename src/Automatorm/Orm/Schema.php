@@ -191,21 +191,21 @@ class Schema
     private static $stringCacheN = []; 
     public static function normaliseCase($string)
     {
-        if (static::$stringCacheN[$string]) return static::$stringCacheN[$string];
+        if (isset(static::$stringCacheN[$string])) return static::$stringCacheN[$string];
         return static::$stringCacheN[$string] = trim(strtolower(preg_replace('/([A-Z])|_/', ' $1', $string)));
     }
     
     private static $stringCacheC = []; 
     public static function camelCase($string)
     {
-        if (static::$stringCacheC[$string]) return static::$stringCacheC[$string];
+        if (isset(static::$stringCacheC[$string])) return static::$stringCacheC[$string];
         return static::$stringCacheC[$string] = str_replace(' ', '', ucwords(self::normaliseCase($string)));
     }
     
     private static $stringCacheU = []; 
     public static function underscoreCase($string)
     {
-        if (static::$stringCacheU[$string]) return static::$stringCacheU[$string];
+        if (isset(static::$stringCacheU[$string])) return static::$stringCacheU[$string];
         return static::$stringCacheU[$string] = str_replace(' ', '_', self::normaliseCase($string));
     }
     
@@ -214,7 +214,7 @@ class Schema
     public function guessContext($class_or_table)
     {
         // Return 'cached' result
-        if (static::$contextCache[$class_or_table]) return static::$contextCache[$class_or_table];
+        if (isset(static::$contextCache[$class_or_table])) return static::$contextCache[$class_or_table];
         
         // Namespace classname? Remove that namespace before continuing
         if (strrpos($class_or_table, '\\') !== false) {
@@ -242,7 +242,7 @@ class Schema
         
         // We haven't found an entry in the schema for our best guess table name? Boom!
         if (!$table) {
-            throw new Exception\Model('NO_SCHEMA', [$class_or_table, $normalised, $class, $table]);
+            throw new Exception\Model('NO_SCHEMA', [$class_or_table, $normalised, $class]);
         }
         
         return static::$contextCache[$class_or_table] = [$class, $table];
