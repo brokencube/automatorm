@@ -18,28 +18,29 @@ class Model extends BaseException
     {
         switch($code) {
             case 'NO_SCHEMA':
-                return 'NO_SCHEMA: Could not find a schema definition for this object. Are you sure the classname and table are the same (case-insensitive). Otherwise, try calling Model::generate_schema(true) to refresh the schema cache.';
-            
-            case 'CONSTRUCT:ID_MISSING':
-                $id = is_object($data) ? 'object' : $data;
-                return 'CONSTRUCT:ID_MISSING: You called a Model constructor with an id of "'.$id.'" - we couldnt find this in the database!';
+                list($class_or_table, $normalised, $class) = $data;
+                return 'NO_SCHEMA: Could not find a schema definition for this object (' . $class_or_table . '). Are you sure the classname and table are the same (case-insensitive). Otherwise, try calling Model::generate_schema(true) to refresh the schema cache.';
             
             case 'MODEL_DATA:SET_WHEN_LOCKED':
                 list($column, $value) = $data;
-                return 'MODEL_DATA:SET_WHEN_LOCKED: It appears you tried to assign a new value to the "'.$column.'" column directly on the object: Updates should be done on the Model_Data object ($obj->db()) instead!';
+                return 'MODEL_DATA:SET_WHEN_LOCKED: It appears you tried to assign a new value to the "'.$column.'" column directly on the $obj->_data object - Updates should be done via a call to $obj->db() instead!';
             
             case 'MODEL_DATA:CANNOT_CHANGE_ID':
                 return 'MODEL_DATA:CANNOT_CHANGE_ID: You cannot change the id column of an object. You probably meant to make a new object instead?';
             
             case 'MODEL_DATA:DATETIME_VALUE_EXPECTED_FOR_COLUMN':
                 list($column, $value) = $data;
-                return 'MODEL_DATA:DATETIME_VALUE_EXPECTED_FOR_COLUMN: Column "'.$column.'" has been declared as a Datetime field - you tried to set it to "'.$value.'".';
+                return 'MODEL_DATA:DATETIME_VALUE_EXPECTED_FOR_COLUMN: Column "'.$column.'" has been declared as a Datetime field - you tried to set it to "'.$value.'". You can set DateTime fields by passing it: Orm\Date objects, \DateTime objects, strings that resolve when strtotime\'d, unix_timestamps, or null (for nullable columns)';
             
             case 'MODEL_DATA:SCALAR_VALUE_EXPECTED_FOR_COLUMN':
                 list($column, $value) = $data;
                 $type = gettype($value);
                 
-                return 'MODEL_DATA:SCALAR_VALUE_EXPECTED_FOR_COLUMN: Property "'.$column.'" on this object is a database column which can only accept simple variables. You tried to assign a "'.$type.'" to it.';
+                if ($type == 'object' && substr($column, -3) == '_id') {
+                    return 'MODEL_DATA:SCALAR_VALUE_EXPECTED_FOR_COLUMN: Property "'.$column.'" on this object is a database column which can only accept scalar values. You tried to assign a "'.$type.'" to it. You probably meant to pass this object to column "'.substr($column, 0, -3).'". ';
+                } else {
+                    return 'MODEL_DATA:SCALAR_VALUE_EXPECTED_FOR_COLUMN: Property "'.$column.'" on this object is a database column which can only accept scalar values. You tried to assign a "'.$type.'" to it.';
+                }
             
             case 'MODEL_DATA:MODEL_EXPECTED_FOR_KEY':
                 list($column, $value) = $data;
