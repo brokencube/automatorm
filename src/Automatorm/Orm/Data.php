@@ -548,14 +548,17 @@ class Data
                 or $this->model['columns'][$var] == 'date'
             ) {
                 // Special checks for datetimes
-                if ($value instanceof Time) { 
+                // Special case for "null"
+                if (is_null($value)) { 
+                    $this->data[$var] = null;
+                } elseif ($value instanceof Time) { 
                     $this->data[$var] = $value;
                 } elseif ($value instanceof \DateTime) { 
                     $this->data[$var] = new Time($value->format(Time::MYSQL_DATE), new \DateTimeZone('UTC'));
                 } elseif (($datetime = strtotime($value)) !== false) { // Fall back to standard strings
                     $this->data[$var] = new Time(date(Time::MYSQL_DATE, $datetime), new \DateTimeZone('UTC'));
-                } elseif (is_null($value)) { // Allow "null"
-                    $this->data[$var] = null;
+                } elseif (is_int($value)) { // Fall back to unix timestamp
+                    $this->data[$var] = new Time(date(Time::MYSQL_DATE, $value), new \DateTimeZone('UTC'));
                 } else { 
                     // Oops!
                     throw new Exception\Model('MODEL_DATA:DATETIME_VALUE_EXPECTED_FOR_COLUMN', array($var, $value));
