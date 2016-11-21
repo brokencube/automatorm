@@ -583,8 +583,11 @@ class Data
             } elseif ($value instanceof Model) {
                 // Trying to pass in the wrong table for the relationship!
                 // That is, the table name on the foreign key does not match the table name in the passed Model object
-                if ($value->data(true)->table !== $this->schema->getTable($var)['table_name']) {
-                    throw new Exception\Model('MODEL_DATA:INCORRECT_MODEL_FOR_RELATIONSHIP', [$var, $value->table, $this->schema->model[$var]['table_name']]);
+                $value_table = Schema::normaliseCase($value->data(true)->table);
+                $expected_table = $this->model['many-to-one'][$var];
+                
+                if ($value_table !== $expected_table) {
+                    throw new Exception\Model('MODEL_DATA:INCORRECT_MODEL_FOR_RELATIONSHIP', [$var, $value_table, $expected_table]);
                 }
                 $this->data[$var.'_id'] = $value->id;
                 $this->external[$var] = $value;
