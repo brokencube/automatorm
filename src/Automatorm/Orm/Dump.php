@@ -105,14 +105,10 @@ class Dump
             $output .= "    <span><strong>1-*</strong></span> =>\n";
             if ($schema['one-to-many']) foreach ($schema['one-to-many'] as $key => $contents)
             {
-                $value = $this->_->$key->id;
-                
-                if (count($value) > \Automatorm\Orm\Dump::$id_limit) {
-                    $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen, $contents['table']);
-                } else {
-                    $value = $this->_data->$key;
-                    $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen);
-                }
+                $ids = $this->_->$key->id;
+                $value = $this->_data->join($key, ['id' => array_slice($ids, 0, \Automatorm\Orm\Dump::$id_limit)]);
+
+                $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen, count($ids));
                 
                 $seen[$key] = true;
             }
@@ -120,14 +116,10 @@ class Dump
             $output .= "    <span><strong>*-*</strong></span> =>\n";
             if ($schema['many-to-many']) foreach ($schema['many-to-many'] as $key => $contents)
             {
-                $value = $this->_->$key->id;
-
-                if (count($value) > \Automatorm\Orm\Dump::$id_limit) {
-                    $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen, $contents['connections'][0]['table']);
-                } else {
-                    $value = $this->_data->$key;
-                    $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen);
-                }
+                $ids = $this->_->$key->id;
+                $value = $this->_data->join($key, ['id' => array_slice($ids, 0, \Automatorm\Orm\Dump::$id_limit)]);
+            
+                $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen, count($ids));
                 
                 $seen[$key] = true;
             }
@@ -139,7 +131,7 @@ class Dump
         return $c();    
     }
     
-    public static function format($key, $value, $seen = [], $isCollection = false)
+    public static function format($key, $value, $seen = [], $collectionCount = 0)
     {
         switch (true)
         {                
@@ -166,40 +158,6 @@ class Dump
                 }
                 
                 if (method_exists($value, '__toString')) $display4 = ' (' . \Automatorm\Orm\Dump::safeTruncate($value) . ')';
-                break;
-        
-            case (is_array($value) && $isCollection !== false):
-                $ids = [];
-                foreach (array_slice($value, 0, \Automatorm\Orm\Dump::$id_limit) as $id)
-                {
-                    if (static::$url_prefix) {
-                        $ids[] = "<a href='".static::$url_prefix."/{$isCollection}/{$id}'>".$id."</a>";
-                    } else {
-                        $ids[] = $id;
-                    }
-                    
-                }
-                
-                if (count($value) > \Automatorm\Orm\Dump::$id_limit) {
-                    $namespace = explode('\\', get_class($obj));
-                    $class = array_pop($namespace);                    
-                    $display1 = 'tablename:';
-                    $display2 = Schema::underscoreCase($isCollection);
-                    $display3 = " [".implode(',', $ids).",...]";
-                    $display4 = ' (' . count($value) . ' results total)';
-                } elseif ($ids) {
-                    $namespace = explode('\\', get_class($obj));
-                    $class = array_pop($namespace);                    
-                    $display1 = 'tablename:';
-                    $display2 = Schema::underscoreCase($isCollection);
-                    $display3 = " [".implode(',', $ids)."]";                    
-                } else {
-                    $display1 = 'empty';                    
-                    $display3 = " []";
-                }
-                
-                $type = 'Collection';
-                
                 break;
 
             case $value instanceof Collection:
@@ -228,14 +186,14 @@ class Dump
                         $display2 = $class;
                     }
                     
-                    $display3 = " [".implode(',', $ids)."]";
-                    if (method_exists($obj, '__toString'))
-                    {                        
-                        foreach ($value->slice(0,30) as $obj) $objstrings[] = \Automatorm\Orm\Dump::safeTruncate($obj);
-                        $display4 = implode(',', $objstrings);
-                        if (strlen($display4) > 1000 || $value->count() > 30) {
-                            $display4 = ' (' . substr($display4, 0, 1000) . '...)';
-                        } else {
+                    if ($collectionCount > \Automatorm\Orm\Dump::$id_limit) {
+                        $display3 = " [".implode(',', $ids).",...]";
+                        $display4 = " ({$collectionCount} results total)";
+                    } else {
+                        $display3 = " [".implode(',', $ids)."]";
+                        if (method_exists($obj, '__toString')) {
+                            foreach ($value as $obj) $objstrings[] = \Automatorm\Orm\Dump::safeTruncate($obj);
+                            $display4 = implode(',', $objstrings);
                             $display4 = ' (' . $display4 . ')';
                         }
                     }
