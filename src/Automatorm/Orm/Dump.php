@@ -5,6 +5,7 @@ namespace Automatorm\Orm;
 class Dump
 {
     static $url_prefix = null;
+    static $id_limit = 15;
     
     public static function dump($var)
     {
@@ -104,18 +105,30 @@ class Dump
             $output .= "    <span><strong>1-*</strong></span> =>\n";
             if ($schema['one-to-many']) foreach ($schema['one-to-many'] as $key => $contents)
             {
-                $value = $this->_data->$key;
+                $value = $this->_->$key->id;
                 
-                $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen);
+                if (count($value) > \Automatorm\Orm\Dump::$id_limit) {
+                    $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen, $contents['table']);
+                } else {
+                    $value = $this->_data->$key;
+                    $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen);
+                }
+                
                 $seen[$key] = true;
             }
 
             $output .= "    <span><strong>*-*</strong></span> =>\n";
             if ($schema['many-to-many']) foreach ($schema['many-to-many'] as $key => $contents)
             {
-                $value = $this->_data->$key;
+                $value = $this->_->$key->id;
+
+                if (count($value) > \Automatorm\Orm\Dump::$id_limit) {
+                    $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen, $contents['connections'][0]['table']);
+                } else {
+                    $value = $this->_data->$key;
+                    $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen);
+                }
                 
-                $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen);
                 $seen[$key] = true;
             }
             
@@ -126,7 +139,7 @@ class Dump
         return $c();    
     }
     
-    public static function format($key, $value, $seen = [])
+    public static function format($key, $value, $seen = [], $isCollection = false)
     {
         switch (true)
         {                
@@ -134,10 +147,17 @@ class Dump
                 $namespace = explode('\\', get_class($value));
                 $class = array_pop($namespace);
                 $table = $value::$tablename;
-
                 $type = 'Model';
-                $display1 = implode('\\', $namespace) . '\\';
-                $display2 = $class;
+
+                // Show table name if Model is not subclassed
+                if (get_class($value) == 'Automatorm\\Orm\\Model') {
+                    $display1 = 'tablename:';
+                    $display2 = $table;
+                } else {
+                    $display1 = implode('\\', $namespace) . '\\';
+                    $display2 = $class;
+                }
+                
                 if (static::$url_prefix) {
                     $table = $value->_data->getTable();
                     $display3 = " <a href='".static::$url_prefix."/{$table}/{$value->id}'>".$value->id."</a>";
@@ -146,8 +166,41 @@ class Dump
                 }
                 
                 if (method_exists($value, '__toString')) $display4 = ' (' . \Automatorm\Orm\Dump::safeTruncate($value) . ')';
+                break;
+        
+            case (is_array($value) && $isCollection !== false):
+                $ids = [];
+                foreach (array_slice($value, 0, \Automatorm\Orm\Dump::$id_limit) as $id)
+                {
+                    if (static::$url_prefix) {
+                        $ids[] = "<a href='".static::$url_prefix."/{$isCollection}/{$id}'>".$id."</a>";
+                    } else {
+                        $ids[] = $id;
+                    }
+                    
+                }
                 
-            break;
+                if (count($value) > \Automatorm\Orm\Dump::$id_limit) {
+                    $namespace = explode('\\', get_class($obj));
+                    $class = array_pop($namespace);                    
+                    $display1 = 'tablename:';
+                    $display2 = Schema::underscoreCase($isCollection);
+                    $display3 = " [".implode(',', $ids).",...]";
+                    $display4 = ' (' . count($value) . ' results total)';
+                } elseif ($ids) {
+                    $namespace = explode('\\', get_class($obj));
+                    $class = array_pop($namespace);                    
+                    $display1 = 'tablename:';
+                    $display2 = Schema::underscoreCase($isCollection);
+                    $display3 = " [".implode(',', $ids)."]";                    
+                } else {
+                    $display1 = 'empty';                    
+                    $display3 = " []";
+                }
+                
+                $type = 'Collection';
+                
+                break;
 
             case $value instanceof Collection:
                 $ids = [];
@@ -165,14 +218,26 @@ class Dump
                 if ($ids)
                 {
                     $namespace = explode('\\', get_class($obj));
-                    $class = array_pop($namespace);                    
-                    $display1 = implode('\\', $namespace) . '\\';
-                    $display2 = $class;
+                    $class = array_pop($namespace);
+                    
+                    if (get_class($obj) == 'Automatorm\\Orm\\Model') {
+                        $display1 = 'tablename:';
+                        $display2 = $obj->_data->getTable();
+                    } else {
+                        $display1 = implode('\\', $namespace) . '\\';
+                        $display2 = $class;
+                    }
+                    
                     $display3 = " [".implode(',', $ids)."]";
-                    if (method_exists($obj, '__toString') && count($ids) < 30)
+                    if (method_exists($obj, '__toString'))
                     {                        
-                        foreach ($value as $obj) $objstrings[] = \Automatorm\Orm\Dump::safeTruncate($obj);
-                        $display4 = ' (' . implode(',', $objstrings) . ')';
+                        foreach ($value->slice(0,30) as $obj) $objstrings[] = \Automatorm\Orm\Dump::safeTruncate($obj);
+                        $display4 = implode(',', $objstrings);
+                        if (strlen($display4) > 1000 || $value->count() > 30) {
+                            $display4 = ' (' . substr($display4, 0, 1000) . '...)';
+                        } else {
+                            $display4 = ' (' . $display4 . ')';
+                        }
                     }
                 }
                 else
