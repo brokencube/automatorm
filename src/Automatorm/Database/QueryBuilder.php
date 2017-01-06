@@ -100,9 +100,9 @@ class QueryBuilder
      * @param mixed[] $columndata List of column => data to insert
      * @return Automatorm\Database\QueryBuilder
      */
-    public static function insert($table, array $columndata = [])
+    public static function insert($table, array $columndata = [], $insert_ignore = false)
     {
-        $query = new static('insert');
+        $query = $insert_ignore ? new static ('insertignore') : new static('insert');
         $query->set = $columndata;
         if ($table instanceof QueryBuilder) {
             $query->table_subquery = $table->resolve();
@@ -461,6 +461,13 @@ class QueryBuilder
                 $limit = $this->resolveLimit();
                 
                 return ["INSERT INTO $table{$join}{$data}{$limit}", $this->data];
+
+            case 'insertignore':
+                $join = $this->resolveJoins();
+                $data = $this->resolveColumnData();
+                $limit = $this->resolveLimit();
+                
+                return ["INSERT IGNORE INTO $table{$join}{$data}{$limit}", $this->data];
 
             case 'update':
                 $join = $this->resolveJoins();

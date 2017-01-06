@@ -35,6 +35,17 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('foo', $data[1]);
     }
     
+    public function testSimpleInsertIgnore()
+    {
+        $qb = QueryBuilder::insert('test', ['id' => 1, 'value' => 'foo'], true);
+        list($sql, $data) = $qb->resolve();
+        
+        $this->assertEquals('INSERT IGNORE INTO `test` SET `id` = ?, `value` = ?', $sql);
+        $this->assertEquals(2, count($data));
+        $this->assertEquals(1, $data[0]);
+        $this->assertEquals('foo', $data[1]);
+    }
+    
     public function testSimpleUpdate()
     {
         $qb = QueryBuilder::update('test', ['id' => 1, 'value' => 'foo']);

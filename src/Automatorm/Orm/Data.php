@@ -684,7 +684,7 @@ class Data
                         $pivot['id'] => $origin_id,      // Id of this object
                         $pivot['connections'][0]['column'] => $object->id  // Id of object linked to this object
                     ];
-                    $query->sql(QueryBuilder::insert($table, $newdata));
+                    $query->sql(QueryBuilder::insert($table, $newdata, true));
                 }
             }
         }
