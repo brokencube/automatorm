@@ -50,8 +50,10 @@ class Model implements \JsonSerializable
      * @param bool $force_refresh Get a fresh copy of data from the database
      * @return Automatorm\Orm\Collection
      */
-    public static function getAll(array $ids, $force_refresh = false)
+    public static function getAll(array $ids = null, $force_refresh = false)
     {
+        // Shortcut if no data is passed
+        if (is_null($ids) or !count($ids)) return new Collection();
         return static::factoryObjectCache($ids, null, null, $force_refresh);
     }
     
