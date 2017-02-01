@@ -69,6 +69,7 @@ class Connection implements \Psr\Log\LoggerAwareInterface
         if (is_array($details))
         {
             $this->name = $name;
+            $this->unix_socket = $details['unix_socket'];
             $this->server = $details['server'];
             $this->user = $details['user'];
             $this->pass = $details['pass'];
@@ -78,8 +79,14 @@ class Connection implements \Psr\Log\LoggerAwareInterface
                 \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION
             ];
             $this->type = $details['type'] ?: 'mysql';
+
+            if ($this->unix_socket && $this->host) {
+                throw new Ex\Database("Must use host OR unix_socket - both supplied", $details);
+            }
+            
             return;
         }
+        
         
         throw new Ex\Database("Not enough details to construct Database object", $details);
     }
@@ -93,7 +100,12 @@ class Connection implements \Psr\Log\LoggerAwareInterface
     {
         if ($this->connection) return $this->connection;
         
-        $dsn = $this->type . ':host=' . $this->server . ';dbname=' . $this->database.';charset=utf8';
+        if ($this->unix_socket) {
+            $dsn = $this->type . ':unix_socket=' . $this->unix_socket . ';dbname=' . $this->database.';charset=utf8';
+        } else {
+            $dsn = $this->type . ':host=' . $this->server . ';dbname=' . $this->database.';charset=utf8';
+        }
+        
         try {
             $this->connection = new \PDO($dsn, $this->user, $this->pass, $this->options);
         } catch (\PDOException $e) {
