@@ -23,6 +23,6 @@
         "phpunit/phpunit": "*"
     },
     "autoload": {    
-        "psr-4": { "Automatorm": "src" }
+        "psr-4": { "Automatorm\\": "src/" }
     }
 }
