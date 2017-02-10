@@ -9,6 +9,12 @@ engines:
     checks:
       Design/TooManyPublicMethods:
         enabled: false
+      Design/TooManyMethods:
+        enabled: false
+      Design/WeightedMethodCount:
+        enabled: false
+      CleanCode/ElseExpression:
+        enabled: false
   phpcodesniffer:
     enabled: true
   phan:
