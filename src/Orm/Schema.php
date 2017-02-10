@@ -95,44 +95,44 @@ class Schema
         
         // Assemble list of table columns by table
         foreach ($schema as $row) {
-            $table_name = self::normaliseCase($row['table_name']);
+            $tableName = self::normaliseCase($row['table_name']);
             
-            $model[$table_name]['table_name'] = $row['table_name'];
+            $model[$tableName]['table_name'] = $row['table_name'];
             // All tables default to type 'table' - can also be 'pivot' or 'foreign' as detected later
-            $model[$table_name]['type'] = 'table';
+            $model[$tableName]['type'] = 'table';
             // List all columns for this table
-            $model[$table_name]['columns'][$row['column_name']] = $row['data_type'];
+            $model[$tableName]['columns'][$row['column_name']] = $row['data_type'];
         }
         
         // Loop over every foreign key definition
         foreach ($keys as $row) {
-            $table_name = self::normaliseCase($row['table_name']);
-            $ref_table_name = self::normaliseCase($row['referenced_table_name']);
+            $tableName = self::normaliseCase($row['table_name']);
+            $refTableName = self::normaliseCase($row['referenced_table_name']);
             
             if ($row['referenced_column_name'] == 'id' and $row['column_name'] == 'id') {
                 // If both columns in the key are 'id' then this is a 1 to 1 relationship.
                 // Create a link in both objects to each other
-                $model[$ref_table_name]['one-to-one'][self::underscoreCase($table_name)] = $table_name;
-                $model[$table_name]['one-to-one'][self::underscoreCase($ref_table_name)] = $ref_table_name;
-                $model[$table_name]['type'] = 'foreign';
+                $model[$refTableName]['one-to-one'][self::underscoreCase($tableName)] = $tableName;
+                $model[$tableName]['one-to-one'][self::underscoreCase($refTableName)] = $refTableName;
+                $model[$tableName]['type'] = 'foreign';
             } elseif ($row['referenced_column_name'] == 'id') {
                 // if this foreign key points at one 'id' column then this is a usable foreign 'key'
                 if (substr($row['column_name'], -3) == '_id') {
-                    $column_root = substr($row['column_name'], 0, -3);
-                    $model[$table_name]['many-to-one'][$column_root] = $ref_table_name;
+                    $columnRoot = substr($row['column_name'], 0, -3);
+                    $model[$tableName]['many-to-one'][$columnRoot] = $refTableName;
                     
                     // Add the key constraint in reverse, trying to make a sensible name.
                     // If the column name was derived from the table name, just use the table name.
                     // (e.g "my_account" table and "my_account_id" -> my_account)
                     // Otherwise, append the column name to the table name to make sure it is unique.
                     // (e.g "your_account" table and "my_account_id" -> your_account_my_account)
-                    if ($column_root == $row['referenced_table_name']) {
-                        $property_name = self::underscoreCase($table_name);
+                    if ($columnRoot == $row['referenced_table_name']) {
+                        $property_name = self::underscoreCase($tableName);
                     } else {
-                        $property_name = self::underscoreCase($table_name) . '_' . $column_root;
+                        $property_name = self::underscoreCase($tableName) . '_' . $columnRoot;
                     }
                     
-                    $model[$ref_table_name]['one-to-many'][$property_name] = array('table' => $table_name, 'column_name' => $row['column_name']);
+                    $model[$refTableName]['one-to-many'][$property_name] = array('table' => $tableName, 'column_name' => $row['column_name']);
                 }
             }
         }
@@ -143,7 +143,7 @@ class Schema
             if (count($pivot['many-to-one']) > 1 and count($pivot['columns']) == count($pivot['many-to-one'])) {
                 // Grab all foreign keys and rearrange them into arrays.
                 $tableinfo = array();
-                foreach($pivot['many-to-one'] as $column => $tablename) {
+                foreach ($pivot['many-to-one'] as $column => $tablename) {
                     $tableinfo[] = array('column' => $column . '_id', 'column_raw' => $column, 'table' => $tablename);
                 }
                 
@@ -175,9 +175,8 @@ class Schema
                 $model[$pivottablename]['type'] = 'pivot';
                 
                 // Remove the M-1 keys for these tables to fully encapsulate the M-M scheme.
-                foreach ($tableinfo as $table)
-                {
-                    foreach((array) $model[ $table['table'] ][ 'one-to-many' ] as $key => $val) {
+                foreach ($tableinfo as $table) {
+                    foreach ((array) $model[ $table['table'] ][ 'one-to-many' ] as $key => $val) {
                         if ($val['table'] == $pivottablename) unset ($model[ $table['table'] ][ 'one-to-many' ][$key]);
                     }
                 }
@@ -195,34 +194,34 @@ class Schema
         return static::$stringCacheN[$string] = trim(strtolower(preg_replace('/([A-Z])|_/', ' $1', $string)));
     }
     
-    private static $stringCacheC = []; 
+    private static $stringCacheC = [];
     public static function camelCase($string)
     {
         if (isset(static::$stringCacheC[$string])) return static::$stringCacheC[$string];
         return static::$stringCacheC[$string] = str_replace(' ', '', ucwords(self::normaliseCase($string)));
     }
     
-    private static $stringCacheU = []; 
+    private static $stringCacheU = [];
     public static function underscoreCase($string)
     {
         if (isset(static::$stringCacheU[$string])) return static::$stringCacheU[$string];
         return static::$stringCacheU[$string] = str_replace(' ', '_', self::normaliseCase($string));
     }
     
-    protected static $contextCache = []; 
+    protected static $contextCache = [];
     // Based on supplied data, try and guess the appropriate class and tablename
-    public function guessContext($class_or_table)
+    public function guessContext($classOrTable)
     {
         // Return 'cached' result
-        if (isset(static::$contextCache[$class_or_table])) return static::$contextCache[$class_or_table];
+        if (isset(static::$contextCache[$classOrTable])) return static::$contextCache[$classOrTable];
         
         // Namespace classname? Remove that namespace before continuing
-        if (strrpos($class_or_table, '\\') !== false) {
-            $class_or_table = substr($class_or_table, strrpos($class_or_table, '\\') + 1);
+        if (strrpos($classOrTable, '\\') !== false) {
+            $classOrTable = substr($classOrTable, strrpos($classOrTable, '\\') + 1);
         }
         
         // Normalise the (namespace stripped) class or table name so we don't have to worry about under_score or CamelCase
-        $normalised = self::normaliseCase($class_or_table);
+        $normalised = self::normaliseCase($classOrTable);
         
         // First guesses as to table and class names
         $class = $this->namespace . '\\' . self::camelCase($normalised);
@@ -232,8 +231,8 @@ class Schema
         if (class_exists($class)) {
             // Does this class have a different table, otherwise use guess from above.
             if ($class::$tablename) {
-                $normalised_table = self::normaliseCase($class::$tablename);
-                $table = $this->model[$normalised_table] ? $this->model[$normalised_table]['table_name'] : '';
+                $normalisedTable = self::normaliseCase($class::$tablename);
+                $table = $this->model[$normalisedTable] ? $this->model[$normalisedTable]['table_name'] : '';
             }
         } else {
             // We didn't find an appropriate class - make a Model object using the guessed table name.
@@ -242,10 +241,10 @@ class Schema
         
         // We haven't found an entry in the schema for our best guess table name? Boom!
         if (!$table) {
-            throw new Exception\Model('NO_SCHEMA', [$class_or_table, $normalised, $class]);
+            throw new Exception\Model('NO_SCHEMA', [$classOrTable, $normalised, $class]);
         }
         
-        return static::$contextCache[$class_or_table] = [$class, $table];
+        return static::$contextCache[$classOrTable] = [$class, $table];
     }
     
     public function getTable($table)

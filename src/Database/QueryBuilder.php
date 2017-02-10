@@ -17,8 +17,7 @@ class QueryBuilder
     
     protected $type;
     protected $table;
-    protected $table_alias;
-    protected $table_subquery;
+    protected $tableSubquery;
     protected $columns = [];
     protected $count;
     protected $set = [];
@@ -38,14 +37,14 @@ class QueryBuilder
      *
      * @param mixed $table Name of table (string of [table => alias]) to select from
      * @param mixed[] $columns List of select clauses/columns
-     * @return Automatorm\Database\QueryBuilder
+     * @return \Automatorm\Database\QueryBuilder
      */
     public static function select($table, array $columns = ['*'])
     {
         $query = new static('select');
         $query->columns = $columns;
         if ($table instanceof QueryBuilder) {
-            $query->table_subquery = $table->resolve();
+            $query->tableSubquery = $table->resolve();
         } else {
             $query->table = $table;
         }
@@ -58,14 +57,14 @@ class QueryBuilder
      *
      * @param mixed $table Name of table (string of [table => alias]) to delete from
      * @param mixed[] $where Where clause array
-     * @return Automatorm\Database\QueryBuilder
+     * @return \Automatorm\Database\QueryBuilder
      */
     public static function delete($table, $where = [])
     {
         $query = new static('delete');
         $query->where($where);
         if ($table instanceof QueryBuilder) {
-            $query->table_subquery = $table->resolve();
+            $query->tableSubquery = $table->resolve();
         } else {
             $query->table = $table;
         }
@@ -78,14 +77,14 @@ class QueryBuilder
      *
      * @param mixed $table Name of table (string of [table => alias]) to select from
      * @param string $column The column to count - for most uses, this should be '*'
-     * @return Automatorm\Database\QueryBuilder
+     * @return \Automatorm\Database\QueryBuilder
      */
     public static function count($table, $column = '*')
     {
         $query = new static('count');
         $query->count = $column;
         if ($table instanceof QueryBuilder) {
-            $query->table_subquery = $table->resolve();
+            $query->tableSubquery = $table->resolve();
         } else {
             $query->table = $table;
         }
@@ -98,14 +97,14 @@ class QueryBuilder
      *
      * @param mixed $table Name of table (string of [table => alias]) to insert into
      * @param mixed[] $columndata List of column => data to insert
-     * @return Automatorm\Database\QueryBuilder
+     * @return \Automatorm\Database\QueryBuilder
      */
-    public static function insert($table, array $columndata = [], $insert_ignore = false)
+    public static function insert($table, array $columndata = [], $insertIgnore = false)
     {
-        $query = $insert_ignore ? new static ('insertignore') : new static('insert');
+        $query = $insertIgnore ? new static ('insertignore') : new static('insert');
         $query->set = $columndata;
         if ($table instanceof QueryBuilder) {
-            $query->table_subquery = $table->resolve();
+            $query->tableSubquery = $table->resolve();
         } else {
             $query->table = $table;
         }
@@ -118,14 +117,14 @@ class QueryBuilder
      *
      * @param mixed $table Name of table (string of [table => alias]) to update
      * @param mixed[] $columndata List of column => data to update
-     * @return Automatorm\Database\QueryBuilder
+     * @return \Automatorm\Database\QueryBuilder
      */
     public static function update($table, array $columndata = [])
     {
         $query = new static('update');
         $query->set = $columndata;
         if ($table instanceof QueryBuilder) {
-            $query->table_subquery = $table->resolve();
+            $query->tableSubquery = $table->resolve();
         } else {
             $query->table = $table;
         }
@@ -138,13 +137,13 @@ class QueryBuilder
      *
      * @param mixed $table Name of table (string of [table => alias]) to replace into
      * @param mixed[] $columndata List of column => data to replace
-     * @return Automatorm\Database\QueryBuilder
+     * @return \Automatorm\Database\QueryBuilder
      */
     public static function replace($table, array $columndata = [])
     {
         $query = new static('replace');
         if ($table instanceof QueryBuilder) {
-            $query->table_subquery = $table->resolve();
+            $query->tableSubquery = $table->resolve();
         } else {
             $query->table = $table;
         }
@@ -179,8 +178,7 @@ class QueryBuilder
      */
     public function where(array $clauses)
     {
-        foreach ($clauses as $key => $value)
-        {
+        foreach ($clauses as $key => $value) {
             if (is_numeric($key) && $value instanceof SqlString) {
                 $this->where[] = $value;
             } else {
@@ -198,8 +196,7 @@ class QueryBuilder
      */
     public function having(array $clauses)
     {
-        foreach ($clauses as $key => $value)
-        {
+        foreach ($clauses as $key => $value) {
             if (is_numeric($key) && $value instanceof SqlString) {
                 $this->having[] = $value;
             } else {
@@ -245,7 +242,10 @@ class QueryBuilder
      * @param string $dir asc or desc - desc by default
      * @return self
      */
-    public function orderBy($sort, $dir = 'desc') { return $this->sortBy($sort, $dir); }
+    public function orderBy($sort, $dir = 'desc')
+    {
+        return $this->sortBy($sort, $dir);
+    }
     
     /**
      * Join a table to this query
@@ -267,7 +267,7 @@ class QueryBuilder
                 $type = 'CROSS JOIN';
                 break;
             default:
-               throw new Exception\QueryBuilder('Unknown Join Type');
+                throw new Exception\QueryBuilder('Unknown Join Type');
         }
         
         $this->joins[] = ['table' => $table, 'type' => $type, 'where' => [], 'on' => []];
@@ -296,7 +296,7 @@ class QueryBuilder
                 $type = 'CROSS JOIN';
                 break;
             default:
-               throw new Exception\QueryBuilder('Unknown Join Type');
+                throw new Exception\QueryBuilder('Unknown Join Type');
         }
         
         $this->joins[] = ['table' => null, 'subquery' => $subquery, 'type' => $type, 'alias' => $alias, 'where' => [], 'on' => []];
@@ -314,8 +314,7 @@ class QueryBuilder
         end($this->joins);
         $joinkey = key($this->joins);
         
-        foreach ($columnclauses as $key => $value)
-        {
+        foreach ($columnclauses as $key => $value) {
             if (is_numeric($key) && $value instanceof SqlString) {
                 $this->joins[$joinkey]['on'][] = $value;
             } else {
@@ -336,8 +335,7 @@ class QueryBuilder
         end($this->joins);
         $joinkey = key($this->joins);
         
-        foreach ($columnclauses as $key => $value)
-        {
+        foreach ($columnclauses as $key => $value) {
             if (is_numeric($key) && $value instanceof SqlString) {
                 $this->joins[$joinkey]['where'][] = $value;
             } else {
@@ -489,9 +487,8 @@ class QueryBuilder
     
     public function resolveTable()
     {
-        if ($this->table_subquery)
-        {
-            list($sql, $subdata) = $this->table_subquery;
+        if ($this->tableSubquery) {
+            list($sql, $subdata) = $this->tableSubquery;
             $this->data = array_merge($this->data, $subdata);
             return '(' . $sql . ') AS subquery';
         }
@@ -504,8 +501,7 @@ class QueryBuilder
         
         $joinstring = '';
         
-        foreach ($this->joins as $join)
-        {
+        foreach ($this->joins as $join) {
             if ($join['table']) {
                 $clauses = [];
                 $joinstring .= " {$join['type']} " . $this->escapeTable($join['table']);
@@ -519,15 +515,13 @@ class QueryBuilder
                 $joinstring .= " {$join['type']} ($sql) as {$join['alias']}";
             }
             
-            if ($join['where'])
-            {
+            if ($join['where']) {
                 foreach ($join['where'] as $where) {
                     $clauses[] = $this->resolveWhereClause($where);
                 }
             }
 
-            if ($join['on'])
-            {
+            if ($join['on']) {
                 foreach ($join['on'] as $where) {
                     if ($where instanceof SqlString) {
                         $clauses[] = (string) $where;
@@ -714,8 +708,7 @@ class QueryBuilder
         $alias = '';
 
         // Parse aliases
-        if (is_array($rawcolumn))
-        {
+        if (is_array($rawcolumn)) {
             list($alias) = array_values($rawcolumn);
             list($rawcolumn) = array_keys($rawcolumn);
         }

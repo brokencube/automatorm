@@ -34,26 +34,26 @@ class Model implements \JsonSerializable
      * Get an object for a single row in the database, based on id
      *
      * @param int $id Id of row
-     * @param bool $force_refresh Get a fresh copy of data from the database
+     * @param bool $forceRefresh Get a fresh copy of data from the database
      * @return self
      */
-    public static function get($id, $force_refresh = false)
+    public static function get($id, $forceRefresh = false)
     {
-        return static::factoryObjectCache($id, null, null, $force_refresh);
+        return static::factoryObjectCache($id, null, null, $forceRefresh);
     }
 
     /**
      * Get objects from the the database, based on list of ids
      *
      * @param int[] $ids Ids of rows
-     * @param bool $force_refresh Get a fresh copy of data from the database
+     * @param bool $forceRefresh Get a fresh copy of data from the database
      * @return Automatorm\Orm\Collection
      */
-    public static function getAll(array $ids = null, $force_refresh = false)
+    public static function getAll(array $ids = null, $forceRefresh = false)
     {
         // Shortcut if no data is passed
         if (is_null($ids) or !count($ids)) return new Collection();
-        return static::factoryObjectCache($ids, null, null, $force_refresh);
+        return static::factoryObjectCache($ids, null, null, $forceRefresh);
     }
     
     /**
@@ -95,25 +95,25 @@ class Model implements \JsonSerializable
     
     /* FACTORY METHODS */    
     // Build an appropriate Model object based on id and class/table name
-    final public static function factory($where, $class_or_table_name = null, $dbconnection = null, array $options = null, $single_result = false)
+    final public static function factory($where, $classOrTable_name = null, $dbconnection = null, array $options = null, $singleResult = false)
     {
         // Some defaults
         if (!$dbconnection) $dbconnection = static::getConnection();
         
         // Figure out the base class and table we need based on current context
         $schema = Schema::get($dbconnection);
-        list($class, $table) = $schema->guessContext($class_or_table_name ?: get_called_class());
+        list($class, $table) = $schema->guessContext($classOrTable_name ?: get_called_class());
         
         // Get data from database        
         $data = Model::factoryData($where, $table, $dbconnection, $options);
         
         // If we're in one object mode, and have no data, return null rather than an empty Model_Collection!
-        if ($single_result and !$data) return null;
+        if ($singleResult and !$data) return null;
         
         // New container for the results
         $collection = new Collection();
         
-        foreach($data as $row) {
+        foreach ($data as $row) {
             if (!$obj = Model::$instance[$dbconnection][$table][$row['id']]) {
                 // Database data object unique to this object
                 $data_obj = Data::make($row, $table, $schema);
@@ -129,7 +129,7 @@ class Model implements \JsonSerializable
             }
             
             // If we only wanted one object then shortcut and return now that we have it!
-            if ($single_result) return $obj;
+            if ($singleResult) return $obj;
             
             // Add to the model collection
             $collection[] = $obj;
@@ -139,15 +139,15 @@ class Model implements \JsonSerializable
         return $collection;
     }
     
-    final public static function factoryObjectCache($ids, $class_or_table = null, $dbconnection = null, $force_refresh = false)
+    final public static function factoryObjectCache($ids, $classOrTable = null, $dbconnection = null, $forceRefresh = false)
     {
         if (!$dbconnection) $dbconnection = static::getConnection();
         $schema = Schema::get($dbconnection);
-        list($class, $table) = $schema->guessContext($class_or_table ?: get_called_class());
+        list($class, $table) = $schema->guessContext($classOrTable ?: get_called_class());
 
         // If we have a single id
         if (is_numeric($ids)) {
-            if (!$force_refresh) {
+            if (!$forceRefresh) {
                 // Check Model object cache
                 if (isset(Model::$instance[$dbconnection][$table][$ids])) {
                     return Model::$instance[$dbconnection][$table][$ids];
@@ -155,7 +155,7 @@ class Model implements \JsonSerializable
             }
             
             /* Cache miss, so create new object */
-            return static::factory(['id' => $ids], $class_or_table, $dbconnection, ['limit' => 1], true);
+            return static::factory(['id' => $ids], $classOrTable, $dbconnection, ['limit' => 1], true);
         
         // Else if we have an array of ids
         } elseif (is_array($ids)) {
@@ -170,7 +170,7 @@ class Model implements \JsonSerializable
                 }
                 // Try and pull the relevant object out of the cache.
                 // If we succeed, remove it from the list of ids to search for in the database
-                if (!$force_refresh) {
+                if (!$forceRefresh) {
                     // Check Model object cache
                     if (isset(Model::$instance[$dbconnection][$table][$id])) {
                         $collection[] = Model::$instance[$dbconnection][$table][$id];
@@ -182,7 +182,7 @@ class Model implements \JsonSerializable
             // For any ids we failed to pull out the cache, pull them from the database instead
             if (count($ids) > 0)
             {
-                $newresults = static::factory(['id' => $ids], $class_or_table, $dbconnection);
+                $newresults = static::factory(['id' => $ids], $classOrTable, $dbconnection);
                 $collection = $collection->merge($newresults);
             }
             
@@ -253,7 +253,7 @@ class Model implements \JsonSerializable
     
     // Return an empty Model_Data object for this class/table so that a new object can be constructed (and a new row entered in the table).
     // For 'foreign' tables, a parent object must be supplied.
-    public static function newData(Model $parent_object = null)
+    public static function newData(Model $parentObject = null)
     {
         $dbconnection = static::getConnection();
         // Get the schema for the current class/table
@@ -261,16 +261,16 @@ class Model implements \JsonSerializable
         list($class, $table) = $schema->guessContext(get_called_class());
         
         // Make a new blank data object
-        $model_data = new Data([], $table, $schema, false, true);
+        $data = new Data([], $table, $schema, false, true);
         
         $table_schema = $schema->getTable($table);
         // "Foreign" tables use a "parent" table for their primary key. We need that parent object for it's id.
         if ($table_schema['type'] == 'foreign') {
-            if (!$parent_object) throw new Exception\Model('NO_PARENT_OBJECT', [$dbconnection, $class, $table, static::$tablename]);
-            $model_data->id = $parent_object->id;
+            if (!$parentObject) throw new Exception\Model('NO_PARENT_OBJECT', [$dbconnection, $class, $table, static::$tablename]);
+            $model_data->id = $parentObject->id;
         }
         
-        return $model_data;
+        return $data;
     }
     
     public static function clearInstanceCache($dbconnection = null, $table = null, $id = null)
@@ -396,9 +396,9 @@ class Model implements \JsonSerializable
         return $this;
     }
     
-    final public function data($return_original = false)
+    final public function data($returnOriginal = false)
     {
-        if ($return_original) {
+        if ($returnOriginal) {
             return $this->_data;
         } else {
             return clone $this->_data;    

@@ -11,13 +11,12 @@ class Dump
     {
         // Use specialised function to dump Orm objects
         if (is_object($var)) {
-            
             if ($var instanceof Model) {
-                return "<pre>" . static::_dump($var) . "</pre>\n";
+                return "<pre>" . static::dumpModel($var) . "</pre>\n";
             }
             
             if ($var instanceof Collection) {
-                return "<pre>" . static::_dumpCollection($var) . "</pre>\n";
+                return "<pre>" . static::dumpCollection($var) . "</pre>\n";
             }
         }
         
@@ -27,7 +26,7 @@ class Dump
         return "<pre>" . ob_get_clean() . "</pre>\n";
     }
     
-    public static function _dumpCollection(Collection $collection)
+    public static function dumpCollection(Collection $collection)
     {
         if (is_object($collection->first()) and $collection->first() instanceof Model) {
             $output = "<span><strong>Collection of ".get_class($collection->first())." Models</strong></span>\n";    
@@ -41,7 +40,7 @@ class Dump
         return $output;
     }
     
-    public static function _dump(Model $model)
+    public static function dumpModel(Model $model)
     {
         $data_access = function ($var) {
             return $this->$var;
@@ -58,17 +57,14 @@ class Dump
             $output .= "  <span><strong>table</strong></span> => ".$this->table."\n";
                         
             $output .= "  <span><strong>object_properties</strong></span> =>\n";
-            foreach (get_object_vars($this) as $key => $value)
-            {
+            foreach (get_object_vars($this) as $key => $value) {
                 $output .= "    " . \Automatorm\Orm\Dump::format($key, $value, $seen);
                 $seen[$key] = true;
             }
             
             $output .= "  <span><strong>dynamic_properties</strong></span> =>\n";
-            foreach (get_class_methods($this) as $method)
-            {
-                if (substr($method, 0, 10) == '_property_')
-                {
+            foreach (get_class_methods($this) as $method) {
+                if (substr($method, 0, 10) == '_property_') {
                     $key = substr($method, 10);
                     $value = $this->$method();
                     $output .= "    " . \Automatorm\Orm\Dump::format($key, $value, $seen);
@@ -77,16 +73,14 @@ class Dump
             }
 
             $output .= "  <span><strong>data_properties</strong></span> =>\n";
-            foreach ($data('__data') as $key => $value)
-            {
+            foreach ($data('__data') as $key => $value) {
                 $output .= "    " . \Automatorm\Orm\Dump::format($key, $value, $seen);
                 $seen[$key] = true;
             }
             
             $output .= "  <span><strong>external_tables</strong></span> =>\n";
             $output .= "    <span><strong>1-1</strong></span> =>\n";
-            if ($schema['one-to-one']) foreach ($schema['one-to-one'] as $key => $contents)
-            {
+            if ($schema['one-to-one']) foreach ($schema['one-to-one'] as $key => $contents) {
                 $value = $this->_data->$key;
                 
                 $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen);
@@ -94,8 +88,7 @@ class Dump
             }
 
             $output .= "    <span><strong>*-1</strong></span> =>\n";
-            if ($schema['many-to-one']) foreach ($schema['many-to-one'] as $key => $contents)
-            {
+            if ($schema['many-to-one']) foreach ($schema['many-to-one'] as $key => $contents) {
                 $value = $this->_data->$key;
                 
                 $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen);
@@ -103,8 +96,7 @@ class Dump
             }
 
             $output .= "    <span><strong>1-*</strong></span> =>\n";
-            if ($schema['one-to-many']) foreach ($schema['one-to-many'] as $key => $contents)
-            {
+            if ($schema['one-to-many']) foreach ($schema['one-to-many'] as $key => $contents) {
                 $ids = $this->_->$key->id;
                 $value = $this->_data->join($key, ['id' => array_slice($ids, 0, \Automatorm\Orm\Dump::$id_limit)]);
 
@@ -114,8 +106,7 @@ class Dump
             }
 
             $output .= "    <span><strong>*-*</strong></span> =>\n";
-            if ($schema['many-to-many']) foreach ($schema['many-to-many'] as $key => $contents)
-            {
+            if ($schema['many-to-many']) foreach ($schema['many-to-many'] as $key => $contents) {
                 $ids = $this->_->$key->id;
                 $value = $this->_data->join($key, ['id' => array_slice($ids, 0, \Automatorm\Orm\Dump::$id_limit)]);
             
@@ -162,8 +153,7 @@ class Dump
 
             case $value instanceof Collection:
                 $ids = [];
-                foreach ($value as $obj)
-                {
+                foreach ($value as $obj) {
                     if ($obj instanceof Model && static::$url_prefix) {
                         $table = $obj->_data->getTable();
                         $ids[] = "<a href='".static::$url_prefix."/{$table}/{$obj->id}'>".$obj->id."</a>";
@@ -173,8 +163,7 @@ class Dump
                     
                 }
                 
-                if ($ids)
-                {
+                if ($ids) {
                     $namespace = explode('\\', get_class($obj));
                     $class = array_pop($namespace);
                     
@@ -197,21 +186,18 @@ class Dump
                             $display4 = ' (' . $display4 . ')';
                         }
                     }
-                }
-                else
-                {
+                } else {
                     $display1 = 'empty';                    
                     $display3 = " []";
                 }
                 
                 $type = 'Collection';
-                
-            break;
+                break;
             
             case $value instanceof Time:
                 $type = 'DateTime';
                 $display3 = $value->format('Y-m-d H:i:s');
-            break;
+                break;
             
             case is_object($value):
                 $namespace = explode('\\', get_class($value));
@@ -221,33 +207,30 @@ class Dump
                 $display1 = implode('\\', $namespace) . '\\';
                 $display2 = $class;
                 if (method_exists($value, '__toString')) $display4 = ' (' . (string) $value . ')';
-            break;
+                break;
             
             case is_bool($value):
                 $type = 'boolean';
                 $display3 = $value?'true':'false';
-            break;
+                break;
             
             case is_null($value):
                 $type = 'null';
                 $display3 = "NULL";
-            break;
+                break;
 
             case is_string($value):
                 $type = 'string';
                 $display3 = '"' . $value .'"';
-            break;
+                break;
             
             default:
                 $type = gettype($value);
                 $display3 = $value;
-            break;
+                break;
         }
         
-        $string = "";
-        
-        if (array_key_exists($key, $seen))
-        {
+        if (array_key_exists($key, $seen)) {
             return
                 "<del style='color: #999999;'><strong>$key</strong> => <small>$type</small> ".
                 $display1.
@@ -255,9 +238,7 @@ class Dump
                 $display3.
                 $display4.
                 "</del>\n";   
-        }
-        else
-        {
+        } else {
             return "<strong>$key</strong> => <small>$type</small> ".
             "<span style='color: #999999;'>$display1</span>".
             "<span style='color: #000077;'>$display2</span>".
