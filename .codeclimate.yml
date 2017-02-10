@@ -1,0 +1,23 @@
+engines:
+  duplication:
+    enabled: true
+    config:
+      languages:
+      - php:
+  phpmd:
+    enabled: true
+    checks:
+      Design/TooManyPublicMethods:
+        enabled: false
+  phpcodesniffer:
+    enabled: true
+  phan:
+    enabled: true
+    config:
+      file_extensions: "php"
+ratings:
+  paths:
+  - src/**
+exclude_paths:
+- test/*
+- "**/vendor/**/*"
