@@ -65,7 +65,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
     
     /**
      * Return number of items in array
-     * @return int Number of items in array 
+     * @return int Number of items in array
      */
     
     public function count()
@@ -103,7 +103,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
             return Data::groupJoin($this, $parameter);
         }
         
-        foreach($this->container as $item) {
+        foreach ($this->container as $item) {
             $value = $item->$parameter;
             if ($value instanceof Collection) {
                 $list = array_merge($list, $value->toArray());
@@ -121,8 +121,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
         if (count($this->container) == 0 && is_numeric($args[1]) && ($args[1] & Model::COUNT_ONLY)) return 0;
         
         // Foreign keys
-        if (
-            $this->container[0] instanceof Model
+        if ($this->container[0] instanceof Model
             and !method_exists($this->container[0], $name)
             and $this->container[0]->_data->externalKeyExists($name)
         ) {
@@ -133,7 +132,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
         
         // Otherwise...
         $list = [];
-        foreach($this->container as $item) {
+        foreach ($this->container as $item) {
             $value = call_user_func_array([$item, $name], $args);
             if ($value instanceof Collection) {
                 $list = array_merge($list, $value->toArray());
@@ -184,8 +183,8 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
         // If we are dealing with a collection of Model objects then user key/value to extract desired property
         $return = [];
         if ($this->container[0] instanceof Model) {
-            if(!$value) {
-                foreach($this->container as $item) {
+            if (!$value) {
+                foreach ($this->container as $item) {
                     if ($key) {
                         $return[$item->$key] = $item;    
                     } else {
@@ -193,10 +192,8 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                     }
                 }
                 return $return;            
-            }
-            else
-            {
-                foreach($this->container as $item) {
+            } else {
+                foreach ($this->container as $item) {
                     if ($key) {
                         $return[$item->$key] = $item->$value;    
                     } else {
@@ -258,7 +255,8 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
     /**
      * Return a new sorted Collection using provided sort function (through uasort() + strnatcasecmp())
      *
-     * @param callable $key Specify the property on the Collection items to sort by - otherwise, objects will be sorted by their toString representation
+     * @param callable $key Specify the property on the Collection items to sort by -
+     *                      otherwise, objects will be sorted by their toString representation
      * @return self New Collection containing the sorted items
      */
     public function natSort($key = null)
@@ -291,8 +289,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
         $merge = [$this->container];
         
         $count = 1;
-        foreach($args as $array)
-        {
+        foreach ($args as $array) {
             if ($array instanceof Collection) $array = $array->container;
             if (!is_array($array)) throw new \InvalidArgumentException("Orm\Collection->add() expects argument {$count} to be an array");
             $merge[] = $array;
@@ -324,46 +321,70 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
     {
         return new static(array_map($function, $this->container));
     }
+    
+    public function extractAffix($propertyName, $invert = false)
+    {
+        $parts = [];
+        // Look for special non-alphanumeric affixes
+        preg_match('/^([!=<>%#]*)([^!=<>%#]+)([!=<>%#]*)$/', $propertyName, $parts);
+        $affix = $parts[1] ?: $parts[3];
+        // Strip any affix from the property name
+        $property = $parts[2];
+        
+        // Invert affix for not()
+        if ($invert) switch ($affix) {
+            case '=':
+            case '==':
+            default:
+                $affix = '!';
+                break;
+            case '!=':
+            case '!':
+            case '<>':
+                $affix = '=';
+                break;
+            case '<':
+                $affix = '>=';
+                break;
+            case '<=':
+                $affix = '>';
+                break;
+            case '>':
+                $affix = '<=';
+                break;
+            case '>=':
+                $affix = '<';
+                break;
+        }
+        
+        // These affixes only work in SQL land
+        switch ($affix) {
+            case '%':
+            case '!%':
+            case '%!':
+            case '#':
+                throw new Exception\BaseException('UNSUPPORTED_AFFIX_TYPE');
+        }
+        
+        return [$affix, $property];
+    }
 
     // Only keep items that match filter
-    public function filter($filter, $invert_affix = false)
+    public function filter($filter, $invertAffix = false)
     {
         $copy = $this->container;
         
         if (is_array($filter)) {        
             // Loop over items
-            foreach ($copy as $item_key => $item) {
+            foreach ($copy as $itemKey => $item) {
                 // Loop over filters
-                foreach ($filter as $property => $value_list) {
-                    // Look for special non-alphanumeric affixes
-                    preg_match('/^([!=<>%#]*)([^!=<>%#]+)([!=<>%#]*)$/', $property, $parts);
-                    $affix = $parts[1] ?: $parts[3];
-                    // Strip any affix from the property name
-                    $property = $parts[2];
-                    
-                    // Invert affix for not()
-                    if ($invert_affix) switch ($affix) {
-                        case '=': case '==': default:   $affix = '!';  break;
-                        case '!=': case '!': case '<>': $affix = '=';  break;
-                        case '<':                       $affix = '>='; break;
-                        case '<=':                      $affix = '>';  break;
-                        case '>':                       $affix = '<='; break;
-                        case '>=':                      $affix = '<';  break;
-                    }
-                    
-                    // These affixes only work in SQL land
-                    switch ($affix) {
-                        case '%':
-                        case '!%':
-                        case '%!':
-                        case '#':
-                            throw new Exception\BaseException('UNSUPPORTED_AFFIX_TYPE');
-                    }
+                foreach ($filter as $property => $valueList) {
+                    list ($affix, $property) = $this->extractAffix($property, $invertAffix);
                     
                     // Each filter can have several acceptable values -- force single item to array
-                    if (!is_array($value_list)) $value_list = array($value_list);
+                    if (!is_array($valueList)) $valueList = array($valueList);
                     // Check each value - if we find a matching value than skip to the next filter.
-                    foreach ($value_list as $value) {
+                    foreach ($valueList as $value) {
                         // Compare based on affix (else == )
                         switch ($affix) {
                             
@@ -377,7 +398,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                             case '!=': case '!': case '<>':
                                 if ($item->$property == $value) {
                                     // Found a negative match, remove this item and move on to next property
-                                    unset($copy[$item_key]);
+                                    unset($copy[$itemKey]);
                                     continue 4; // Back to foreach $copy
                                 }
                             break;
@@ -385,7 +406,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                             case '>':
                                 if ($item->$property <= $value) {
                                     // Found a negative match, remove this item and move on to next property
-                                    unset($copy[$item_key]);
+                                    unset($copy[$itemKey]);
                                     continue 4; // Back to foreach $copy
                                 }
                             break;
@@ -393,7 +414,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                             case '>=':
                                 if ($item->$property < $value) {
                                     // Found a negative match, remove this item and move on to next property
-                                    unset($copy[$item_key]);
+                                    unset($copy[$itemKey]);
                                     continue 4; // Back to foreach $copy
                                 }
                             break;
@@ -401,7 +422,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                             case '<':
                                 if ($item->$property >= $value) {
                                     // Found a negative match, remove this item and move on to next property
-                                    unset($copy[$item_key]);
+                                    unset($copy[$itemKey]);
                                     continue 4; // Back to foreach $copy
                                 }
                             break;
@@ -409,7 +430,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                             case '<=':
                                 if ($item->$property > $value) {
                                     // Found a negative match, remove this item and move on to next property
-                                    unset($copy[$item_key]);
+                                    unset($copy[$itemKey]);
                                     continue 4; // Back to foreach $copy
                                 }
                             break;
@@ -418,26 +439,34 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                     
                     switch ($affix) {
                         // Negative cases
-                        case '=': case '==': default:
+                        case '=':
+                        case '==':
+                        default:
                             // Failed to break loop, so the current value matches none of the
                             // values for the current filter, therefore remove the item
-                            unset($copy[$item_key]);
+                            unset($copy[$itemKey]);
                             continue 3; // Back to foreach $copy
                         
                         // Positive cases
-                        case '<': case '<=': case '>': case '>=': case '!=': case '!': case '<>':
+                        case '<':
+                        case '<=':
+                        case '>':
+                        case '>=':
+                        case '!=':
+                        case '!':
+                        case '<>':
                             // Failed to break oop, so the current value passes.
                             // No action, keep this key, continue to next filter
                             continue 2; // Back to foreach $filter
                     }
                 }
             }
-        } elseif(is_callable($filter)) {
+        } elseif (is_callable($filter)) {
             // Loop over items
-            foreach ($copy as $item_key => $item) {
+            foreach ($copy as $itemKey => $item) {
                 // Use the closure/callback to filter the item
                 if (!$filter($item)) {
-                    unset($copy[$item_key]);
+                    unset($copy[$itemKey]);
                 }
             }            
         } else {
