@@ -26,7 +26,6 @@ class Model implements \JsonSerializable
     // Flags
     const COUNT_ONLY = 1;
     
-    public static $dbconnection;    // Override database connection associated with this class
     public static $tablename;       // Override table associated with this class
     protected static $instance;     // An internal store of already created objects so that objects for each row only get created once
     
@@ -64,8 +63,6 @@ class Model implements \JsonSerializable
      */
     public static function getConnection()
     {
-        if (static::$dbconnection) return static::$dbconnection;
-        
         $class = get_called_class();
         $namespace = substr($class, 0, strrpos($class, '\\'));
         if (key_exists($namespace, Schema::$namespaces)) return Schema::$namespaces[$namespace];

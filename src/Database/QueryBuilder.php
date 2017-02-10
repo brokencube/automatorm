@@ -380,8 +380,7 @@ class QueryBuilder
         
         // Special cases for null values in where clause
         if (is_null($value)) {
-            if ($affix == '!') return [$column, "is not null", null, null];
-            return [$column, "is null", null, null];
+            return [$column, $affix == '!' ? "is not null" : "is null", null, null];
         }
         
         // Special case for in clauses
@@ -389,11 +388,7 @@ class QueryBuilder
             // Special case for empty in clauses
             if (!count($value)) return $affix == '!' ? [null, null, null, "true"] : [null, null, null, "false"];
             
-            if ($affix == '!') {
-                return [$column, "not in", $value, null];
-            } else {
-                return [$column, "in", $value, null];
-            }
+            return [$column, $affix == '!' ? "not in" : "in", $value, null];
         }
         
         // Special case for # "count" clause
@@ -405,16 +400,24 @@ class QueryBuilder
         }
         
         switch ($affix) {
-            case '=':   $comparitor = '=';        break;
-            case '!':   $comparitor = '!=';       break;
-            case '!=':  $comparitor = '!=';       break;
-            case '>':   $comparitor = '>';        break;
-            case '<':   $comparitor = '<';        break;
-            case '>=':  $comparitor = '>=';       break;
-            case '<=':  $comparitor = '<=';       break;
-            case '%':   $comparitor = 'like';     break;
-            case '!%':  $comparitor = 'not like'; break;
-            case '%!':  $comparitor = 'not like'; break;                    
+            case '=':
+            case '!=':
+            case '>':
+            case '<':
+            case '>=':
+            case '<=':
+                $comparitor = $affix;
+                break;
+            case '!':
+                $comparitor = '!=';
+                break;
+            case '%':
+                $comparitor = 'like';
+                break;
+            case '!%':
+            case '%!':
+                $comparitor = 'not like';
+                break;
         }
         
         return [$column, $comparitor, $value, $special];
@@ -431,8 +434,7 @@ class QueryBuilder
         $this->data = [];
         
         $table = $this->resolveTable();
-        switch ($this->type)
-        {
+        switch ($this->type) {
             case 'count':
                 $columns = $this->resolveCount();
                 $join = $this->resolveJoins();

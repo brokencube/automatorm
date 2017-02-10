@@ -5,12 +5,12 @@ class Time extends \DateTime
 {
     const MYSQL_DATE = 'Y-m-d H:i:s';
     public static $display_timezone = 'UTC'; // Default to UTC
-	
-    public function __construct($time = 'now', \DateTimeZone $root_timezone = null)
+    
+    public function __construct($time = 'now', \DateTimeZone $rootTimezone = null)
     {
         // Set root timezone to UTC - all data for objects should be stored in UTC
-        if (!$root_timezone) $root_timezone = new \DateTimeZone('UTC');
-        parent::__construct($time, $root_timezone);
+        if (!$rootTimezone) $rootTimezone = new \DateTimeZone('UTC');
+        parent::__construct($time, $rootTimezone);
         
         // Move date to display timezone for display
         $this->setTimezone(new \DateTimeZone(self::$display_timezone));
@@ -19,9 +19,9 @@ class Time extends \DateTime
     public function __toString()
     {
         // Format date (in display timezone)
-        return $this->format(self::MYSQL_DATE);	
+        return $this->format(self::MYSQL_DATE);    
     }
-	
+    
     public function mysql()
     {
         // Store current timezone and set to UTC
@@ -36,4 +36,3 @@ class Time extends \DateTime
         return $datetime;
     }
 }
-
