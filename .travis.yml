@@ -4,4 +4,4 @@ php:
 - 7.0
 script: 
 - composer install
-- phpunit
+- vendor/bin/phpunit
