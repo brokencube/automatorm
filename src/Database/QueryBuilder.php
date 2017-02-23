@@ -457,21 +457,21 @@ class QueryBuilder
             
             case 'insert':
                 $join = $this->resolveJoins();
-                $data = $this->resolveColumnData();
+                $data = $this->resolveInsertColumnData();
                 $limit = $this->resolveLimit();
                 
                 return ["INSERT INTO $table{$join}{$data}{$limit}", $this->data];
 
             case 'insertignore':
                 $join = $this->resolveJoins();
-                $data = $this->resolveColumnData();
+                $data = $this->resolveInsertColumnData();
                 $limit = $this->resolveLimit();
                 
                 return ["INSERT IGNORE INTO $table{$join}{$data}{$limit}", $this->data];
 
             case 'update':
                 $join = $this->resolveJoins();
-                $data = $this->resolveColumnData();
+                $data = $this->resolveUpdateColumnData();
                 $where = $this->resolveWhere();
                 $limit = $this->resolveLimit();
                 
@@ -581,7 +581,7 @@ class QueryBuilder
         }
     }
     
-    public function resolveColumnData()
+    public function resolveUpdateColumnData()
     {
         $column = [];
         foreach ($this->set as $col => $value) {
@@ -593,6 +593,27 @@ class QueryBuilder
             }
         }
         return ' SET ' . implode(', ', $column);
+    }
+
+    public function resolveInsertColumnData()
+    {
+        $column = [];
+        $value = [];
+        
+        foreach ($this->set as $col => $val) {
+            $column[] = $this->escapeColumn($col);
+        }
+        
+        foreach ($this->set as $val) {
+            
+            if ($val instanceof SqlString) {
+                $value[] = (string) $val;
+            } else {
+                $value[] = '?';
+                $this->data[] = $this->resolveValue($val);
+            }
+        }
+        return ' (' . implode(', ', $column) . ') VALUES (' . implode(', ', $value) . ')';
     }
     
     public function resolveCount()
