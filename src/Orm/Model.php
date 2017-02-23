@@ -214,11 +214,11 @@ class Model implements \JsonSerializable
                 if (is_array($options['sort'])) {
                     foreach ($options['sort'] as $sortby)
                     {
-                        list ($sort, $dir) = explode(' ', $sortby, 2);
+                        list ($sort, $dir) = explode(' ', $sortby, 3);
                         $build->sortBy($sort, $dir);
                     }
                 } else {
-                    list ($sort, $dir) = explode(' ', $options['sort'], 2);
+                    list ($sort, $dir) = explode(' ', $options['sort'], 3);
                     $build->sortBy($sort, $dir);
                 }
             }
