@@ -466,6 +466,6 @@ class Model implements \JsonSerializable
     public static function getNamespace()
     {
         $class = get_called_class();
-        return substr($class, strrpos($class, '\\'));
+        return substr($class, 0, strrpos($class, '\\'));
     }
 }
