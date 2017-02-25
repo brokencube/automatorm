@@ -220,7 +220,7 @@ class Data
                 ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"])
                 ->joinWhere($where);
                 
-            $query = new Query($proto->__schema);
+            $query = new Query($proto->__schema->database);
             list($raw) = $query->sql($q)->execute();
             
             // Rearrange the list of ids into a flat array and an id grouped array
@@ -318,7 +318,7 @@ class Data
                 ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"])
                 ->joinWhere($where);
                 
-            $query = new Query($proto->__schema);
+            $query = new Query($proto->__schema->database);
             list($raw) = $query->sql($q)->execute();
 
             // Rearrange the list of ids into a flat array and an id grouped array
@@ -415,7 +415,7 @@ class Data
                 ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"])
                 ->where($clauses);
                 
-            $query = new Query($this->__database);
+            $query = new Query($this->__schema->database);
             list($raw) = $query->sql($q)->execute();
 
             // Rearrange the list of ids into a flat array
@@ -499,7 +499,7 @@ class Data
                 ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"])
                 ->where($clauses);
                 
-            $query = new Query($this->__database);
+            $query = new Query($this->__schema->database);
             list($raw) = $query->sql($q)->execute();
             
             // Rearrange the list of ids into a flat array
