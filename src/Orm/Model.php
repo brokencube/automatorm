@@ -287,6 +287,12 @@ class Model implements \JsonSerializable
         }
         static::$instance = [];
     }
+
+    public static function getNamespace()
+    {
+        $class = get_called_class();
+        return substr($class, 0, strrpos($class, '\\'));
+    }
     
     ///////////////////////////////////
     /*        OBJECT METHODS         */
@@ -294,7 +300,7 @@ class Model implements \JsonSerializable
     
     protected $id;                // Id of the table row this object represents
     protected $table;             // Name of db table relating to this object
-    protected $database;          // Name of db connection relating to this object
+    protected $namespace;         // Namespace (incase this is a pure Model object)
 
     protected $_data;             // Container for the Model_Data object for this row. Used for both internal and external __get access.
     protected $cache = false;     // Retain $_db the next time this item is serialised.
@@ -311,7 +317,7 @@ class Model implements \JsonSerializable
         $this->_data = $data;
         $this->id = $data->id;
         $this->table = $data->getTable();
-        $this->database = $data->getDatabase();
+        $this->namespace = $data->getNamespace();
     }
 
     // Dynamic object properties - Prefer properties set on the model object over column data from the db (Model_Data object)
@@ -368,7 +374,7 @@ class Model implements \JsonSerializable
     
     public function __sleep()
     {
-        $properties = ['id', 'table', 'database'];
+        $properties = ['id', 'table', 'namespace'];
         if ($this->cache) $properties[] = '_data';
         
         return $properties;
@@ -378,7 +384,7 @@ class Model implements \JsonSerializable
     public function __wakeup()
     {
         // Store the object in the object cache
-        Model::$instance[$this->database][$this->table][strtolower(get_called_class())][$this->id] = $this;
+        Model::$instance[$namespace][$this->table][strtolower(get_called_class())][$this->id] = $this;
         
         if (!$this->_data) {
             // If we don't have a data object, then this object wasn't cached, regenerate the Data object.
@@ -442,7 +448,7 @@ class Model implements \JsonSerializable
     // Mostly used for updating foreign key results after updates
     final public function dataRefresh()
     {
-        $schema = Schema::get(static::getNamespace());
+        $schema = Schema::get($this->namespace);
         list($data) = Model::factoryData(['id' => $this->id], $this->table, $schema);
         
         // Database data object unique to this object
@@ -461,11 +467,5 @@ class Model implements \JsonSerializable
     {
         $this->cache = $bool;
         return $this;
-    }
-    
-    public static function getNamespace()
-    {
-        $class = get_called_class();
-        return substr($class, 0, strrpos($class, '\\'));
     }
 }

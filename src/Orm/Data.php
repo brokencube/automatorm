@@ -667,6 +667,11 @@ class Data
         return $this->__schema;
     }
     
+    public function getNamespace()
+    {
+        return $this->__schema->namespace;
+    }
+    
     public function externalKeyExists($var)
     {
         if (key_exists($var, (array) $this->__model['one-to-one'])) return 'one-to-one';
