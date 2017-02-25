@@ -35,7 +35,7 @@ class Query implements \Psr\Log\LoggerAwareInterface
     // Create a new query container
     public function __construct($connection = 'default', $sql = null)
     {
-        if ($connection instanceof Automatorm\Interfaces\Connection) {
+        if ($connection instanceof \Automatorm\Interfaces\Connection) {
             $this->connection = $connection;
         } elseif (is_string($connection)) {
             $this->connection = Connection::get($connection);
