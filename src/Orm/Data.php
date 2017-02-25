@@ -12,8 +12,8 @@ class Data
 {
     protected $__data = array();     // Data from columns on this table
     protected $__external = array(); // Links to foreign key objects
-    protected $__database;           // Database this data is associated with
     protected $__schema;             // Schema object for this database
+    protected $__namespace;          // Namespace of the Model for this data - used to find Schema again
     protected $__table;              // Class this data is associated with
     protected $__model;              // Fragment of Schema object for this table
     protected $__locked = true;      // Can we use __set() - for updates/inserts
@@ -47,9 +47,9 @@ class Data
     
     public function __construct(array $data, $table, Schema $schema, $locked = true, $new = false)
     {
-        $this->__database = $schema->database;
         $this->__table = $table;
         $this->__schema = $schema;
+        $this->__namespace = $schema->namespace;
         $this->__model = $schema->getTable($table);
         $this->__locked = $locked;
         $this->__new = $new;
@@ -465,7 +465,7 @@ class Data
             $column = $this->__model['one-to-many'][$var]['column_name'];
             
             // Use the model factory to find the relevant items
-            list($data) = Model::factoryDataCount($where + [$column => $id], $table, $this->__database);
+            list($data) = Model::factoryDataCount($where + [$column => $id], $table, $this->__schema->database);
             return $data['count'];
         }
         
@@ -632,7 +632,7 @@ class Data
             $mode = 'update';
         }
         
-        $id = $this->__database->getDataAccessor()->commit(
+        $id = $this->__schema->database->getDataAccessor()->commit(
             $mode,
             $this->__table,
             $this->__data['id'],
@@ -654,7 +654,7 @@ class Data
     
     public function getDatabase()
     {
-        return $this->__database;
+        return $this->__schema->database;
     }
     
     public function getModel()
@@ -688,5 +688,24 @@ class Data
         unset($return['__schema']);
         unset($return['__model']);
         return $return;
-    }    
+    }
+    
+    public function __sleep()
+    {
+        return [
+            '__data',
+            '__namespace',
+            '__table',
+            '__locked',
+            '__new',
+            '__delete'
+        ];
+    }
+    
+    public function __wakeup()
+    {
+        $this->__external = [];
+        $this->__schema = Schema::get($this->__namespace);
+        $this->__model = $this->__schema->getTable($this->__table);
+    }
 }
