@@ -113,7 +113,7 @@ class DataAccess
         return $data;
     }
     
-    public function getM2MData($pivot_table, $pivot, $ids, $joinwhere = null, $where = null)
+    public function getM2MData($pivot_tablename, $pivot, $ids, $joinwhere = null, $where = null)
     {
         $query = QueryBuilder::select([$pivot_tablename => 'pivot'], ['pivot.*'])
             ->where(['`pivot`.'.$pivot['id'] => $ids])
