@@ -34,7 +34,7 @@ class Schema
     public static function generate($connection, $namespace = 'models', $cachebust = false)
     {
         if (!$connection instanceof Automatorm\Interfaces\Connection) {
-            $connection = Connection::get($database);
+            $connection = Connection::get($connection);
         }
         
         // Register namespace with connection
