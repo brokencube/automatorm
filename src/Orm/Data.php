@@ -209,7 +209,7 @@ class Data
             $pivot_schema = $proto->__schema->getTable($pivot['pivot']);
             $pivot_tablename = $pivot_schema['table_name'];
             
-            $raw = $this->getDataAccessor()->getM2MData(
+            $raw = $proto->getDataAccessor()->getM2MData(
                 $pivot_tablename,
                 $pivot,
                 $ids,
@@ -305,7 +305,7 @@ class Data
             $pivot_schema = $proto->__schema->getTable($pivot['pivot']);
             $pivot_tablename = $pivot_schema['table_name'];
             
-            $raw = $this->getDataAccessor()->getM2MData(
+            $raw = $proto->getDataAccessor()->getM2MData(
                 $pivot_tablename,
                 $pivot,
                 $ids,
