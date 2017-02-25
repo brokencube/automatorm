@@ -403,7 +403,7 @@ class Data
             $raw = $this->getDataAccessor()->getM2MData(
                 $pivot_tablename,
                 $pivot,
-                $ids,
+                $this->__data['id'],
                 null,
                 $clauses
             );
@@ -486,7 +486,7 @@ class Data
             $raw = $this->getDataAccessor()->getM2MData(
                 $pivot_tablename,
                 $pivot,
-                $ids,
+                $this->__data['id'],
                 null,
                 $clauses
             );
