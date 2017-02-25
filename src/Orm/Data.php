@@ -455,7 +455,7 @@ class Data
             $column = $this->__model['one-to-many'][$var]['column_name'];
             
             // Use the model factory to find the relevant items
-            list($data) = Model::factoryDataCount($where + [$column => $id], $table, $this->__schema->database);
+            list($data) = Model::factoryDataCount($where + [$column => $id], $table, $this->__schema);
             return $data['count'];
         }
         
