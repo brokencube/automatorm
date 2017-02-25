@@ -153,7 +153,7 @@ class Model implements \JsonSerializable
             }
             
             /* Cache miss, so create new object */
-            return static::factory(['id' => $ids], $classOrTable, $namespace, ['limit' => 1], true);
+            return static::factory(['id' => $ids], $classOrTable, $schema, ['limit' => 1], true);
         
         // Else if we have an array of ids
         } elseif (is_array($ids)) {
@@ -180,7 +180,7 @@ class Model implements \JsonSerializable
             // For any ids we failed to pull out the cache, pull them from the database instead
             if (count($ids) > 0)
             {
-                $newresults = static::factory(['id' => $ids], $classOrTable, $namespace);
+                $newresults = static::factory(['id' => $ids], $classOrTable, $schema);
                 $collection = $collection->merge($newresults);
             }
             

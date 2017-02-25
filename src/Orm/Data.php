@@ -378,7 +378,7 @@ class Data
             $column = $this->__model['one-to-many'][$var]['column_name'];
             
             // Use the model factory to find the relevant items
-            $results = Model::factory($where + [$column => $id], $table, $this->__database);
+            $results = Model::factory($where + [$column => $id], $table, $this->__schema);
             
             if (empty($where)) $this->__external[$var] = $results;
             
