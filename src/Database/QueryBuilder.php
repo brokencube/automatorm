@@ -41,14 +41,11 @@ class QueryBuilder
      */
     public static function select($table, array $columns = ['*'])
     {
-        $query = new static('select');
-        $query->columns = $columns;
-        if ($table instanceof QueryBuilder) {
-            $query->tableSubquery = $table->resolve();
-        } else {
-            $query->table = $table;
-        }
+        $query = new static();
+        $query->type('select');
+        $query->table($table);
         
+        $query->columns = $columns;
         return $query;
     }
 
@@ -61,14 +58,11 @@ class QueryBuilder
      */
     public static function delete($table, $where = [])
     {
-        $query = new static('delete');
-        $query->where($where);
-        if ($table instanceof QueryBuilder) {
-            $query->tableSubquery = $table->resolve();
-        } else {
-            $query->table = $table;
-        }
+        $query = new static();
+        $query->type('delete');
+        $query->table($table);
         
+        $query->where($where);
         return $query;
     }
 
@@ -81,14 +75,11 @@ class QueryBuilder
      */
     public static function count($table, $column = '*')
     {
-        $query = new static('count');
-        $query->count = $column;
-        if ($table instanceof QueryBuilder) {
-            $query->tableSubquery = $table->resolve();
-        } else {
-            $query->table = $table;
-        }
+        $query = new static();
+        $query->type('count');
+        $query->table($table);
         
+        $query->count = $column;
         return $query;
     }
 
@@ -101,14 +92,11 @@ class QueryBuilder
      */
     public static function insert($table, array $columndata = [], $insertIgnore = false)
     {
-        $query = $insertIgnore ? new static ('insertignore') : new static('insert');
-        $query->set = $columndata;
-        if ($table instanceof QueryBuilder) {
-            $query->tableSubquery = $table->resolve();
-        } else {
-            $query->table = $table;
-        }
+        $query = new static();
+        $query->type($insertIgnore ? 'insertignore' : 'insert');
+        $query->table($table);
         
+        $query->set = $columndata;
         return $query;
     }
 
@@ -121,14 +109,11 @@ class QueryBuilder
      */
     public static function update($table, array $columndata = [])
     {
-        $query = new static('update');
+        $query = new static();
+        $query->type('update');
+        $query->table($table);
+        
         $query->set = $columndata;
-        if ($table instanceof QueryBuilder) {
-            $query->tableSubquery = $table->resolve();
-        } else {
-            $query->table = $table;
-        }
-
         return $query;        
     }
 
@@ -141,21 +126,11 @@ class QueryBuilder
      */
     public static function replace($table, array $columndata = [])
     {
-        $query = new static('replace');
-        if ($table instanceof QueryBuilder) {
-            $query->tableSubquery = $table->resolve();
-        } else {
-            $query->table = $table;
-        }
-
+        $query = new static();
+        $query->type('replace');
+        $query->table($table);
         return $query;                
     }
-    
-    protected function __construct($type)
-    {
-        $this->type = $type; 
-    }
-
     
     // BUILDER FUNCTIONS
     /**
@@ -164,6 +139,34 @@ class QueryBuilder
      * @param mixed[] $columns List of select clauses/columns
      * @return self
      */
+    public function type($type)
+    {
+        // Whitelist
+        switch ($type) {
+            case 'select':
+            case 'replace':
+            case 'update':
+            case 'insert':
+            case 'count':
+            case 'delete':
+            case 'insertignore':
+                $this->type = $type;
+                break;
+            
+            default:
+                throw new Exception\QueryBuilder('Unknown Query Type');
+        }
+    }
+    
+    public function table($table)
+    {
+        if ($table instanceof QueryBuilder) {
+            $this->tableSubquery = $table->resolve();
+        } else {
+            $this->table = $table;
+        }        
+    }
+    
     public function columns(array $columns)
     {
         $this->columns = $columns;

@@ -139,7 +139,7 @@ class Data
             
             /* Call Tablename::factory(foreign key id) to get the object we want */
             $table = $proto->__model['one-to-one'][$var];
-            $results = Model::factoryObjectCache($ids, $table, $proto->__database);
+            $results = Model::factoryObjectCache($ids, $table, $proto->__schema);
             
             return $results;
         }
@@ -154,19 +154,19 @@ class Data
 
             if (!$where)
             {
-                $results = Model::factoryObjectCache($ids, $table, $proto->__database);
+                $results = Model::factoryObjectCache($ids, $table, $proto->__schema);
                 
                 // Store the object results on the relevant objects
                 foreach ($collection as $obj)
                 {
-                    $obj->_data->__external[$var] = Model::factoryObjectCache($obj->{$var . '_id'}, $table, $proto->__database);
+                    $obj->_data->__external[$var] = Model::factoryObjectCache($obj->{$var . '_id'}, $table, $proto->__schema);
                 }
                 
                 return $results;
             }
             else
             {
-                $results = Model::factory($where + ['id' => $ids], $table, $proto->__database);
+                $results = Model::factory($where + ['id' => $ids], $table, $proto->__schema);
                 
                 return $results;
             }
@@ -181,7 +181,7 @@ class Data
             $ids = $collection->id->toArray();
             
             // Use the model factory to find the relevant items
-            $results = Model::factory($where + [$column => $ids], $table, $proto->__database);
+            $results = Model::factory($where + [$column => $ids], $table, $proto->__schema);
             
             // If we didn't use a filter, store the relevant results in each object
             if (!$where)
@@ -220,7 +220,7 @@ class Data
                 ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"])
                 ->joinWhere($where);
                 
-            $query = new Query($proto->__database);
+            $query = new Query($proto->__schema);
             list($raw) = $query->sql($q)->execute();
             
             // Rearrange the list of ids into a flat array and an id grouped array
@@ -236,7 +236,7 @@ class Data
             $flat_ids = array_unique($flat_ids);
             
             // Use the model factory to retrieve the objects from the list of ids (using cache first)
-            $results = Model::factoryObjectCache($flat_ids, $pivot['connections'][0]['table'], $proto->__database);
+            $results = Model::factoryObjectCache($flat_ids, $pivot['connections'][0]['table'], $proto->__schema);
             
             // If we don't have a filter ($where), then we can split up the results per object and store the
             // results relevant to the result on that object. The calls to Model::factoryObjectCache below will never hit the database, because
@@ -245,7 +245,7 @@ class Data
             {
                 foreach ($collection as $obj)
                 {
-                    $data = Model::factoryObjectCache($grouped_ids[$obj->id], $pivot['connections'][0]['table'], $proto->__database);
+                    $data = Model::factoryObjectCache($grouped_ids[$obj->id], $pivot['connections'][0]['table'], $proto->__schema);
                     $obj->_data->__external[$var] = $data ?: new Collection;
                 }
             }
@@ -270,7 +270,7 @@ class Data
             /* Call Tablename::factory(foreign key id) to get the object we want */
             $table = $proto->__model['many-to-one'][$var];
             
-            list($data) = Model::factoryDataCount(['id' => $ids] + $where, $table, $proto->__database);
+            list($data) = Model::factoryDataCount(['id' => $ids] + $where, $table, $proto->__schema);
             return $data['count'];
         }
         
@@ -281,7 +281,7 @@ class Data
             
             /* Call Tablename::factory(foreign key id) to get the object we want */
             $table = $proto->__model['many-to-one'][$var];
-            list($data) = Model::factoryDataCount(['id' => $ids] + $where, $table, $proto->__database);
+            list($data) = Model::factoryDataCount(['id' => $ids] + $where, $table, $proto->__schema);
             return $data['count'];
         }
         
@@ -294,7 +294,7 @@ class Data
             $ids = $collection->id->toArray();
             
             // Use the model factory to find the relevant items
-            list($data) = Model::factoryDataCount([$column => $ids] + $where, $table, $proto->__database);
+            list($data) = Model::factoryDataCount([$column => $ids] + $where, $table, $proto->__schema);
             return $data['count'];
         }
         
@@ -318,7 +318,7 @@ class Data
                 ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"])
                 ->joinWhere($where);
                 
-            $query = new Query($proto->__database);
+            $query = new Query($proto->__schema);
             list($raw) = $query->sql($q)->execute();
 
             // Rearrange the list of ids into a flat array and an id grouped array
@@ -332,7 +332,7 @@ class Data
             $flat_ids = array_unique($flat_ids);
             
             // Use the model factory to retrieve the objects from the list of ids (using cache first)
-            list($data) = Model::factoryDataCount(['id' => $flat_ids] + $where, $pivot['connections'][0]['table'], $proto->__database);
+            list($data) = Model::factoryDataCount(['id' => $flat_ids] + $where, $pivot['connections'][0]['table'], $proto->__schema);
             return $data['count'];
         }        
     }
@@ -358,7 +358,7 @@ class Data
         if (key_exists($var, (array) $this->__model['one-to-one'])) {        
             /* Call Tablename::factory(foreign key id) to get the object we want */
             $table = $this->__model['one-to-one'][$var];
-            $this->__external[$var] = Model::factoryObjectCache($id, $table, $this->__database);
+            $this->__external[$var] = Model::factoryObjectCache($id, $table, $this->__schema);
             
             return $this->__external[$var];
         }
@@ -366,7 +366,7 @@ class Data
         if (key_exists($var, (array) $this->__model['many-to-one'])) {        
             /* Call Tablename::factory(foreign key id) to get the object we want */
             $table = $this->__model['many-to-one'][$var];
-            $this->__external[$var] = Model::factoryObjectCache($this->__data[$var . '_id'], $table, $this->__database);
+            $this->__external[$var] = Model::factoryObjectCache($this->__data[$var . '_id'], $table, $this->__schema);
             
             return $this->__external[$var];
         }
@@ -423,7 +423,7 @@ class Data
             foreach($raw as $raw_id) $id[] = $raw_id[$pivot['connections'][0]['column']];
             
             // Use the model factory to retrieve the objects from the list of ids (using cache first)
-            $results = Model::factoryObjectCache($id, $pivot['connections'][0]['table'], $this->__database);
+            $results = Model::factoryObjectCache($id, $pivot['connections'][0]['table'], $this->__schema);
             
             if (!$where) $this->__external[$var] = $results;
             
@@ -446,7 +446,7 @@ class Data
         if (key_exists($var, (array) $this->__model['one-to-one'])) {
             /* Call Tablename::factory(foreign key id) to get the object we want */
             $table = $this->__model['one-to-one'][$var];
-            $this->__external[$var] = Model::factoryObjectCache($id, $table, $this->__database);
+            $this->__external[$var] = Model::factoryObjectCache($id, $table, $this->__schema);
             return $this->__external[$var] ? 1 : 0;
         }
         
@@ -454,7 +454,7 @@ class Data
         if (key_exists($var, (array) $this->__model['many-to-one'])) {        
             /* Call Tablename::factory(foreign key id) to get the object we want */
             $table = $this->__model['many-to-one'][$var];
-            $this->__external[$var] = Model::factoryObjectCache($this->__data[$var . '_id'], $table, $this->__database);
+            $this->__external[$var] = Model::factoryObjectCache($this->__data[$var . '_id'], $table, $this->__schema);
             return $this->__external[$var] ? 1 : 0;
         }
         
@@ -624,72 +624,28 @@ class Data
     
     public function commit()
     {
-        // Create a new query
-        $query = new Query($this->__database);        
-        $this->buildQuery($query);
-        $values = $query->execute(true);
-        
-        // Don't return anything if we just deleted this row.
-        if ($this->__delete) {
-            return null;  
-        } 
-
-        // Get the id we just inserted
-        if ($this->__new) {
-            $this->__new = false;
-            return $query->insertId(0);
-        }
-        
-        // Else return the esiting id.
-        return $this->__data['id'];
-    }
-    
-    protected function buildQuery(&$query)
-    {
-        // [FIXME] [NikB] Why did I split this back out to update/insert rather than replace?
-        // Log says "Fixed major overwriting problem in commit()" but what was getting overwritten?
-        
-        // Insert/Update the data, and store the insert id into a variable
-        if ($this->__delete) {
-            $q = QueryBuilder::delete($this->__table, ['id' => $this->__data['id']]);
-            $query->sql($q);
-        } elseif ($this->__new) {
-            $q = QueryBuilder::insert($this->__table, $this->__data);
-            $query->sql($q)->sql("SELECT last_insert_id() into @id");
+        if ($data->__delete) {
+            $mode = 'delete';
+        } elseif ($data->__new) {
+            $mode = 'insert';
         } else {
-            $q = QueryBuilder::update($this->__table, $this->__data)->where(['id' => $this->__data['id']]);
-            $query->sql($q)->sql("SELECT ".$this->__data['id']." into @id");
+            $mode = 'update';
         }
         
-        if (!$this->__delete) {
-            $origin_id = new SqlString('@id');
-            
-            // Foreign tables
-            foreach ($this->__external as $property_name => $value) {
-                // Skip property if this isn't an M-M table (M-1 and 1-M tables are dealt with in other ways)
-                if (!$pivot = $this->__model['many-to-many'][$property_name]) continue;
-                
-                // We can only do updates support simple connection access for 2 key pivots.
-                if (count($pivot['connections']) != 1) continue;
-                
-                // Get the table name of the pivot table for this property
-                $table = Schema::underscoreCase($pivot['pivot']);
-                
-                // Clear out any existing data for this object - this is safe because we are in an atomic transaction.
-                $query->sql("Delete from $table where {$pivot['id']} = @id");
-                
-                // Loops through the list of objects to link to this table
-                foreach ($value as $object) {
-                    $newdata = [
-                        $pivot['id'] => $origin_id,      // Id of this object
-                        $pivot['connections'][0]['column'] => $object->id  // Id of object linked to this object
-                    ];
-                    $query->sql(QueryBuilder::insert($table, $newdata, true));
-                }
-            }
-        }
+        $id = $this->__database->getDataAccessor()->commit(
+            $mode,
+            $this->__table,
+            $this->__data['id'],
+            $this->__data,
+            $this->__external,
+            $this->__model
+        );
+        
+        $this->__new = false;
+        
+        return $id;
     }
-    
+  
     // Get the table that this object is attached to.
     public function getTable()
     {

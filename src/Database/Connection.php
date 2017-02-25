@@ -2,8 +2,9 @@
 namespace Automatorm\Database;
 
 use Automatorm\Exception as Ex;
+use Automatorm\Orm\DataAccess;
 
-class Connection implements \Psr\Log\LoggerAwareInterface
+class Connection implements \Psr\Log\LoggerAwareInterface, Automatorm\Interfaces\Connection
 {
     use \Psr\Log\LoggerAwareTrait;
     public function getLogger()
@@ -91,11 +92,23 @@ class Connection implements \Psr\Log\LoggerAwareInterface
         throw new Ex\Database("Not enough details to construct Database object", $details);
     }
     
+    /**
+     * Clear connection.
+     * A call to connect() after this call will return a new PDO instance.
+     *
+     * @return null
+     */
     public function disconnect()
     {
         unset($this->connection);
     }
-    
+
+    /**
+     * Return a PDO instance based on the supplied connection details.
+     * This object should always return the same PDO instance until ->disconnect() is called.
+     *
+     * @return PDO Instance of PDO connection
+     */    
     public function connect()
     {
         if ($this->connection) return $this->connection;
@@ -114,5 +127,10 @@ class Connection implements \Psr\Log\LoggerAwareInterface
         }
         
         return $this->connection;
+    }
+    
+    public function getDataAccessor()
+    {
+        return new DataAccess($this);
     }
 }

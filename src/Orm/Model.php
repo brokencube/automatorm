@@ -95,17 +95,15 @@ class Model implements \JsonSerializable
     
     /* FACTORY METHODS */    
     // Build an appropriate Model object based on id and class/table name
-    final public static function factory($where, $classOrTable_name = null, $dbconnection = null, array $options = null, $singleResult = false)
+    final public static function factory($where, $classOrTable_name = null, $schema = null, array $options = null, $singleResult = false)
     {
-        // Some defaults
-        if (!$dbconnection) $dbconnection = static::getConnection();
-        
         // Figure out the base class and table we need based on current context
-        $schema = Schema::get($dbconnection);
+        $schema = $schema ?: Schema::get(__NAMESPACE__);
         list($class, $table) = $schema->guessContext($classOrTable_name ?: get_called_class());
+        $namespace = $schema->namespace;
         
         // Get data from database        
-        $data = Model::factoryData($where, $table, $dbconnection, $options);
+        $data = Model::factoryData($where, $table, $schema, $options);
         
         // If we're in one object mode, and have no data, return null rather than an empty Model_Collection!
         if ($singleResult and !$data) return null;
@@ -114,7 +112,7 @@ class Model implements \JsonSerializable
         $collection = new Collection();
         
         foreach ($data as $row) {
-            if (!$obj = Model::$instance[$dbconnection][$table][$row['id']]) {
+            if (!$obj = Model::$instance[$namespace][$table][$row['id']]) {
                 // Database data object unique to this object
                 $data_obj = Data::make($row, $table, $schema);
                 
@@ -122,7 +120,7 @@ class Model implements \JsonSerializable
                 $obj = new $class($data_obj);
                 
                 // Store it in the object cache.        
-                Model::$instance[$dbconnection][$table][$row['id']] = $obj;
+                Model::$instance[$namespace][$table][$row['id']] = $obj;
                 
                 // Call Model objects _init() function - this is to avoid recursion issues with object's natural constructor and the cache above
                 $obj->_init();
@@ -139,23 +137,23 @@ class Model implements \JsonSerializable
         return $collection;
     }
     
-    final public static function factoryObjectCache($ids, $classOrTable = null, $dbconnection = null, $forceRefresh = false)
+    final public static function factoryObjectCache($ids, $classOrTable = null, Schema $schema = null, $forceRefresh = false)
     {
-        if (!$dbconnection) $dbconnection = static::getConnection();
-        $schema = Schema::get($dbconnection);
+        $schema = $schema ?: Schema::get(__NAMESPACE__);
         list($class, $table) = $schema->guessContext($classOrTable ?: get_called_class());
-
+        $namespace = $schema->namespace;
+        
         // If we have a single id
         if (is_numeric($ids)) {
             if (!$forceRefresh) {
                 // Check Model object cache
-                if (isset(Model::$instance[$dbconnection][$table][$ids])) {
-                    return Model::$instance[$dbconnection][$table][$ids];
+                if (isset(Model::$instance[$namespace][$table][$ids])) {
+                    return Model::$instance[$namespace][$table][$ids];
                 }
             }
             
             /* Cache miss, so create new object */
-            return static::factory(['id' => $ids], $classOrTable, $dbconnection, ['limit' => 1], true);
+            return static::factory(['id' => $ids], $classOrTable, $namespace, ['limit' => 1], true);
         
         // Else if we have an array of ids
         } elseif (is_array($ids)) {
@@ -172,8 +170,8 @@ class Model implements \JsonSerializable
                 // If we succeed, remove it from the list of ids to search for in the database
                 if (!$forceRefresh) {
                     // Check Model object cache
-                    if (isset(Model::$instance[$dbconnection][$table][$id])) {
-                        $collection[] = Model::$instance[$dbconnection][$table][$id];
+                    if (isset(Model::$instance[$namespace][$table][$id])) {
+                        $collection[] = Model::$instance[$namespace][$table][$id];
                         unset($ids[$key]);
                     }
                 }
@@ -182,7 +180,7 @@ class Model implements \JsonSerializable
             // For any ids we failed to pull out the cache, pull them from the database instead
             if (count($ids) > 0)
             {
-                $newresults = static::factory(['id' => $ids], $classOrTable, $dbconnection);
+                $newresults = static::factory(['id' => $ids], $classOrTable, $namespace);
                 $collection = $collection->merge($newresults);
             }
             
@@ -196,7 +194,7 @@ class Model implements \JsonSerializable
     }
     
     // Get data from database from which we can construct Model objects
-    final public static function factoryData($where, $table, $dbconnection, array $options = null)
+    final public static function factoryData($where, $table, Schema $schema, array $options = null)
     {
         // Select * from $table where $where
         $build = QueryBuilder::select($table)->where($where);
@@ -224,7 +222,7 @@ class Model implements \JsonSerializable
             }
         }
         
-        $query = new Query($dbconnection);
+        $query = new Query($schema->database);
         list($data) = $query->sql($build)->execute();
         
         return $data;
@@ -444,10 +442,11 @@ class Model implements \JsonSerializable
     // Mostly used for updating foreign key results after updates
     final public function dataRefresh()
     {
-        list($data) = Model::factoryData(['id' => $this->id], $this->table, $this->database);
+        $schema = Schema::get(__NAMESPACE__);
+        list($data) = Model::factoryData(['id' => $this->id], $this->table, $schema);
         
         // Database data object unique to this object
-        $this->_data = new Data($data, $this->table, Schema::get($this->database));
+        $this->_data = new Data($data, $this->table, $schema);
         Data::updateCache($this->_data);
         
         // Call replacement constructor after storing in the cache list (to prevent recursion)

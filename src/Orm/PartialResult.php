@@ -82,7 +82,7 @@ class PartialResult
             // Resolve down to a real Model object, then call __get on it.
             $ids = $this->resolveState('id');
             
-            $results = Model::factoryObjectCache($ids, $this->currentTable, $this->database);
+            $results = Model::factoryObjectCache($ids, $this->currentTable, $this->currentSchema);
             
             // If we should be returning a group of results, but have a single object, wrap in Collection
             if ($this->multiresult && !$results instanceof Collection) {

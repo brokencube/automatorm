@@ -10,7 +10,7 @@ use HodgePodge\Core\Cache;
 
 class Schema
 {
-    const CURRENT_VERSION = 4;
+    const CURRENT_VERSION = 5;
 
     // Cache Bridge
     protected static $cache = '\\Automatorm\\Cache\\HodgePodgeCache';
@@ -22,23 +22,27 @@ class Schema
     // Singleton
     public static $object_list = [];
     public static $namespaces = [];
-    public static function get($dbconnection)
+    public static function get($namespace)
     {
-        if (!static::$object_list[$dbconnection]) {
-            throw new Exception\Model('NO_GENERATED_SCHEMA', $dbconnection);
+        if (!static::$object_list[$namespace]) {
+            throw new Exception\Model('NO_GENERATED_SCHEMA', $namespace);
         }
         
-        return static::$object_list[$dbconnection];
+        return static::$object_list[$namespace];
     }
 
-    public static function generate($dbconnection = 'default', $namespace = 'models', $cachebust = false)
+    public static function generate($connection, $namespace = 'models', $cachebust = false)
     {
+        if (!$connection instanceof Automatorm\Interfaces\Connection) {
+            $connection = Connection::get($database);
+        }
+        
         // Register namespace with connection
-        static::$namespaces[$namespace] = $dbconnection;
+        static::$namespaces[$namespace] = $connection;
         
         // Get schema from cache
         $cache = is_object(static::$cache) ? static::$cache : new static::$cache();
-        $key = 'schema_' . md5($dbconnection . $namespace . static::CURRENT_VERSION);
+        $key = 'schema_' . md5($namespace . static::CURRENT_VERSION);
         $obj = $cache->get($key);
         
         // Expire old versions of Schema
@@ -49,13 +53,13 @@ class Schema
         
         // If no cache, generate the schema
         if ($cachebust or !$obj) {
-            $model = static::generateSchema($dbconnection);
-            $obj = new static($model, $dbconnection, $namespace);
+            $model = static::generateSchema($connection);
+            $obj = new static($model, $connection, $namespace);
             $cache->put($key, $obj, 60 * 60 * 24 * 7);
         }
         
         // Return schema object
-        return static::$object_list[$dbconnection] = $obj;
+        return static::$object_list[$namespace] = $obj;
     }
     
     ///////////////////////////////////////////////////////////////////////////
@@ -65,20 +69,20 @@ class Schema
     protected $namespace;
     protected $version;
     
-    protected function __construct($model, $database, $namespace) {
+    protected function __construct($model, Automatorm\Interfaces\Connection $database, $namespace) {
         $this->model = $model;
-        $this->database = $database;
         $this->namespace = $namespace;
         $this->version = static::CURRENT_VERSION;
+        $this->database = $database;
     }
     
     // Generate Schema
-    public static function generateSchema($dbconnection)
+    public static function generateSchema(Automatorm\Interfaces\Connection $connection)
     {
         $model = [];
         
         // Get a list of all foreign keys in this database
-        $query = new Query($dbconnection);
+        $query = new Query($connection);
         $query->sql("
             SELECT b.table_name, b.column_name, b.referenced_table_name, b.referenced_column_name
             FROM information_schema.table_constraints a 
