@@ -17,6 +17,8 @@ class Model extends BaseException
     private function make_message($code, $data)
     {
         switch($code) {
+            case 'NO_GENERATED_SCHEMA':
+                return 'NO_GENERATED_SCHEMA: Could not find a schema definition for namespace {$data}';
             case 'NO_SCHEMA':
                 list($class_or_table, $normalised, $class) = $data;
                 return 'NO_SCHEMA: Could not find a schema definition for this object (' . $class_or_table . '). Are you sure the classname and table are the same (case-insensitive). Otherwise, try calling Model::generate_schema(true) to refresh the schema cache.';
