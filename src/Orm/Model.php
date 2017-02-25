@@ -98,7 +98,7 @@ class Model implements \JsonSerializable
     final public static function factory($where, $classOrTable_name = null, $schema = null, array $options = null, $singleResult = false)
     {
         // Figure out the base class and table we need based on current context
-        $schema = $schema ?: Schema::get(__NAMESPACE__);
+        $schema = $schema ?: Schema::get(static::getNamespace());
         list($class, $table) = $schema->guessContext($classOrTable_name ?: get_called_class());
         $namespace = $schema->namespace;
         
@@ -139,7 +139,7 @@ class Model implements \JsonSerializable
     
     final public static function factoryObjectCache($ids, $classOrTable = null, Schema $schema = null, $forceRefresh = false)
     {
-        $schema = $schema ?: Schema::get(__NAMESPACE__);
+        $schema = $schema ?: Schema::get(static::getNamespace());
         list($class, $table) = $schema->guessContext($classOrTable ?: get_called_class());
         $namespace = $schema->namespace;
         
@@ -442,7 +442,7 @@ class Model implements \JsonSerializable
     // Mostly used for updating foreign key results after updates
     final public function dataRefresh()
     {
-        $schema = Schema::get(__NAMESPACE__);
+        $schema = Schema::get(static::getNamespace());
         list($data) = Model::factoryData(['id' => $this->id], $this->table, $schema);
         
         // Database data object unique to this object
@@ -461,5 +461,11 @@ class Model implements \JsonSerializable
     {
         $this->cache = $bool;
         return $this;
+    }
+    
+    public static function getNamespace()
+    {
+        $class = get_called_class();
+        return substr($class, strrpos($class, '\\'));
     }
 }
