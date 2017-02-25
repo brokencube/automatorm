@@ -1,12 +1,7 @@
 <?php
 namespace Automatorm\Orm;
 
-use Automatorm\Database\Query;
-use Automatorm\Database\QueryBuilder;
-use Automatorm\Database\SqlString;
 use Automatorm\Exception;
-
-use HodgePodge\Core;
 
 class Data
 {
@@ -214,14 +209,12 @@ class Data
             $pivot_schema = $proto->__schema->getTable($pivot['pivot']);
             $pivot_tablename = $pivot_schema['table_name'];
             
-            $q = QueryBuilder::select([$pivot_tablename => 'pivot'], ['pivot.*'])
-                ->where(['`pivot`.'.$pivot['id'] => $ids])
-                ->join([Schema::underscoreCase($pivot['connections'][0]['table']) => 'pivotjoin'])
-                ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"])
-                ->joinWhere($where);
-                
-            $query = new Query($proto->__schema->database);
-            list($raw) = $query->sql($q)->execute();
+            $raw = $this->getDataAccessor()->getM2MData(
+                $pivot_tablename,
+                $pivot,
+                $ids,
+                $where
+            );
             
             // Rearrange the list of ids into a flat array and an id grouped array
             $flat_ids = [];
@@ -312,14 +305,12 @@ class Data
             $pivot_schema = $proto->__schema->getTable($pivot['pivot']);
             $pivot_tablename = $pivot_schema['table_name'];
             
-            $q = QueryBuilder::select([$pivot_tablename => 'pivot'], ['pivot.*'])
-                ->where(['`pivot`.'.$pivot['id'] => $ids])
-                ->join([Schema::underscoreCase($pivot['connections'][0]['table']) => 'pivotjoin'])
-                ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"])
-                ->joinWhere($where);
-                
-            $query = new Query($proto->__schema->database);
-            list($raw) = $query->sql($q)->execute();
+            $raw = $this->getDataAccessor()->getM2MData(
+                $pivot_tablename,
+                $pivot,
+                $ids,
+                $where
+            );
 
             // Rearrange the list of ids into a flat array and an id grouped array
             $flat_ids = [];
@@ -409,15 +400,14 @@ class Data
             }
             
             // Build Query
-            $q = QueryBuilder::select([$pivot_tablename => 'pivot'], ['pivot.*'])
-                ->where(['`pivot`.'.$pivot['id'] => $this->__data['id']])
-                ->join([Schema::underscoreCase($pivot['connections'][0]['table']) => 'pivotjoin'])
-                ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"])
-                ->where($clauses);
-                
-            $query = new Query($this->__schema->database);
-            list($raw) = $query->sql($q)->execute();
-
+            $raw = $this->getDataAccessor()->getM2MData(
+                $pivot_tablename,
+                $pivot,
+                $ids,
+                null,
+                $clauses
+            );
+            
             // Rearrange the list of ids into a flat array
             $id = [];
             foreach($raw as $raw_id) $id[] = $raw_id[$pivot['connections'][0]['column']];
@@ -493,14 +483,13 @@ class Data
             }
             
             // Build Query
-            $q = QueryBuilder::select([$pivot_tablename => 'pivot'], ['pivot.*'])
-                ->where(['`pivot`.'.$pivot['id'] => $this->__data['id']])
-                ->join([Schema::underscoreCase($pivot['connections'][0]['table']) => 'pivotjoin'])
-                ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"])
-                ->where($clauses);
-                
-            $query = new Query($this->__schema->database);
-            list($raw) = $query->sql($q)->execute();
+            $raw = $this->getDataAccessor()->getM2MData(
+                $pivot_tablename,
+                $pivot,
+                $ids,
+                null,
+                $clauses
+            );
             
             // Rearrange the list of ids into a flat array
             $id = array();
@@ -632,7 +621,7 @@ class Data
             $mode = 'update';
         }
         
-        $id = $this->__schema->database->getDataAccessor()->commit(
+        $id = $this->getDataAccessor()->commit(
             $mode,
             $this->__table,
             $this->__data['id'],
@@ -670,6 +659,11 @@ class Data
     public function getNamespace()
     {
         return $this->__schema->namespace;
+    }
+    
+    public function getDataAccessor()
+    {
+        return $this->__schema->database->getDataAccessor();
     }
     
     public function externalKeyExists($var)

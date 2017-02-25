@@ -76,4 +76,58 @@ class DataAccess
         return $id;
     }
 
+    public function getData($table, $where, $options)
+    {
+        // Select * from $table where $where
+        $query = QueryBuilder::select($table)->where($where);
+        
+        if (is_array($options)) {
+            // Limit
+            if (key_exists('limit', $options)) {
+                $query->limit($options['limit'], is_null($options['offset']) ? null : $options['offset']);
+            }
+            
+            // Sort
+            if (key_exists('sort', $options)) {
+                foreach ((array) $options['sort'] as $sortby) {
+                    list ($sort, $dir) = explode(' ', $sortby, 3);
+                    $query->sortBy($sort, $dir);
+                }
+            }
+        }
+        
+        list($data) = Query::run($query, $this->connection);
+        return $data;
+    }
+    
+    public function getDataCount($table, $where, $options)
+    {
+        // Select * from $table where $where
+        $query = QueryBuilder::count($table)->where($where);
+        
+        if (is_array($options) && key_exists('limit', $options)) {
+            $query->limit($options['limit'], is_null($options['offset']) ? null : $options['offset']);
+        }
+        
+        list($data) = Query::run($query, $this->connection);
+        return $data;
+    }
+    
+    public function getM2MData($pivot_table, $pivot, $ids, $joinwhere = null, $where = null)
+    {
+        $query = QueryBuilder::select([$pivot_tablename => 'pivot'], ['pivot.*'])
+            ->where(['`pivot`.'.$pivot['id'] => $ids])
+            ->join([Schema::underscoreCase($pivot['connections'][0]['table']) => 'pivotjoin'])
+            ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"]);
+            
+        if ($joinwhere) {
+            $query->joinWhere($joinwhere);
+        }
+        if ($where) {
+            $query->where($where);
+        }
+        
+        list($raw) = Query::run($query, $this->connection);
+        return $raw;
+    }
 }

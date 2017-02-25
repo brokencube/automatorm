@@ -2,8 +2,6 @@
 namespace Automatorm\Orm;
 
 use Automatorm\Exception;
-use Automatorm\Database\Query;
-use Automatorm\Database\QueryBuilder;
 
 /* MVC Model Class giving a lightweight ORM interface with an indirect active record pattern.
  * The rationale for this superclass is to make it trivial to create an object representing a single row in a database table (and a class
@@ -196,57 +194,21 @@ class Model implements \JsonSerializable
     // Get data from database from which we can construct Model objects
     final public static function factoryData($where, $table, Schema $schema, array $options = null)
     {
-        // Select * from $table where $where
-        $build = QueryBuilder::select($table)->where($where);
-        
-        if (is_array($options)) {
-            // Limit
-            if (key_exists('limit', $options) && key_exists('offset', $options)) {
-                $build->limit($options['limit'], $options['offset']);
-            } elseif (key_exists('limit', $options)) {
-                $build->limit($options['limit']);
-            }
-            
-            // Sort
-            if (key_exists('sort', $options)) {
-                if (is_array($options['sort'])) {
-                    foreach ($options['sort'] as $sortby)
-                    {
-                        list ($sort, $dir) = explode(' ', $sortby, 3);
-                        $build->sortBy($sort, $dir);
-                    }
-                } else {
-                    list ($sort, $dir) = explode(' ', $options['sort'], 3);
-                    $build->sortBy($sort, $dir);
-                }
-            }
-        }
-        
-        $query = new Query($schema->database);
-        list($data) = $query->sql($build)->execute();
-        
-        return $data;
+        return $schema->database->getDataAccessor()->getData(
+            $table,
+            $where,
+            $options
+        );
     }
 
     // Get data from database from which we can construct Model objects
     final public static function factoryDataCount($where, $table, Schema $schema, array $options = null)
     {
-        // Select * from $table where $where
-        $build = QueryBuilder::count($table)->where($where);
-        
-        if (is_array($options)) {
-            // Limit
-            if (key_exists('limit', $options) && key_exists('offset', $options)) {
-                $build->limit($options['limit'], $options['offset']);
-            } elseif (key_exists('limit', $options)) {
-                $build->limit($options['limit']);
-            }
-        }
-        
-        $query = new Query($schema->database);
-        list($data) = $query->sql($build)->execute();
-        
-        return $data;
+        return $schema->database->getDataAccessor()->getDataCount(
+            $table,
+            $where,
+            $options
+        );
     }
     
     // Return an empty Model_Data object for this class/table so that a new object can be constructed (and a new row entered in the table).
