@@ -4,7 +4,7 @@ namespace Automatorm\Database;
 use Automatorm\Exception as Ex;
 use Automatorm\Orm\DataAccess;
 
-class Connection implements \Psr\Log\LoggerAwareInterface, Automatorm\Interfaces\Connection
+class Connection implements \Psr\Log\LoggerAwareInterface, \Automatorm\Interfaces\Connection
 {
     use \Psr\Log\LoggerAwareTrait;
     public function getLogger()

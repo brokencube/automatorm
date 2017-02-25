@@ -69,7 +69,7 @@ class Schema
     protected $namespace;
     protected $version;
     
-    protected function __construct($model, Automatorm\Interfaces\Connection $database, $namespace) {
+    protected function __construct($model, \Automatorm\Interfaces\Connection $database, $namespace) {
         $this->model = $model;
         $this->namespace = $namespace;
         $this->version = static::CURRENT_VERSION;
@@ -77,7 +77,7 @@ class Schema
     }
     
     // Generate Schema
-    public static function generateSchema(Automatorm\Interfaces\Connection $connection)
+    public static function generateSchema(\Automatorm\Interfaces\Connection $connection)
     {
         $model = [];
         
@@ -240,7 +240,7 @@ class Schema
             }
         } else {
             // We didn't find an appropriate class - make a Model object using the guessed table name.
-            $class = 'Automatorm\\Orm\\Model';
+            $class = '\\Automatorm\\Orm\\Model';
         }
         
         // We haven't found an entry in the schema for our best guess table name? Boom!
