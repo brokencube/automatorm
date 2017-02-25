@@ -624,9 +624,9 @@ class Data
     
     public function commit()
     {
-        if ($data->__delete) {
+        if ($this->__delete) {
             $mode = 'delete';
-        } elseif ($data->__new) {
+        } elseif ($this->__new) {
             $mode = 'insert';
         } else {
             $mode = 'update';
