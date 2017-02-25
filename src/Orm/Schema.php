@@ -10,7 +10,7 @@ use HodgePodge\Core\Cache;
 
 class Schema
 {
-    const CURRENT_VERSION = 5;
+    const CURRENT_VERSION = 6;
 
     // Cache Bridge
     protected static $cache = '\\Automatorm\\Cache\\HodgePodgeCache';
@@ -43,20 +43,15 @@ class Schema
         // Get schema from cache
         $cache = is_object(static::$cache) ? static::$cache : new static::$cache();
         $key = 'schema_' . md5($namespace . static::CURRENT_VERSION);
-        $obj = $cache->get($key);
-        
-        // Expire old versions of Schema
-        if ($obj && $obj->version != static::CURRENT_VERSION)
-        {
-            unset($obj);
-        }
+        $model = $cache->get($key);
         
         // If no cache, generate the schema
-        if ($cachebust or !$obj) {
+        if ($cachebust or !$model) {
             $model = static::generateSchema($connection);
-            $obj = new static($model, $connection, $namespace);
-            $cache->put($key, $obj, 60 * 60 * 24 * 7);
+            $cache->put($key, $model, 60 * 60 * 24 * 7);
         }
+        
+        $obj = new static($model, $connection, $namespace);
         
         // Return schema object
         return static::$object_list[$namespace] = $obj;
