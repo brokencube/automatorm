@@ -229,7 +229,7 @@ class Model implements \JsonSerializable
     }
 
     // Get data from database from which we can construct Model objects
-    final public static function factoryDataCount($where, $table, $dbconnection, array $options = null)
+    final public static function factoryDataCount($where, $table, Schema $schema, array $options = null)
     {
         // Select * from $table where $where
         $build = QueryBuilder::count($table)->where($where);
@@ -243,7 +243,7 @@ class Model implements \JsonSerializable
             }
         }
         
-        $query = new Query($dbconnection);
+        $query = new Query($schema->database);
         list($data) = $query->sql($build)->execute();
         
         return $data;
@@ -253,9 +253,9 @@ class Model implements \JsonSerializable
     // For 'foreign' tables, a parent object must be supplied.
     public static function newData(Model $parentObject = null)
     {
-        $dbconnection = static::getConnection();
+        $namespace = static::getNamespace();
         // Get the schema for the current class/table
-        $schema = Schema::get($dbconnection);
+        $schema = Schema::get($namespace);
         list($class, $table) = $schema->guessContext(get_called_class());
         
         // Make a new blank data object
@@ -264,25 +264,25 @@ class Model implements \JsonSerializable
         $table_schema = $schema->getTable($table);
         // "Foreign" tables use a "parent" table for their primary key. We need that parent object for it's id.
         if ($table_schema['type'] == 'foreign') {
-            if (!$parentObject) throw new Exception\Model('NO_PARENT_OBJECT', [$dbconnection, $class, $table, static::$tablename]);
+            if (!$parentObject) throw new Exception\Model('NO_PARENT_OBJECT', [$namespace, $class, $table, static::$tablename]);
             $model_data->id = $parentObject->id;
         }
         
         return $data;
     }
     
-    public static function clearInstanceCache($dbconnection = null, $table = null, $id = null)
+    public static function clearInstanceCache($namespace = null, $table = null, $id = null)
     {
         if (isset($id)) {
-            static::$instance[$dbconnection][$table][$id] = [];
+            static::$instance[$namespace][$table][$id] = [];
             return;
         }
         if (isset($table)) {
-            static::$instance[$dbconnection][$table] = [];
+            static::$instance[$namespace][$table] = [];
             return;
         }
-        if (isset($dbconnection)) {
-            static::$instance[$dbconnection] = [];
+        if (isset($namespace)) {
+            static::$instance[$namespace] = [];
             return;
         }
         static::$instance = [];
