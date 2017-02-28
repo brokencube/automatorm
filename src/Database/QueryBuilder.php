@@ -18,7 +18,7 @@ class QueryBuilder
     protected $type;
     protected $table;
     protected $tableSubquery;
-    protected $columns = [];
+    protected $columns = ['*'];
     protected $count;
     protected $set = [];
     protected $joins = [];
@@ -255,7 +255,7 @@ class QueryBuilder
     /**
      * Join a table to this query
      *
-     * @param string $table Name of table to select from
+     * @param mixed $table Name of table to select from
      * @return self
      */
     public function join($table, $rawtype = null)
@@ -294,18 +294,18 @@ class QueryBuilder
         $type = 'JOIN';
         if ($rawtype) {
             switch (strtolower($rawtype)) {
-            case 'left':
-                $type = 'LEFT JOIN';
-                break;
-            case 'left outer':
-                $type = 'LEFT OUTER JOIN';
-                break;
-            case 'cross':
-                $type = 'CROSS JOIN';
-                break;
-            default:
-                throw new Exception\QueryBuilder('Unknown Join Type');
-        }
+                case 'left':
+                    $type = 'LEFT JOIN';
+                    break;
+                case 'left outer':
+                    $type = 'LEFT OUTER JOIN';
+                    break;
+                case 'cross':
+                    $type = 'CROSS JOIN';
+                    break;
+                default:
+                    throw new Exception\QueryBuilder('Unknown Join Type');
+            }
         }
         
         $this->joins[] = ['table' => null, 'subquery' => $subquery, 'type' => $type, 'alias' => $alias, 'where' => [], 'on' => []];
@@ -318,7 +318,7 @@ class QueryBuilder
      * @param mixed[] $columnclauses List of on clauses in the format column = column
      * @return self
      */
-    public function joinOn($columnclauses = [])
+    public function joinOn(array $columnclauses = [])
     {
         end($this->joins);
         $joinkey = key($this->joins);

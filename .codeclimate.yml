@@ -17,6 +17,8 @@ engines:
         enabled: false
       CleanCode/BooleanArgumentFlag:
         enabled: false
+      CleanCode/StaticAccess:
+        enabled: false
   phpcodesniffer:
     enabled: true
   phan:

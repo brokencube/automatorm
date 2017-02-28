@@ -33,12 +33,12 @@ class DataAccess
         }
         
         if ($mode != 'delete') {
-            $origin_id = new SqlString('@id');
+            $originId = new SqlString('@id');
             
             // Foreign tables
-            foreach ($externalData as $property_name => $value) {
+            foreach ($externalData as $propertyName => $value) {
                 // Skip property if this isn't an M-M table (M-1 and 1-M tables are dealt with in other ways)
-                if (!$pivot = $schema['many-to-many'][$property_name]) {
+                if (!$pivot = $schema['many-to-many'][$propertyName]) {
                     continue;
                 }
                 
@@ -56,7 +56,7 @@ class DataAccess
                 // Loops through the list of objects to link to this table
                 foreach ($value as $object) {
                     $newdata = [
-                        $pivot['id'] => $origin_id,      // Id of this object
+                        $pivot['id'] => $originId,      // Id of this object
                         $pivot['connections'][0]['column'] => $object->id  // Id of object linked to this object
                     ];
                     $query->sql(QueryBuilder::insert($tablename, $newdata, true));
@@ -64,7 +64,8 @@ class DataAccess
             }
         }
         
-        $values = $query->execute(true);
+        $query->transaction();
+        $values = $query->execute();
         
         // Don't return anything if we just deleted this row.
         if ($mode == 'delete') {
@@ -117,9 +118,9 @@ class DataAccess
         return $data;
     }
     
-    public function getM2MData($pivot_tablename, $pivot, $ids, $joinwhere = null, $where = null)
+    public function getM2MData($pivotTablename, $pivot, $ids, $joinwhere = null, $where = null)
     {
-        $query = QueryBuilder::select([$pivot_tablename => 'pivot'], ['pivot.*'])
+        $query = QueryBuilder::select([$pivotTablename => 'pivot'], ['pivot.*'])
             ->where(['`pivot`.'.$pivot['id'] => $ids])
             ->join([Schema::underscoreCase($pivot['connections'][0]['table']) => 'pivotjoin'])
             ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"]);

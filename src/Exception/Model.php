@@ -4,17 +4,17 @@ namespace Automatorm\Exception;
 class Model extends BaseException
 {
     public $code;
-    public function __construct($code, $data = null, \Exception $previous_exception = null)
+    public function __construct($code, $data = null, \Exception $previousException = null)
     {
         $this->code = $code;
         parent::__construct(
-            $this->make_message($code, $data),
+            $this->makeMessage($code, $data),
             $data,
-            $previous_exception
+            $previousException
         );
     }
     
-    private function make_message($code, $data)
+    private function makeMessage($code, $data)
     {
         switch ($code) {
             case 'NO_GENERATED_SCHEMA':

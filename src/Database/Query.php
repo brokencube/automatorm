@@ -2,10 +2,13 @@
 namespace Automatorm\Database;
 
 use Automatorm\Exception;
+use Automatorm\Interfaces\Connection as ConnectionInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 
-class Query implements \Psr\Log\LoggerAwareInterface
+class Query implements LoggerAwareInterface
 {
-    use \Psr\Log\LoggerAwareTrait;
+    use LoggerAwareTrait;
     
     protected $connection;      // Connection object
     protected $error;
@@ -36,7 +39,7 @@ class Query implements \Psr\Log\LoggerAwareInterface
     // Create a new query container
     public function __construct($connection = 'default', $sql = null)
     {
-        if ($connection instanceof \Automatorm\Interfaces\Connection) {
+        if ($connection instanceof ConnectionInterface) {
             $this->connection = $connection;
         } elseif (is_string($connection)) {
             $this->connection = Connection::get($connection);
@@ -104,7 +107,7 @@ class Query implements \Psr\Log\LoggerAwareInterface
         
         // We are only allowed to execute each Query object once!
         if ($this->lock) {
-            throw new Exception\Database('QUERY_LOCKED', "This query has already been executed", $this);
+            throw new Exception\Database("QUERY_LOCKED: This query has already been executed", $this);
         }
         $this->lock = true;
         

@@ -45,7 +45,7 @@ class Model implements \JsonSerializable
      *
      * @param int[] $ids Ids of rows
      * @param bool $forceRefresh Get a fresh copy of data from the database
-     * @return Automatorm\Orm\Collection
+     * @return \Automatorm\Orm\Collection
      */
     public static function getAll(array $ids = null, $forceRefresh = false)
     {
@@ -88,7 +88,7 @@ class Model implements \JsonSerializable
      *
      * @param mixed[] $where Where clause to search for
      * @param mixed[] $options Options to pass: limit => int, offeset => int, sort => "column direction"
-     * @return Automatorm\Orm\Collection
+     * @return \Automatorm\Orm\Collection
      */
     public static function findAll($where = [], $options = [])
     {
@@ -97,11 +97,11 @@ class Model implements \JsonSerializable
     
     /* FACTORY METHODS */
     // Build an appropriate Model object based on id and class/table name
-    final public static function factory($where, $classOrTable_name = null, $schema = null, array $options = null, $singleResult = false)
+    final public static function factory($where, $classOrTablename = null, $schema = null, array $options = null, $singleResult = false)
     {
         // Figure out the base class and table we need based on current context
         $schema = $schema ?: Schema::get(static::getNamespace());
-        list($class, $table) = $schema->guessContext($classOrTable_name ?: get_called_class());
+        list($class, $table) = $schema->guessContext($classOrTablename ?: get_called_class());
         $namespace = $schema->namespace;
         
         // Get data from database

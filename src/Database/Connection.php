@@ -3,22 +3,28 @@ namespace Automatorm\Database;
 
 use Automatorm\Exception as Ex;
 use Automatorm\Orm\DataAccess;
+use Automatorm\Interfaces\Connection as ConnectionInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
+use PDO;
+use PDOException;
 
-class Connection implements \Psr\Log\LoggerAwareInterface, \Automatorm\Interfaces\Connection
+class Connection implements LoggerAwareInterface, ConnectionInterface
 {
-    use \Psr\Log\LoggerAwareTrait;
+    use LoggerAwareTrait;
     public function getLogger()
     {
         return $this->logger;
     }
     
-    protected static $connections = array();
-    protected static $details = array();
+    protected static $connections = [];
+    protected static $details = [];
     
     /************************
      * CONNECTION FUNCTIONS *
      ************************/
-    public static function register(array $db, $name = 'default', array $options = null, \Psr\Log\LoggerInterface $logger = null)
+    public static function register(array $db, $name = 'default', array $options = null, LoggerInterface $logger = null)
     {
         if (key_exists($name, self::$details)) {
             throw new Ex\Database("Database connection '{$name}' already registered", $name);
@@ -26,7 +32,7 @@ class Connection implements \Psr\Log\LoggerAwareInterface, \Automatorm\Interface
         return self::$details[$name] = new static($db, $name, $options, $logger);
     }
 
-    public static function registerPDO(\PDO $pdo, $name = 'default', \Psr\Log\LoggerInterface $logger = null)
+    public static function registerPDO(PDO $pdo, $name = 'default', LoggerInterface $logger = null)
     {
         if (key_exists($name, self::$details)) {
             throw new Ex\Database("Database connection '{$name}' already registered", $name);
@@ -64,11 +70,11 @@ class Connection implements \Psr\Log\LoggerAwareInterface, \Automatorm\Interface
     protected $options;
     protected $connection;
     
-    protected function __construct($details, $name = 'default', array $options = null, \Psr\Log\LoggerInterface $logger = null)
+    protected function __construct($details, $name = 'default', array $options = null, LoggerInterface $logger = null)
     {
         $this->logger = $logger;
         
-        if ($details instanceof \PDO) {
+        if ($details instanceof PDO) {
             $this->name = $name;
             $this->connection = $details;
             return;
@@ -82,8 +88,8 @@ class Connection implements \Psr\Log\LoggerAwareInterface, \Automatorm\Interface
             $this->pass = $details['pass'];
             $this->database = $details['database'];
             $this->options = $options ?: [
-                \PDO::ATTR_PERSISTENT => true,
-                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION
+                PDO::ATTR_PERSISTENT => true,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
             ];
             $this->type = $details['type'] ?: 'mysql';
 
@@ -128,13 +134,12 @@ class Connection implements \Psr\Log\LoggerAwareInterface, \Automatorm\Interface
         }
         
         try {
-            $this->connection = new \PDO($dsn, $this->user, $this->pass, $this->options);
-        } catch (\PDOException $e) {
+            $this->connection = new PDO($dsn, $this->user, $this->pass, $this->options);
+            return $this->connection;
+        } catch (PDOException $e) {
             unset($this->connection);
             throw new Ex\Database("Database connection failed ({$dsn})", $this, $e);
         }
-        
-        return $this->connection;
     }
     
     public function getDataAccessor()

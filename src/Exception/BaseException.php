@@ -5,9 +5,9 @@ class BaseException extends \Exception implements \JsonSerializable
 {
     protected $data;
     
-    public function __construct($message = '', $data = null, \Exception $previous_exception = null)
+    public function __construct($message = '', $data = null, \Exception $previousException = null)
     {
-        parent::__construct($message, 0, $previous_exception);
+        parent::__construct($message, 0, $previousException);
         $this->data = $data;
     }
     
