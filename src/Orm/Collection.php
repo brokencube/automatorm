@@ -355,29 +355,29 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
         // Invert affix for not()
         if ($invert) {
             switch ($affix) {
-            case '=':
-            case '==':
-            default:
-                $affix = '!';
-                break;
-            case '!=':
-            case '!':
-            case '<>':
-                $affix = '=';
-                break;
-            case '<':
-                $affix = '>=';
-                break;
-            case '<=':
-                $affix = '>';
-                break;
-            case '>':
-                $affix = '<=';
-                break;
-            case '>=':
-                $affix = '<';
-                break;
-        }
+                case '=':
+                case '==':
+                default:
+                    $affix = '!';
+                    break;
+                case '!=':
+                case '!':
+                case '<>':
+                    $affix = '=';
+                    break;
+                case '<':
+                    $affix = '>=';
+                    break;
+                case '<=':
+                    $affix = '>';
+                    break;
+                case '>':
+                    $affix = '<=';
+                    break;
+                case '>=':
+                    $affix = '<';
+                    break;
+            }
         }
         
         // These affixes only work in SQL land
@@ -408,6 +408,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                     if (!is_array($valueList)) {
                         $valueList = array($valueList);
                     }
+                    
                     // Check each value - if we find a matching value than skip to the next filter.
                     foreach ($valueList as $value) {
                         // Compare based on affix (else == )
