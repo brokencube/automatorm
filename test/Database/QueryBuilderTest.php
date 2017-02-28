@@ -1,6 +1,7 @@
 <?php
 
 namespace Automatorm\UnitTest\Database;
+
 use Automatorm\Database\QueryBuilder;
 use Automatorm\Exception\QueryBuilder as QueryBuilderException;
 
@@ -177,5 +178,4 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('SELECT `id` FROM `database`.`schema`.`test` as `t` WHERE true', $sql);
         $this->assertEquals(0, count($data));
     }
-    
 }

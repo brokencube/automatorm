@@ -9,7 +9,9 @@ class Time extends \DateTime
     public function __construct($time = 'now', \DateTimeZone $rootTimezone = null)
     {
         // Set root timezone to UTC - all data for objects should be stored in UTC
-        if (!$rootTimezone) $rootTimezone = new \DateTimeZone('UTC');
+        if (!$rootTimezone) {
+            $rootTimezone = new \DateTimeZone('UTC');
+        }
         parent::__construct($time, $rootTimezone);
         
         // Move date to display timezone for display
@@ -19,7 +21,7 @@ class Time extends \DateTime
     public function __toString()
     {
         // Format date (in display timezone)
-        return $this->format(self::MYSQL_DATE);    
+        return $this->format(self::MYSQL_DATE);
     }
     
     public function mysql()

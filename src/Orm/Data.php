@@ -21,13 +21,10 @@ class Data
     {
         $key = $data['id'] . ':' . $table . ':' . $schema->namespace;
         
-        if (isset(static::$__instance[$key]))
-        {
+        if (isset(static::$__instance[$key])) {
             $obj = static::$__instance[$key];
-        }
-        else
-        {
-            $obj = static::$__instance[$key] = new static($data, $table, $schema, true, false);    
+        } else {
+            $obj = static::$__instance[$key] = new static($data, $table, $schema, true, false);
         }
         
         return $obj;
@@ -50,9 +47,9 @@ class Data
         $this->__new = $new;
         
         // Pull in data from $data
-        foreach($data as $key => $value) {
+        foreach ($data as $key => $value) {
             // Make a special object for dates
-            if(!is_null($value) and (
+            if (!is_null($value) and (
                 $this->__model['columns'][$key] == 'datetime'
                 or $this->__model['columns'][$key] == 'timestamp'
                 or $this->__model['columns'][$key] == 'date'
@@ -90,7 +87,9 @@ class Data
     
     public function delete()
     {
-        if ($this->__new) throw new Exception\Model('MODEL_DATA:CANNOT_DELETE_UNCOMMITED_DATA');
+        if ($this->__new) {
+            throw new Exception\Model('MODEL_DATA:CANNOT_DELETE_UNCOMMITED_DATA');
+        }
         $this->__delete = true;
         return $this;
     }
@@ -99,10 +98,14 @@ class Data
     public function &__get($var)
     {
         /* This property is a native database column, return it */
-        if (isset($this->__data[$var])) return $this->__data[$var];
+        if (isset($this->__data[$var])) {
+            return $this->__data[$var];
+        }
         
         /* This property has already been defined, return it */
-        if (isset($this->__external[$var])) return $this->__external[$var];
+        if (isset($this->__external[$var])) {
+            return $this->__external[$var];
+        }
         
         /* This property hasn't been defined, so it's not one of the table columns. We want to look at foreign keys and pivots */
         
@@ -112,24 +115,26 @@ class Data
         
         try {
             return $this->join($var);
-        }
-        catch (Exception\Model $e) {
-            if ($e->code == 'MODEL_DATA:UNKNOWN_FOREIGN_PROPERTY') return null;
+        } catch (Exception\Model $e) {
+            if ($e->code == 'MODEL_DATA:UNKNOWN_FOREIGN_PROPERTY') {
+                return null;
+            }
             throw $e;
         }
     }
     
     public static function groupJoin(Collection $collection, $var, $where = [])
     {
-        if (!$collection->count()) return $collection;
+        if (!$collection->count()) {
+            return $collection;
+        }
         
         $proto = $collection[0]->_data;
         
         $results = new Collection();
         
         /* FOREIGN KEYS */
-        if (key_exists($var, (array) $proto->__model['one-to-one']))
-        {
+        if (key_exists($var, (array) $proto->__model['one-to-one'])) {
             $ids = $collection->id->toArray();
             
             /* Call Tablename::factory(foreign key id) to get the object we want */
@@ -139,28 +144,23 @@ class Data
             return $results;
         }
         
-        if (key_exists($var, (array) $proto->__model['many-to-one']))
-        {
+        if (key_exists($var, (array) $proto->__model['many-to-one'])) {
             // Remove duplicates from the group
             $ids = array_unique($collection->{$var . '_id'}->toArray());
             
             /* Call Tablename::factoryObjectCache(foreign key ids) to makes sure all the objects we want are in the instance cache */
             $table = $proto->__model['many-to-one'][$var];
 
-            if (!$where)
-            {
+            if (!$where) {
                 $results = Model::factoryObjectCache($ids, $table, $proto->__schema);
                 
                 // Store the object results on the relevant objects
-                foreach ($collection as $obj)
-                {
+                foreach ($collection as $obj) {
                     $obj->_data->__external[$var] = Model::factoryObjectCache($obj->{$var . '_id'}, $table, $proto->__schema);
                 }
                 
                 return $results;
-            }
-            else
-            {
+            } else {
                 $results = Model::factory($where + ['id' => $ids], $table, $proto->__schema);
                 
                 return $results;
@@ -169,7 +169,6 @@ class Data
         
         /* Look for lists of objects in other tables referencing this one */
         if (key_exists($var, (array) $proto->__model['one-to-many'])) {
-            
             $table = $proto->__model['one-to-many'][$var]['table'];
             $column = $proto->__model['one-to-many'][$var]['column_name'];
             
@@ -179,15 +178,12 @@ class Data
             $results = Model::factory($where + [$column => $ids], $table, $proto->__schema);
             
             // If we didn't use a filter, store the relevant results in each object
-            if (!$where)
-            {
-                foreach($results as $obj)
-                {
+            if (!$where) {
+                foreach ($results as $obj) {
                     $external[$obj->$column][] = $obj;
                 }
                 
-                foreach ($collection as $obj)
-                {
+                foreach ($collection as $obj) {
                     $obj->_data->__external[$var] = new Collection((array) $external[$obj->id]);
                 }
             }
@@ -203,7 +199,9 @@ class Data
             $ids = $collection->id->toArray();
             
             // We can only support simple connection access for 2 key pivots.
-            if (count($pivot['connections']) != 1) throw new Exception\Model('MODEL_DATA:CANNOT_CALL_MULTIPIVOT_AS_PROPERTY', array($var));
+            if (count($pivot['connections']) != 1) {
+                throw new Exception\Model('MODEL_DATA:CANNOT_CALL_MULTIPIVOT_AS_PROPERTY', array($var));
+            }
             
             // Get a list of ids linked to this object (i.e. the tablename_id stored in the pivot table)
             $pivot_schema = $proto->__schema->getTable($pivot['pivot']);
@@ -219,8 +217,7 @@ class Data
             // Rearrange the list of ids into a flat array and an id grouped array
             $flat_ids = [];
             $grouped_ids = [];
-            foreach($raw as $raw_id)
-            {
+            foreach ($raw as $raw_id) {
                 $flat_ids[] = $raw_id[$pivot['connections'][0]['column']];
                 $grouped_ids[$raw_id[$pivot['id']]][] = $raw_id[$pivot['connections'][0]['column']];
             }
@@ -234,30 +231,29 @@ class Data
             // If we don't have a filter ($where), then we can split up the results per object and store the
             // results relevant to the result on that object. The calls to Model::factoryObjectCache below will never hit the database, because
             // all of the possible objects were returned in the call above.
-            if (!$where)
-            {
-                foreach ($collection as $obj)
-                {
+            if (!$where) {
+                foreach ($collection as $obj) {
                     $data = Model::factoryObjectCache($grouped_ids[$obj->id], $pivot['connections'][0]['table'], $proto->__schema);
                     $obj->_data->__external[$var] = $data ?: new Collection;
                 }
             }
             
             return $results;
-        }        
+        }
     }
 
     public static function groupJoinCount(Collection $collection, $var, $where = [])
     {
-        if (!$collection->count()) return $collection;
+        if (!$collection->count()) {
+            return $collection;
+        }
         
         $proto = $collection[0]->_data;
         
         $results = new Collection();
         
         /* FOREIGN KEYS */
-        if (key_exists($var, (array) $proto->__model['one-to-one']))
-        {
+        if (key_exists($var, (array) $proto->__model['one-to-one'])) {
             $ids = $collection->id->toArray();
             
             /* Call Tablename::factory(foreign key id) to get the object we want */
@@ -267,8 +263,7 @@ class Data
             return $data['count'];
         }
         
-        if (key_exists($var, (array) $proto->__model['many-to-one']))
-        {
+        if (key_exists($var, (array) $proto->__model['many-to-one'])) {
             // Remove duplicates from the group
             $ids = array_unique($collection->{$var . '_id'}->toArray());
             
@@ -280,7 +275,6 @@ class Data
         
         /* Look for lists of objects in other tables referencing this one */
         if (key_exists($var, (array) $proto->__model['one-to-many'])) {
-            
             $table = $proto->__model['one-to-many'][$var]['table'];
             $column = $proto->__model['one-to-many'][$var]['column_name'];
             
@@ -299,7 +293,9 @@ class Data
             $ids = $collection->id->toArray();
             
             // We can only support simple connection access for 2 key pivots.
-            if (count($pivot['connections']) != 1) throw new Exception\Model('MODEL_DATA:CANNOT_CALL_MULTIPIVOT_AS_PROPERTY', array($var));
+            if (count($pivot['connections']) != 1) {
+                throw new Exception\Model('MODEL_DATA:CANNOT_CALL_MULTIPIVOT_AS_PROPERTY', array($var));
+            }
             
             // Get a list of ids linked to this object (i.e. the tablename_id stored in the pivot table)
             $pivot_schema = $proto->__schema->getTable($pivot['pivot']);
@@ -314,8 +310,7 @@ class Data
 
             // Rearrange the list of ids into a flat array and an id grouped array
             $flat_ids = [];
-            foreach($raw as $raw_id)
-            {
+            foreach ($raw as $raw_id) {
                 $flat_ids[] = $raw_id[$pivot['connections'][0]['column']];
             }
             
@@ -325,7 +320,7 @@ class Data
             // Use the model factory to retrieve the objects from the list of ids (using cache first)
             list($data) = Model::factoryDataCount(['id' => $flat_ids] + $where, $pivot['connections'][0]['table'], $proto->__schema);
             return $data['count'];
-        }        
+        }
     }
     
     public function hasForeignKey($var)
@@ -340,13 +335,17 @@ class Data
 
     public function join($var, array $where = [])
     {
-        if ($this->__external[$var]) return $this->__external[$var]->filter($where);
+        if ($this->__external[$var]) {
+            return $this->__external[$var]->filter($where);
+        }
         
         // If this Model_Data isn't linked to the db yet, then linked values cannot exist
-        if (!$id = $this->__data['id']) return new Collection();
+        if (!$id = $this->__data['id']) {
+            return new Collection();
+        }
         
         /* FOREIGN KEYS */
-        if (key_exists($var, (array) $this->__model['one-to-one'])) {        
+        if (key_exists($var, (array) $this->__model['one-to-one'])) {
             /* Call Tablename::factory(foreign key id) to get the object we want */
             $table = $this->__model['one-to-one'][$var];
             $this->__external[$var] = Model::factoryObjectCache($id, $table, $this->__schema);
@@ -354,7 +353,7 @@ class Data
             return $this->__external[$var];
         }
         
-        if (key_exists($var, (array) $this->__model['many-to-one'])) {        
+        if (key_exists($var, (array) $this->__model['many-to-one'])) {
             /* Call Tablename::factory(foreign key id) to get the object we want */
             $table = $this->__model['many-to-one'][$var];
             $this->__external[$var] = Model::factoryObjectCache($this->__data[$var . '_id'], $table, $this->__schema);
@@ -364,14 +363,15 @@ class Data
         
         /* Look for lists of objects in other tables referencing this one */
         if (key_exists($var, (array) $this->__model['one-to-many'])) {
-            
             $table = $this->__model['one-to-many'][$var]['table'];
             $column = $this->__model['one-to-many'][$var]['column_name'];
             
             // Use the model factory to find the relevant items
             $results = Model::factory($where + [$column => $id], $table, $this->__schema);
             
-            if (empty($where)) $this->__external[$var] = $results;
+            if (empty($where)) {
+                $this->__external[$var] = $results;
+            }
             
             return $results;
         }
@@ -382,21 +382,24 @@ class Data
             $pivot = $this->__model['many-to-many'][$var];
             
             // We can only support simple connection access for 2 key pivots.
-            if (count($pivot['connections']) != 1) throw new Exception\Model('MODEL_DATA:CANNOT_CALL_MULTIPIVOT_AS_PROPERTY', array($var));
+            if (count($pivot['connections']) != 1) {
+                throw new Exception\Model('MODEL_DATA:CANNOT_CALL_MULTIPIVOT_AS_PROPERTY', array($var));
+            }
             
             // Get a list of ids linked to this object (i.e. the tablename_id stored in the pivot table)
             $pivot_schema = $this->__schema->getTable($pivot['pivot']);
             $pivot_tablename = $pivot_schema['table_name'];
 
             $clauses = [];
-            if ($where) foreach ($where as $clause_column => $clause_value)
-            {
-                // Rewrite $where clauses to insert `pivotjoin` table in column name
+            if ($where) {
+                foreach ($where as $clause_column => $clause_value) {
+                    // Rewrite $where clauses to insert `pivotjoin` table in column name
                 preg_match('/^([!=<>%]*)(.+?)([!=<>%]*)$/', $clause_column, $parts);
-                $prefix = $parts[1] ?: $parts[3];
-                $clause_column = $parts[2];
+                    $prefix = $parts[1] ?: $parts[3];
+                    $clause_column = $parts[2];
                 
-                $clauses['`pivotjoin`.`' . $clause_column . '`' . $prefix] = $clause_value;
+                    $clauses['`pivotjoin`.`' . $clause_column . '`' . $prefix] = $clause_value;
+                }
             }
             
             // Build Query
@@ -410,12 +413,16 @@ class Data
             
             // Rearrange the list of ids into a flat array
             $id = [];
-            foreach($raw as $raw_id) $id[] = $raw_id[$pivot['connections'][0]['column']];
+            foreach ($raw as $raw_id) {
+                $id[] = $raw_id[$pivot['connections'][0]['column']];
+            }
             
             // Use the model factory to retrieve the objects from the list of ids (using cache first)
             $results = Model::factoryObjectCache($id, $pivot['connections'][0]['table'], $this->__schema);
             
-            if (!$where) $this->__external[$var] = $results;
+            if (!$where) {
+                $this->__external[$var] = $results;
+            }
             
             return $results;
         }
@@ -425,11 +432,17 @@ class Data
     
     public function joinCount($var, $where = [])
     {
-        if (!is_null($this->__external[$var]) && !$this->__external[$var] instanceof Collection) return 1;
-        if ($this->__external[$var]) return $this->__external[$var]->filter($where)->count();
+        if (!is_null($this->__external[$var]) && !$this->__external[$var] instanceof Collection) {
+            return 1;
+        }
+        if ($this->__external[$var]) {
+            return $this->__external[$var]->filter($where)->count();
+        }
         
         // If this Model_Data isn't linked to the db yet, then linked values cannot exist
-        if (!$id = $this->__data['id']) return 0;
+        if (!$id = $this->__data['id']) {
+            return 0;
+        }
         
         /* FOREIGN KEYS */
         // 1-1, just grab the object - not worth optimising
@@ -441,7 +454,7 @@ class Data
         }
         
         // M-1, just grab the object - not worth optimising
-        if (key_exists($var, (array) $this->__model['many-to-one'])) {        
+        if (key_exists($var, (array) $this->__model['many-to-one'])) {
             /* Call Tablename::factory(foreign key id) to get the object we want */
             $table = $this->__model['many-to-one'][$var];
             $this->__external[$var] = Model::factoryObjectCache($this->__data[$var . '_id'], $table, $this->__schema);
@@ -450,7 +463,6 @@ class Data
         
         /* Look for lists of objects in other tables referencing this one */
         if (key_exists($var, (array) $this->__model['one-to-many'])) {
-            
             $table = $this->__model['one-to-many'][$var]['table'];
             $column = $this->__model['one-to-many'][$var]['column_name'];
             
@@ -465,21 +477,24 @@ class Data
             $pivot = $this->__model['many-to-many'][$var];
             
             // We can only support simple connection access for 2 key pivots.
-            if (count($pivot['connections']) != 1) throw new Exception\Model('MODEL_DATA:CANNOT_CALL_MULTIPIVOT_AS_PROPERTY', array($var));
+            if (count($pivot['connections']) != 1) {
+                throw new Exception\Model('MODEL_DATA:CANNOT_CALL_MULTIPIVOT_AS_PROPERTY', array($var));
+            }
             
             // Get a list of ids linked to this object (i.e. the tablename_id stored in the pivot table)
             $pivot_schema = $this->__schema->getTable($pivot['pivot']);
             $pivot_tablename = $pivot_schema['table_name'];
             
             $clauses = [];
-            if ($where) foreach ($where as $clause_column => $clause_value)
-            {
-                // Rewrite $where clauses to insert `pivotjoin` table in column name
+            if ($where) {
+                foreach ($where as $clause_column => $clause_value) {
+                    // Rewrite $where clauses to insert `pivotjoin` table in column name
                 preg_match('/^([!=<>%]*)(.+?)([!=<>%]*)$/', $clause_column, $parts);
-                $prefix = $parts[1] ?: $parts[3];
-                $clause_column = $parts[2];
+                    $prefix = $parts[1] ?: $parts[3];
+                    $clause_column = $parts[2];
                 
-                $clauses['`pivotjoin`.`' . $clause_column . '`' . $prefix] = $clause_value;
+                    $clauses['`pivotjoin`.`' . $clause_column . '`' . $prefix] = $clause_value;
+                }
             }
             
             // Build Query
@@ -493,7 +508,9 @@ class Data
             
             // Rearrange the list of ids into a flat array
             $id = array();
-            foreach($raw as $raw_id) $id[] = $raw_id[$pivot['connections'][0]['column']];
+            foreach ($raw as $raw_id) {
+                $id[] = $raw_id[$pivot['connections'][0]['column']];
+            }
             $dedup = array_unique($id);
             
             return count($dedup);
@@ -505,14 +522,26 @@ class Data
     public function __isset($var)
     {
         // Is it already set in local array?
-        if (isset($this->__data[$var])) return true;
-        if (isset($this->__external[$var])) return true;
+        if (isset($this->__data[$var])) {
+            return true;
+        }
+        if (isset($this->__external[$var])) {
+            return true;
+        }
         
         // Check through all the possible foreign keys for a matching name
-        if (key_exists($var, (array) $this->__model['one-to-one'])) return true;        
-        if (key_exists($var, (array) $this->__model['many-to-one'])) return true;
-        if (key_exists($var, (array) $this->__model['one-to-many'])) return true;
-        if (key_exists($var, (array) $this->__model['many-to-many'])) return true;
+        if (key_exists($var, (array) $this->__model['one-to-one'])) {
+            return true;
+        }
+        if (key_exists($var, (array) $this->__model['many-to-one'])) {
+            return true;
+        }
+        if (key_exists($var, (array) $this->__model['one-to-many'])) {
+            return true;
+        }
+        if (key_exists($var, (array) $this->__model['many-to-many'])) {
+            return true;
+        }
         
         return false;
     }
@@ -520,7 +549,9 @@ class Data
     public function __set($var, $value)
     {
         // Cannot change data if it is locked (i.e. it is attached to a Model object)
-        if ($this->__locked) throw new Exception\Model('MODEL_DATA:SET_WHEN_LOCKED', array($var, $value));
+        if ($this->__locked) {
+            throw new Exception\Model('MODEL_DATA:SET_WHEN_LOCKED', array($var, $value));
+        }
         
         // Cannot update primary key on existing objects
         // (and cannot set id for new objects that don't have a foreign primary key)
@@ -529,25 +560,24 @@ class Data
         }
         
         // Updating normal columns
-        if (key_exists($var, $this->__model['columns']))
-        {
+        if (key_exists($var, $this->__model['columns'])) {
             if ($this->__model['columns'][$var] == 'datetime'
                 or $this->__model['columns'][$var] == 'timestamp'
                 or $this->__model['columns'][$var] == 'date'
             ) {
                 // Special checks for datetimes
                 // Special case for "null"
-                if (is_null($value)) { 
+                if (is_null($value)) {
                     $this->__data[$var] = null;
-                } elseif ($value instanceof Time) { 
+                } elseif ($value instanceof Time) {
                     $this->__data[$var] = $value;
-                } elseif ($value instanceof \DateTime) { 
+                } elseif ($value instanceof \DateTime) {
                     $this->__data[$var] = new Time($value->format(Time::MYSQL_DATE), new \DateTimeZone('UTC'));
                 } elseif (($datetime = strtotime($value)) !== false) { // Fall back to standard strings
                     $this->__data[$var] = new Time(date(Time::MYSQL_DATE, $datetime), new \DateTimeZone('UTC'));
                 } elseif (is_int($value)) { // Fall back to unix timestamp
                     $this->__data[$var] = new Time(date(Time::MYSQL_DATE, $value), new \DateTimeZone('UTC'));
-                } else { 
+                } else {
                     // Oops!
                     throw new Exception\Model('MODEL_DATA:DATETIME_VALUE_EXPECTED_FOR_COLUMN', array($var, $value));
                 }
@@ -587,14 +617,22 @@ class Data
         
         // Pivot tables - needs an array of appropriate objects for this column
         if (key_exists($var, (array) $this->__model['many-to-many'])) {
-            if (is_array($value)) $value = new Collection($value);
-            if (!$value) $value = new Collection();
+            if (is_array($value)) {
+                $value = new Collection($value);
+            }
+            if (!$value) {
+                $value = new Collection();
+            }
             
             // Still not got a valid collection? Boom!
-            if (!$value instanceof Collection) throw new Exception\Model('MODEL_DATA:ARRAY_EXPECTED_FOR_PIVOT', array($var, $value));
+            if (!$value instanceof Collection) {
+                throw new Exception\Model('MODEL_DATA:ARRAY_EXPECTED_FOR_PIVOT', array($var, $value));
+            }
             
-            foreach($value as $obj) {                
-                if (!$obj instanceof Model) throw new Exception\Model('MODEL_DATA:MODEL_EXPECTED_IN_PIVOT_ARRAY', array($var, $value, $obj));
+            foreach ($value as $obj) {
+                if (!$obj instanceof Model) {
+                    throw new Exception\Model('MODEL_DATA:MODEL_EXPECTED_IN_PIVOT_ARRAY', array($var, $value, $obj));
+                }
             }
             
             $this->__external[$var] = $value;
@@ -668,10 +706,18 @@ class Data
     
     public function externalKeyExists($var)
     {
-        if (key_exists($var, (array) $this->__model['one-to-one'])) return 'one-to-one';
-        if (key_exists($var, (array) $this->__model['one-to-many'])) return 'one-to-many';
-        if (key_exists($var, (array) $this->__model['many-to-one'])) return 'many-to-one';
-        if (key_exists($var, (array) $this->__model['many-to-many'])) return 'many-to-many';
+        if (key_exists($var, (array) $this->__model['one-to-one'])) {
+            return 'one-to-one';
+        }
+        if (key_exists($var, (array) $this->__model['one-to-many'])) {
+            return 'one-to-many';
+        }
+        if (key_exists($var, (array) $this->__model['many-to-one'])) {
+            return 'many-to-one';
+        }
+        if (key_exists($var, (array) $this->__model['many-to-many'])) {
+            return 'many-to-many';
+        }
         return null;
     }
     

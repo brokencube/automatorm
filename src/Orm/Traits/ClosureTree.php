@@ -85,7 +85,9 @@ trait ClosureTree
         
         // "Find" all nodes in this tree to so all node objects are in instance cache
         $ids = [$rootid];
-        foreach ($results as $row) $ids[] = $row['child_id'];
+        foreach ($results as $row) {
+            $ids[] = $row['child_id'];
+        }
         
         // Reset children and parents arrays on all nodes
         foreach (static::findAll(['id' => $ids]) as $node) {
@@ -121,7 +123,9 @@ trait ClosureTree
         list($results) = $query->execute();
         
         $parents = [];
-        foreach ($results as $row) $parents[] = $row['parent_id'];
+        foreach ($results as $row) {
+            $parents[] = $row['parent_id'];
+        }
         
         return static::findAll(['id' => $parents]);
     }
@@ -136,7 +140,9 @@ trait ClosureTree
         list($results) = $query->execute();
         
         $children = [];
-        foreach ($results as $row) $children[] = $row['child_id'];
+        foreach ($results as $row) {
+            $children[] = $row['child_id'];
+        }
         
         return static::findAll(['id' => $children]);
     }
@@ -151,4 +157,3 @@ trait ClosureTree
         return static::getChildren();
     }
 }
-

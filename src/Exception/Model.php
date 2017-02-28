@@ -16,7 +16,7 @@ class Model extends BaseException
     
     private function make_message($code, $data)
     {
-        switch($code) {
+        switch ($code) {
             case 'NO_GENERATED_SCHEMA':
                 return 'NO_GENERATED_SCHEMA: Could not find a schema definition for namespace: ' . $data;
             case 'NO_SCHEMA':
@@ -48,8 +48,7 @@ class Model extends BaseException
                 list($column, $value) = $data;
                 $type = gettype($value);
                 
-                if ($type == 'integer')
-                {
+                if ($type == 'integer') {
                     return 'MODEL_DATA:MODEL_EXPECTED_FOR_KEY: Property "'.$column.'" expected a Model object, but you gave it an integer - Perhaps you meant to set "'.$column.'_id" instead?';
                 }
                 return 'MODEL_DATA:MODEL_EXPECTED_FOR_KEY: Property "'.$column.'" expected a Model object, but you gave it a variable of type "'.$type.'"';
@@ -58,10 +57,9 @@ class Model extends BaseException
                 list($column, $value) = $data;
                 $type = gettype($value);
                 
-                if ($type == 'object' and $value instanceof Model)
-                {
+                if ($type == 'object' and $value instanceof Model) {
                     return 'MODEL_DATA:ARRAY_EXPECTED_FOR_PIVOT: Property "'.$column.'" represents a M-M (Pivot) relationship. It expects an array of Model objects, but you gave it a Model object. If you intended to replace all of the objects in this join with a single object, you should wrap your Model object in array first.';
-                } 
+                }
                 return 'MODEL_DATA:ARRAY_EXPECTED_FOR_PIVOT: Property "'.$column.'" represents a M-M (Pivot) relationship. It expects an array of Model objects, but you gave it a variable of type "'.$type.'" instead.';
             
             case 'MODEL_DATA:MODEL_EXPECTED_IN_PIVOT_ARRAY':

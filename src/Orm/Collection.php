@@ -79,7 +79,9 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
      */
     public function first()
     {
-        if (!count($this->container)) return null;
+        if (!count($this->container)) {
+            return null;
+        }
         return array_slice($this->container, 0, 1)[0];
     }
 
@@ -89,7 +91,9 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
      */
     public function last()
     {
-        if (!count($this->container)) return null;
+        if (!count($this->container)) {
+            return null;
+        }
         return array_slice($this->container, count($this->container) - 1, 1)[0];
     }
     
@@ -118,15 +122,18 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
     public function __call($name, $args)
     {
         // If we use Model::COUNT_ONLY on empty container, return 0
-        if (count($this->container) == 0 && is_numeric($args[1]) && ($args[1] & Model::COUNT_ONLY)) return 0;
+        if (count($this->container) == 0 && is_numeric($args[1]) && ($args[1] & Model::COUNT_ONLY)) {
+            return 0;
+        }
         
         // Foreign keys
         if ($this->container[0] instanceof Model
             and !method_exists($this->container[0], $name)
             and $this->container[0]->_data->externalKeyExists($name)
         ) {
-            if (is_numeric($args[1]) && ($args[1] & Model::COUNT_ONLY))
+            if (is_numeric($args[1]) && ($args[1] & Model::COUNT_ONLY)) {
                 return Data::groupJoinCount($this, $name, $args[0]);
+            }
             return Data::groupJoin($this, $name, $args[0]);
         }
         
@@ -156,9 +163,15 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
 
     public function __construct($array = null)
     {
-        if (is_null($array)) $array = array();
-        if ($array instanceof Collection) $array = $array->toArray();
-        if (!is_array($array)) throw new \InvalidArgumentException('Orm\Collection::__construct() expects an array - ' . gettype($array) . ' given');
+        if (is_null($array)) {
+            $array = array();
+        }
+        if ($array instanceof Collection) {
+            $array = $array->toArray();
+        }
+        if (!is_array($array)) {
+            throw new \InvalidArgumentException('Orm\Collection::__construct() expects an array - ' . gettype($array) . ' given');
+        }
         
         $this->container = $array;
     }
@@ -175,10 +188,14 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
     public function toArray($value = null, $key = 'id')
     {
         // Empty array?
-        if (!count($this->container)) return [];
+        if (!count($this->container)) {
+            return [];
+        }
         
         // If we are not dealing with a collection of Model objects, just return the internal container
-        if (!$this->container[0] instanceof Model) return $this->container;
+        if (!$this->container[0] instanceof Model) {
+            return $this->container;
+        }
         
         // If we are dealing with a collection of Model objects then user key/value to extract desired property
         $return = [];
@@ -186,18 +203,18 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
             if (!$value) {
                 foreach ($this->container as $item) {
                     if ($key) {
-                        $return[$item->$key] = $item;    
+                        $return[$item->$key] = $item;
                     } else {
-                        $return[] = $item;    
+                        $return[] = $item;
                     }
                 }
-                return $return;            
+                return $return;
             } else {
                 foreach ($this->container as $item) {
                     if ($key) {
-                        $return[$item->$key] = $item->$value;    
+                        $return[$item->$key] = $item->$value;
                     } else {
-                        $return[] = $item->$value;  
+                        $return[] = $item->$value;
                     }
                 }
                 return $return;
@@ -268,7 +285,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
         } else {
             return $this->sort(function ($a, $b) use ($key) {
                 return strnatcasecmp($a->{$key}, $b->{$key});
-            });            
+            });
         }
     }
     
@@ -290,8 +307,12 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
         
         $count = 1;
         foreach ($args as $array) {
-            if ($array instanceof Collection) $array = $array->container;
-            if (!is_array($array)) throw new \InvalidArgumentException("Orm\Collection->add() expects argument {$count} to be an array");
+            if ($array instanceof Collection) {
+                $array = $array->container;
+            }
+            if (!is_array($array)) {
+                throw new \InvalidArgumentException("Orm\Collection->add() expects argument {$count} to be an array");
+            }
             $merge[] = $array;
             $count++;
         }
@@ -332,7 +353,8 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
         $property = $parts[2];
         
         // Invert affix for not()
-        if ($invert) switch ($affix) {
+        if ($invert) {
+            switch ($affix) {
             case '=':
             case '==':
             default:
@@ -356,6 +378,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                 $affix = '<';
                 break;
         }
+        }
         
         // These affixes only work in SQL land
         switch ($affix) {
@@ -374,15 +397,17 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
     {
         $copy = $this->container;
         
-        if (is_array($filter)) {        
+        if (is_array($filter)) {
             // Loop over items
             foreach ($copy as $itemKey => $item) {
                 // Loop over filters
                 foreach ($filter as $property => $valueList) {
-                    list ($affix, $property) = $this->extractAffix($property, $invertAffix);
+                    list($affix, $property) = $this->extractAffix($property, $invertAffix);
                     
                     // Each filter can have several acceptable values -- force single item to array
-                    if (!is_array($valueList)) $valueList = array($valueList);
+                    if (!is_array($valueList)) {
+                        $valueList = array($valueList);
+                    }
                     // Check each value - if we find a matching value than skip to the next filter.
                     foreach ($valueList as $value) {
                         // Compare based on affix (else == )
@@ -468,7 +493,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                 if (!$filter($item)) {
                     unset($copy[$itemKey]);
                 }
-            }            
+            }
         } else {
             throw new \InvalidArgumentException('Orm\Collection->filter() expects an array or callable');
         }

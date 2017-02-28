@@ -18,7 +18,7 @@ class DataAccess
     public function commit($mode, $table, $id, $data, $externalData, $schema)
     {
         // Create a new query
-        $query = new Query($this->connection);        
+        $query = new Query($this->connection);
 
         // Insert/Update the data, and store the insert id into a variable
         if ($mode == 'delete') {
@@ -38,10 +38,14 @@ class DataAccess
             // Foreign tables
             foreach ($externalData as $property_name => $value) {
                 // Skip property if this isn't an M-M table (M-1 and 1-M tables are dealt with in other ways)
-                if (!$pivot = $schema['many-to-many'][$property_name]) continue;
+                if (!$pivot = $schema['many-to-many'][$property_name]) {
+                    continue;
+                }
                 
                 // We can only do updates support simple connection access for 2 key pivots.
-                if (count($pivot['connections']) != 1) continue;
+                if (count($pivot['connections']) != 1) {
+                    continue;
+                }
                 
                 // Get the table name of the pivot table for this property
                 $tablename = Schema::underscoreCase($pivot['pivot']);
@@ -64,8 +68,8 @@ class DataAccess
         
         // Don't return anything if we just deleted this row.
         if ($mode == 'delete') {
-            return null;  
-        } 
+            return null;
+        }
 
         // Get the id we just inserted
         if ($mode == 'insert') {
@@ -90,7 +94,7 @@ class DataAccess
             // Sort
             if (key_exists('sort', $options)) {
                 foreach ((array) $options['sort'] as $sortby) {
-                    list ($sort, $dir) = explode(' ', $sortby, 3);
+                    list($sort, $dir) = explode(' ', $sortby, 3);
                     $query->sortBy($sort, $dir);
                 }
             }

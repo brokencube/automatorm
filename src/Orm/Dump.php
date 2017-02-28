@@ -4,8 +4,8 @@ namespace Automatorm\Orm;
 
 class Dump
 {
-    static $url_prefix = null;
-    static $id_limit = 15;
+    public static $url_prefix = null;
+    public static $id_limit = 15;
     
     public static function dump($var)
     {
@@ -29,7 +29,7 @@ class Dump
     public static function dumpCollection(Collection $collection)
     {
         if (is_object($collection->first()) and $collection->first() instanceof Model) {
-            $output = "<span><strong>Collection of ".get_class($collection->first())." Models</strong></span>\n";    
+            $output = "<span><strong>Collection of ".get_class($collection->first())." Models</strong></span>\n";
         } else {
             $output = "<span><strong>Collection object:</strong></span>\n";
         }
@@ -46,7 +46,7 @@ class Dump
             return $this->$var;
         };
         
-        $closure = function () use ($data_access){
+        $closure = function () use ($data_access) {
             $data = $data_access->bindTo($this->_data, $this->_data);
             $schema = $data('__model');
             $seen = [];
@@ -80,52 +80,59 @@ class Dump
             
             $output .= "  <span><strong>external_tables</strong></span> =>\n";
             $output .= "    <span><strong>1-1</strong></span> =>\n";
-            if ($schema['one-to-one']) foreach ($schema['one-to-one'] as $key => $contents) {
-                $value = $this->_data->$key;
+            if ($schema['one-to-one']) {
+                foreach ($schema['one-to-one'] as $key => $contents) {
+                    $value = $this->_data->$key;
                 
-                $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen);
-                $seen[$key] = true;
+                    $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen);
+                    $seen[$key] = true;
+                }
             }
 
             $output .= "    <span><strong>*-1</strong></span> =>\n";
-            if ($schema['many-to-one']) foreach ($schema['many-to-one'] as $key => $contents) {
-                $value = $this->_data->$key;
+            if ($schema['many-to-one']) {
+                foreach ($schema['many-to-one'] as $key => $contents) {
+                    $value = $this->_data->$key;
                 
-                $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen);
-                $seen[$key] = true;
+                    $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen);
+                    $seen[$key] = true;
+                }
             }
 
             $output .= "    <span><strong>1-*</strong></span> =>\n";
-            if ($schema['one-to-many']) foreach ($schema['one-to-many'] as $key => $contents) {
-                $ids = $this->_->$key->id;
-                $value = $this->_data->join($key, ['id' => array_slice($ids, 0, \Automatorm\Orm\Dump::$id_limit)]);
+            if ($schema['one-to-many']) {
+                foreach ($schema['one-to-many'] as $key => $contents) {
+                    $ids = $this->_->$key->id;
+                    $value = $this->_data->join($key, ['id' => array_slice($ids, 0, \Automatorm\Orm\Dump::$id_limit)]);
 
-                $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen, count($ids));
+                    $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen, count($ids));
                 
-                $seen[$key] = true;
+                    $seen[$key] = true;
+                }
             }
 
             $output .= "    <span><strong>*-*</strong></span> =>\n";
-            if ($schema['many-to-many']) foreach ($schema['many-to-many'] as $key => $contents) {
-                $ids = $this->_->$key->id;
-                $value = $this->_data->join($key, ['id' => array_slice($ids, 0, \Automatorm\Orm\Dump::$id_limit)]);
+            if ($schema['many-to-many']) {
+                foreach ($schema['many-to-many'] as $key => $contents) {
+                    $ids = $this->_->$key->id;
+                    $value = $this->_data->join($key, ['id' => array_slice($ids, 0, \Automatorm\Orm\Dump::$id_limit)]);
             
-                $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen, count($ids));
+                    $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen, count($ids));
                 
-                $seen[$key] = true;
+                    $seen[$key] = true;
+                }
             }
             
             return $output;
         };
         
         $c = $closure->bindTo($model, $model);
-        return $c();    
+        return $c();
     }
     
     public static function format($key, $value, $seen = [], $collectionCount = 0)
     {
-        switch (true)
-        {                
+        switch (true) {
             case $value instanceof Model:
                 $namespace = explode('\\', get_class($value));
                 $class = array_pop($namespace);
@@ -148,7 +155,9 @@ class Dump
                     $display3 = " ".$value->id;
                 }
                 
-                if (method_exists($value, '__toString')) $display4 = ' (' . \Automatorm\Orm\Dump::safeTruncate($value) . ')';
+                if (method_exists($value, '__toString')) {
+                    $display4 = ' (' . \Automatorm\Orm\Dump::safeTruncate($value) . ')';
+                }
                 break;
 
             case $value instanceof Collection:
@@ -160,7 +169,6 @@ class Dump
                     } else {
                         $ids[] = $obj->id;
                     }
-                    
                 }
                 
                 if ($ids) {
@@ -181,13 +189,15 @@ class Dump
                     } else {
                         $display3 = " [".implode(',', $ids)."]";
                         if (method_exists($obj, '__toString')) {
-                            foreach ($value as $obj) $objstrings[] = \Automatorm\Orm\Dump::safeTruncate($obj);
+                            foreach ($value as $obj) {
+                                $objstrings[] = \Automatorm\Orm\Dump::safeTruncate($obj);
+                            }
                             $display4 = implode(',', $objstrings);
                             $display4 = ' (' . $display4 . ')';
                         }
                     }
                 } else {
-                    $display1 = 'empty';                    
+                    $display1 = 'empty';
                     $display3 = " []";
                 }
                 
@@ -206,7 +216,9 @@ class Dump
                 $type = 'object';
                 $display1 = implode('\\', $namespace) . '\\';
                 $display2 = $class;
-                if (method_exists($value, '__toString')) $display4 = ' (' . (string) $value . ')';
+                if (method_exists($value, '__toString')) {
+                    $display4 = ' (' . (string) $value . ')';
+                }
                 break;
             
             case is_bool($value):
@@ -237,7 +249,7 @@ class Dump
                 $display2.
                 $display3.
                 $display4.
-                "</del>\n";   
+                "</del>\n";
         } else {
             return "<strong>$key</strong> => <small>$type</small> ".
             "<span style='color: #999999;'>$display1</span>".
@@ -250,7 +262,9 @@ class Dump
     
     public static function safeTruncate($string, $length = 50)
     {
-        if (strlen($string) > $length) return htmlspecialchars(substr($string,0,$length)) . '...';
-        return htmlspecialchars($string);        
+        if (strlen($string) > $length) {
+            return htmlspecialchars(substr($string, 0, $length)) . '...';
+        }
+        return htmlspecialchars($string);
     }
 }

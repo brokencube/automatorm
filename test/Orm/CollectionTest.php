@@ -1,6 +1,7 @@
 <?php
 
 namespace Automatorm\UnitTest\Orm;
+
 use Automatorm\Orm\Collection;
 
 class CollectionTest extends \PHPUnit_Framework_TestCase
@@ -13,7 +14,7 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
         $collection = new Collection($array);
         $array2 = $collection->toArray();
         $this->assertEquals($array, $array2);
-    } 
+    }
     
     public function providerTestArray()
     {

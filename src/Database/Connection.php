@@ -20,19 +20,25 @@ class Connection implements \Psr\Log\LoggerAwareInterface, \Automatorm\Interface
      ************************/
     public static function register(array $db, $name = 'default', array $options = null, \Psr\Log\LoggerInterface $logger = null)
     {
-        if (key_exists($name, self::$details)) throw new Ex\Database("Database connection '{$name}' already registered", $name);
+        if (key_exists($name, self::$details)) {
+            throw new Ex\Database("Database connection '{$name}' already registered", $name);
+        }
         return self::$details[$name] = new static($db, $name, $options, $logger);
     }
 
     public static function registerPDO(\PDO $pdo, $name = 'default', \Psr\Log\LoggerInterface $logger = null)
     {
-        if (key_exists($name, self::$details)) throw new Ex\Database("Database connection '{$name}' already registered", $name);
+        if (key_exists($name, self::$details)) {
+            throw new Ex\Database("Database connection '{$name}' already registered", $name);
+        }
         return self::$details[$name] = new static($pdo, $name, null, $logger);
     }
 
     public static function get($name = 'default')
     {
-        if (!self::$details[$name]) throw new Ex\Database("Database connection '$name' not registered.", $name);
+        if (!self::$details[$name]) {
+            throw new Ex\Database("Database connection '$name' not registered.", $name);
+        }
         return self::$details[$name];
     }
 
@@ -43,7 +49,9 @@ class Connection implements \Psr\Log\LoggerAwareInterface, \Automatorm\Interface
     
     public function __get($var)
     {
-        if (property_exists($this, $var)) return $this->{$var};
+        if (property_exists($this, $var)) {
+            return $this->{$var};
+        }
         return null;
     }
    
@@ -60,15 +68,13 @@ class Connection implements \Psr\Log\LoggerAwareInterface, \Automatorm\Interface
     {
         $this->logger = $logger;
         
-        if ($details instanceof \PDO)
-        {
+        if ($details instanceof \PDO) {
             $this->name = $name;
             $this->connection = $details;
             return;
         }
         
-        if (is_array($details))
-        {
+        if (is_array($details)) {
             $this->name = $name;
             $this->unix_socket = $details['unix_socket'];
             $this->server = $details['server'];
@@ -108,10 +114,12 @@ class Connection implements \Psr\Log\LoggerAwareInterface, \Automatorm\Interface
      * This object should always return the same PDO instance until ->disconnect() is called.
      *
      * @return PDO Instance of PDO connection
-     */    
+     */
     public function connect()
     {
-        if ($this->connection) return $this->connection;
+        if ($this->connection) {
+            return $this->connection;
+        }
         
         if ($this->unix_socket) {
             $dsn = $this->type . ':unix_socket=' . $this->unix_socket . ';dbname=' . $this->database.';charset=utf8';
@@ -122,7 +130,7 @@ class Connection implements \Psr\Log\LoggerAwareInterface, \Automatorm\Interface
         try {
             $this->connection = new \PDO($dsn, $this->user, $this->pass, $this->options);
         } catch (\PDOException $e) {
-            unset ($this->connection);
+            unset($this->connection);
             throw new Ex\Database("Database connection failed ({$dsn})", $this, $e);
         }
         

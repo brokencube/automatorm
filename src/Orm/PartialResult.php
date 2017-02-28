@@ -42,27 +42,27 @@ class PartialResult
     
     public function __get($var)
     {
-        if ($this->resolution) return $this->resolution->{$var};
-        if ($var == '_') return $this->resolve();
+        if ($this->resolution) {
+            return $this->resolution->{$var};
+        }
+        if ($var == '_') {
+            return $this->resolve();
+        }
         
-        if (array_key_exists($var, $this->currentSchema['columns']))
-        {
+        if (array_key_exists($var, $this->currentSchema['columns'])) {
             // We have column data, resolve!
             return $this->resolve($var, true);
         }
         
-        if (array_key_exists($var, $this->currentSchema['one-to-many']))
-        {
+        if (array_key_exists($var, $this->currentSchema['one-to-many'])) {
             return $this->push12M($var, $this->currentSchema['one-to-many'][$var]);
         }
 
-        if (array_key_exists($var, $this->currentSchema['many-to-one']))
-        {
+        if (array_key_exists($var, $this->currentSchema['many-to-one'])) {
             return $this->pushM21($var, $this->currentSchema['many-to-one'][$var]);
         }
         
-        if (array_key_exists($var, $this->currentSchema['many-to-many']))
-        {
+        if (array_key_exists($var, $this->currentSchema['many-to-many'])) {
             return $this->pushM2M($var, $this->currentSchema['many-to-many'][$var]);
         }
         
@@ -77,8 +77,7 @@ class PartialResult
         }
         
         // If we are not looking for column data, return the list of 'id's, and use that to get a list of Models
-        if (!$this->resolution)
-        {
+        if (!$this->resolution) {
             // Resolve down to a real Model object, then call __get on it.
             $ids = $this->resolveState('id');
             
@@ -97,9 +96,8 @@ class PartialResult
             $this->resolution = $results;
         }
         
-        if (!is_null($var))
-        {
-            return $this->resolution->{$var};    
+        if (!is_null($var)) {
+            return $this->resolution->{$var};
         }
         
         return $this->resolution;
@@ -121,7 +119,9 @@ class PartialResult
         $query->sql($this->query);
         list($rows) = $query->execute();
         
-        foreach($rows as $row) $return[] = $row[$column];
+        foreach ($rows as $row) {
+            $return[] = $row[$column];
+        }
         return $return;
     }
     

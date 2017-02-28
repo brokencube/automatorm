@@ -6,7 +6,7 @@ use Automatorm\Exception;
 /* MVC Model Class giving a lightweight ORM interface with an indirect active record pattern.
  * The rationale for this superclass is to make it trivial to create an object representing a single row in a database table (and a class
  * representing a database table).
- * 
+ *
  * Features:
  * * Auto generation of object properties - TableName::get($id)->column_name syntax
  * * Foreign key support
@@ -50,7 +50,9 @@ class Model implements \JsonSerializable
     public static function getAll(array $ids = null, $forceRefresh = false)
     {
         // Shortcut if no data is passed
-        if (is_null($ids) or !count($ids)) return new Collection();
+        if (is_null($ids) or !count($ids)) {
+            return new Collection();
+        }
         return static::factoryObjectCache($ids, null, null, $forceRefresh);
     }
     
@@ -63,7 +65,9 @@ class Model implements \JsonSerializable
     {
         $class = get_called_class();
         $namespace = substr($class, 0, strrpos($class, '\\'));
-        if (key_exists($namespace, Schema::$namespaces)) return Schema::$namespaces[$namespace];
+        if (key_exists($namespace, Schema::$namespaces)) {
+            return Schema::$namespaces[$namespace];
+        }
         
         return 'default';
     }
@@ -91,7 +95,7 @@ class Model implements \JsonSerializable
         return static::factory($where, null, null, $options);
     }
     
-    /* FACTORY METHODS */    
+    /* FACTORY METHODS */
     // Build an appropriate Model object based on id and class/table name
     final public static function factory($where, $classOrTable_name = null, $schema = null, array $options = null, $singleResult = false)
     {
@@ -100,11 +104,13 @@ class Model implements \JsonSerializable
         list($class, $table) = $schema->guessContext($classOrTable_name ?: get_called_class());
         $namespace = $schema->namespace;
         
-        // Get data from database        
+        // Get data from database
         $data = Model::factoryData($where, $table, $schema, $options);
         
         // If we're in one object mode, and have no data, return null rather than an empty Model_Collection!
-        if ($singleResult and !$data) return null;
+        if ($singleResult and !$data) {
+            return null;
+        }
         
         // New container for the results
         $collection = new Collection();
@@ -117,7 +123,7 @@ class Model implements \JsonSerializable
                 // Create the object!!
                 $obj = new $class($data_obj);
                 
-                // Store it in the object cache.        
+                // Store it in the object cache.
                 Model::$instance[$namespace][$table][$row['id']] = $obj;
                 
                 // Call Model objects _init() function - this is to avoid recursion issues with object's natural constructor and the cache above
@@ -125,7 +131,9 @@ class Model implements \JsonSerializable
             }
             
             // If we only wanted one object then shortcut and return now that we have it!
-            if ($singleResult) return $obj;
+            if ($singleResult) {
+                return $obj;
+            }
             
             // Add to the model collection
             $collection[] = $obj;
@@ -159,8 +167,7 @@ class Model implements \JsonSerializable
             
             foreach ($ids as $key => $id) {
                 // If an id isn't numeric then skip it
-                if (!is_numeric($id))
-                {
+                if (!is_numeric($id)) {
                     unset($ids[$key]);
                     continue;
                 }
@@ -176,8 +183,7 @@ class Model implements \JsonSerializable
             }
             
             // For any ids we failed to pull out the cache, pull them from the database instead
-            if (count($ids) > 0)
-            {
+            if (count($ids) > 0) {
                 $newresults = static::factory(['id' => $ids], $classOrTable, $schema);
                 $collection = $collection->merge($newresults);
             }
@@ -226,7 +232,9 @@ class Model implements \JsonSerializable
         $table_schema = $schema->getTable($table);
         // "Foreign" tables use a "parent" table for their primary key. We need that parent object for it's id.
         if ($table_schema['type'] == 'foreign') {
-            if (!$parentObject) throw new Exception\Model('NO_PARENT_OBJECT', [$namespace, $class, $table, static::$tablename]);
+            if (!$parentObject) {
+                throw new Exception\Model('NO_PARENT_OBJECT', [$namespace, $class, $table, static::$tablename]);
+            }
             $model_data->id = $parentObject->id;
         }
         
@@ -270,7 +278,9 @@ class Model implements \JsonSerializable
     // This is a replacement constructor that is called after the model object has been placed in the instance cache.
     // The real constructor is marked final as the normal constructor can cause infinite loops when combined with Class::get();
     // Empty by default - designed to be overridden by subclass
-    protected function _init() {}
+    protected function _init()
+    {
+    }
     
     // Actual constructor - stores row data and a the $model for this object type.
     final protected function __construct(Data $data)
@@ -285,13 +295,19 @@ class Model implements \JsonSerializable
     // Dynamic object properties - Prefer properties set on the model object over column data from the db (Model_Data object)
     public function __get($var)
     {
-        if ($var == '_') return new PartialResult($this);
+        if ($var == '_') {
+            return new PartialResult($this);
+        }
         
         // If the property actually exists, then return it rather than looking at the Model_Data object.
-        if (property_exists($this, $var)) return $this->{$var};
+        if (property_exists($this, $var)) {
+            return $this->{$var};
+        }
         
         // If a special property method exists, then call it (again, instead of looking at the Model_Data object).
-        if (method_exists($this, '_property_'.$var)) return $this->{$var} = call_user_func([$this, '_property_'.$var]);
+        if (method_exists($this, '_property_'.$var)) {
+            return $this->{$var} = call_user_func([$this, '_property_'.$var]);
+        }
         
         // Nothing special set up, default to looking at the Model_Data object.
         return $this->{$var} = $this->_data->{$var};
@@ -300,22 +316,25 @@ class Model implements \JsonSerializable
     public function __call($var, $args)
     {
         try {
-            if (is_numeric($args[1]) && ($args[1] & Model::COUNT_ONLY))
+            if (is_numeric($args[1]) && ($args[1] & Model::COUNT_ONLY)) {
                 return $this->_data->joinCount($var, (array) $args[0]);
+            }
             return $this->_data->join($var, (array) $args[0]);
-        }
-        catch (Exception\Model $e)
-        {
+        } catch (Exception\Model $e) {
             throw new \BadMethodCallException("Method does not exist ({$var})", 0, $e);
         }
     }
     
     public function __isset($var)
     {
-        if (property_exists($this, $var)) return true;
+        if (property_exists($this, $var)) {
+            return true;
+        }
         
         // If a special property method exists, then in effect the property exists, even if it hasn't been materialised yet.
-        if (method_exists($this, '_property_'.$var)) return true;
+        if (method_exists($this, '_property_'.$var)) {
+            return true;
+        }
         
         // Check the Data object
         return isset($this->_data->{$var});
@@ -337,7 +356,9 @@ class Model implements \JsonSerializable
     public function __sleep()
     {
         $properties = ['id', 'table', 'namespace'];
-        if ($this->cache) $properties[] = '_data';
+        if ($this->cache) {
+            $properties[] = '_data';
+        }
         
         return $properties;
     }
@@ -351,11 +372,9 @@ class Model implements \JsonSerializable
         if (!$this->_data) {
             // If we don't have a data object, then this object wasn't cached, regenerate the Data object.
             $this->dataRefresh();
-        }
-        else
-        {
+        } else {
             // We have a data object, call replacement constructor after storing in the cache list (to prevent recursion)
-            $this->_init();            
+            $this->_init();
         }
         
         return $this;
@@ -366,7 +385,7 @@ class Model implements \JsonSerializable
         if ($returnOriginal) {
             return $this->_data;
         } else {
-            return clone $this->_data;    
+            return clone $this->_data;
         }
     }
     
@@ -383,26 +402,26 @@ class Model implements \JsonSerializable
         $modelschema = $this->_data->getModel();
         
         // Clean out cached column data
-        foreach ($modelschema['columns'] as $column => $type)
-        {
-            if ($column != 'id' && property_exists($this, $column)) unset($this->{$column});
+        foreach ($modelschema['columns'] as $column => $type) {
+            if ($column != 'id' && property_exists($this, $column)) {
+                unset($this->{$column});
+            }
         }
         
         // Clean out cached "dynamic property" data
-        foreach (get_class_methods(get_called_class()) as $methodname)
-        {
-            if (substr($methodname,0,10) == '_property_')
-            {
-                $column = substr($methodname,10);
+        foreach (get_class_methods(get_called_class()) as $methodname) {
+            if (substr($methodname, 0, 10) == '_property_') {
+                $column = substr($methodname, 10);
                 unset($this->{$column});
             }
         }
         
         // Clean out cached external data
         $foreignkeys = (array) $modelschema['one-to-one'] + (array) $modelschema['one-to-many'] + (array) $modelschema['many-to-many'] + (array) $modelschema['many-to-one'];
-        foreach ($foreignkeys as $column => $value)
-        {
-            if ($column && $column != 'id') unset($this->{$column});
+        foreach ($foreignkeys as $column => $value) {
+            if ($column && $column != 'id') {
+                unset($this->{$column});
+            }
         }
     }
     
@@ -421,7 +440,7 @@ class Model implements \JsonSerializable
         $this->dataClearCache();
         $this->_init();
         
-        return $this;        
+        return $this;
     }
     
     // If true, Data object is preserved when serializing this object

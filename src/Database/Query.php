@@ -14,8 +14,9 @@ class Query implements \Psr\Log\LoggerAwareInterface
     protected $debug;
 
     // Readonly access to object properties
-    public function __get($var) {
-        switch($var) {
+    public function __get($var)
+    {
+        switch ($var) {
             case 'connection':
             case 'error':
             case 'sql':
@@ -26,7 +27,7 @@ class Query implements \Psr\Log\LoggerAwareInterface
         return $this->debug[$var];
     }
     
-    static public function run($sql, $connection = 'default')
+    public static function run($sql, $connection = 'default')
     {
         $query = new static($connection, $sql);
         return $query->execute();
@@ -43,7 +44,9 @@ class Query implements \Psr\Log\LoggerAwareInterface
             throw new Exception\Database('Unknown connection', $connection);
         }
         
-        if ($sql) $this->sql($sql);
+        if ($sql) {
+            $this->sql($sql);
+        }
         
         // Default Logger
         $this->logger = $this->connection->getLogger();
@@ -57,7 +60,7 @@ class Query implements \Psr\Log\LoggerAwareInterface
         } elseif ($sql instanceof Sql) {
             $this->sql[] = $sql;
         } else {
-            $this->sql[] = new Sql(trim($sql), $data);    
+            $this->sql[] = new Sql(trim($sql), $data);
         }
         
         return $this;
@@ -100,18 +103,20 @@ class Query implements \Psr\Log\LoggerAwareInterface
         $pdo = $this->connection->connect();
         
         // We are only allowed to execute each Query object once!
-        if ($this->lock) throw new Exception\Database('QUERY_LOCKED', "This query has already been executed", $this);
+        if ($this->lock) {
+            throw new Exception\Database('QUERY_LOCKED', "This query has already been executed", $this);
+        }
         $this->lock = true;
         
         $count = 0;
         $return = [];
         
         try {
-            foreach($this->sql as $query) {
+            foreach ($this->sql as $query) {
                 $time = microtime(true);
                 $result = $query->execute($pdo);
                 if ($result->columnCount()) {
-                    $return[$count] = $result->fetchAll(\PDO::FETCH_ASSOC);    
+                    $return[$count] = $result->fetchAll(\PDO::FETCH_ASSOC);
                 } else {
                     $return[$count] = [];
                 }
@@ -122,13 +127,11 @@ class Query implements \Psr\Log\LoggerAwareInterface
                 $this->debug[$count]['time'] = microtime(true) - $time;
                 $count++;
             }
-        }
-        catch (\PDOException $e) {
+        } catch (\PDOException $e) {
             $this->debug[$count]['time'] = microtime(true) - $time;
             $this->error = $e->getMessage();
             throw new Exception\Query($this, $e);
-        }
-        finally {
+        } finally {
             // Log the query with Psr3 Logger
             $this->logQuery($this);
         }
@@ -139,12 +142,13 @@ class Query implements \Psr\Log\LoggerAwareInterface
     
     public function logQuery(Query $query)
     {
-        if (!$this->logger) return;
+        if (!$this->logger) {
+            return;
+        }
         
         $count = 0;
-        foreach($query->sql as $sql)
-        {
-            $preview = preg_replace('/\s+/m', ' ', substr($sql->sql,0,100));
+        foreach ($query->sql as $sql) {
+            $preview = preg_replace('/\s+/m', ' ', substr($sql->sql, 0, 100));
             $time = number_format($query->debug[0]['time'] * 1000, 2);
             
             $message = "{$time}ms Con:{$query->connection->name} | $preview";

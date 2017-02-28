@@ -8,7 +8,7 @@ interface Connection
      * This object should always return the same PDO instance until ->disconnect() is called.
      *
      * @return PDO Instance of PDO connection
-     */    
+     */
     public function connect();
     
     /**

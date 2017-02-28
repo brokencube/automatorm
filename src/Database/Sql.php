@@ -9,7 +9,9 @@ class Sql
     public function __construct($sql, $data = [])
     {
         $this->sql = $sql;
-        if (!is_array($data)) $data = [$data];
+        if (!is_array($data)) {
+            $data = [$data];
+        }
         $this->data = $data;
     }
     
@@ -27,7 +29,7 @@ class Sql
     
     public static function build(QueryBuilder $query)
     {
-        list ($sql, $data) = $query->resolve();
+        list($sql, $data) = $query->resolve();
         return new static($sql, $data);
     }
 }

@@ -13,26 +13,30 @@ class Model
     {
         $namespace = $schema->namespace;
         
-        foreach ($schema->model as $model)
-        {
-            if (in_array($model['table_name'], ['blog_category', 'currencies', 'currency_rates', 'currency_rates_current', 'desc'])) continue;
+        foreach ($schema->model as $model) {
+            if (in_array($model['table_name'], ['blog_category', 'currencies', 'currency_rates', 'currency_rates_current', 'desc'])) {
+                continue;
+            }
             $updates = "";
             
             if ($model['type'] === 'table') {
                 $classname = Schema::camelCase($model['table_name']);
                 $filename = $path . DIRECTORY_SEPARATOR . $classname . '.php';
-                if (file_exists($filename)) continue; // Skip existing files
+                if (file_exists($filename)) {
+                    continue;
+                } // Skip existing files
                 
-                foreach ($model['columns'] as $col => $coltype)
-                {
-                    if ($col === 'id') continue;
+                foreach ($model['columns'] as $col => $coltype) {
+                    if ($col === 'id') {
+                        continue;
+                    }
                     if (substr($col, -3) == '_id') {
                         $fk = substr($col, 0, -3);
                         if (key_exists($fk, (array) $model['one-to-one'])) {
                             $updates .= "        // 1-1 map not supported yet: {$col}\n";
                         } elseif (key_exists($fk, (array) $model['one-to-many'])) {
                             $fkclass = Schema::camelCase($model['one-to-many'][$fk]);
-                            $updates .= "        \$db->{$fk} = {$fkclass}::getAll(\$data['{$col}']);\n";                            
+                            $updates .= "        \$db->{$fk} = {$fkclass}::getAll(\$data['{$col}']);\n";
                         } elseif (key_exists($fk, (array) $model['many-to-one'])) {
                             $fkclass = Schema::camelCase($model['many-to-one'][$fk]);
                             $updates .= "        \$db->{$fk} = {$fkclass}::get(\$data['{$col}']);\n";

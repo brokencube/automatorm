@@ -114,7 +114,7 @@ class QueryBuilder
         $query->table($table);
         
         $query->set = $columndata;
-        return $query;        
+        return $query;
     }
 
     /**
@@ -129,7 +129,7 @@ class QueryBuilder
         $query = new static();
         $query->type('replace');
         $query->table($table);
-        return $query;                
+        return $query;
     }
     
     // BUILDER FUNCTIONS
@@ -164,7 +164,7 @@ class QueryBuilder
             $this->tableSubquery = $table->resolve();
         } else {
             $this->table = $table;
-        }        
+        }
     }
     
     public function columns(array $columns)
@@ -185,7 +185,7 @@ class QueryBuilder
             if (is_numeric($key) && $value instanceof SqlString) {
                 $this->where[] = $value;
             } else {
-                $this->where[] = $this->extractWhereColumn($key, $value);    
+                $this->where[] = $this->extractWhereColumn($key, $value);
             }
         }
         return $this;
@@ -203,7 +203,7 @@ class QueryBuilder
             if (is_numeric($key) && $value instanceof SqlString) {
                 $this->having[] = $value;
             } else {
-                $this->having[] = $this->extractWhereColumn($key, $value);    
+                $this->having[] = $this->extractWhereColumn($key, $value);
             }
         }
         return $this;
@@ -234,7 +234,9 @@ class QueryBuilder
      */
     public function sortBy($sort, $dir = 'desc')
     {
-        if ($sort) $this->sortBy[] = ['sort' => $sort, 'dir' => $dir == 'desc' ? 'desc' : 'asc'];
+        if ($sort) {
+            $this->sortBy[] = ['sort' => $sort, 'dir' => $dir == 'desc' ? 'desc' : 'asc'];
+        }
         return $this;
     }
 
@@ -259,7 +261,8 @@ class QueryBuilder
     public function join($table, $rawtype = null)
     {
         $type = 'JOIN';
-        if ($rawtype) switch (strtolower($rawtype)) {
+        if ($rawtype) {
+            switch (strtolower($rawtype)) {
             case 'left':
                 $type = 'LEFT JOIN';
                 break;
@@ -271,6 +274,7 @@ class QueryBuilder
                 break;
             default:
                 throw new Exception\QueryBuilder('Unknown Join Type');
+        }
         }
         
         $this->joins[] = ['table' => $table, 'type' => $type, 'where' => [], 'on' => []];
@@ -288,7 +292,8 @@ class QueryBuilder
     public function joinSubquery($subquery, $alias, $rawtype = null)
     {
         $type = 'JOIN';
-        if ($rawtype) switch (strtolower($rawtype)) {
+        if ($rawtype) {
+            switch (strtolower($rawtype)) {
             case 'left':
                 $type = 'LEFT JOIN';
                 break;
@@ -300,6 +305,7 @@ class QueryBuilder
                 break;
             default:
                 throw new Exception\QueryBuilder('Unknown Join Type');
+        }
         }
         
         $this->joins[] = ['table' => null, 'subquery' => $subquery, 'type' => $type, 'alias' => $alias, 'where' => [], 'on' => []];
@@ -321,7 +327,7 @@ class QueryBuilder
             if (is_numeric($key) && $value instanceof SqlString) {
                 $this->joins[$joinkey]['on'][] = $value;
             } else {
-                $this->joins[$joinkey]['on'][] = $this->extractWhereColumn($key, $value, true);    
+                $this->joins[$joinkey]['on'][] = $this->extractWhereColumn($key, $value, true);
             }
         }
         return $this;
@@ -357,19 +363,21 @@ class QueryBuilder
      */
     public function groupBy($group)
     {
-        if ($group) $this->groupBy[] = $group;
+        if ($group) {
+            $this->groupBy[] = $group;
+        }
         return $this;
     }
     
     // Preprocess Functions
     /**
-     * Extract features from "where" clauses 
+     * Extract features from "where" clauses
      *
      * @param string $column Column name as given by user
      * @param mixed $value Value to compare column to
      * @param bool $onclause Processing is different for "on clauses", clauses of the form column = column
      * @return mixed[] Returns [$column, $comparitor, $value, $special] for future internal use when resolving
-     */    
+     */
     protected function extractWhereColumn($column, $value, $onclause = false)
     {
         $comparitor = '=';
@@ -387,14 +395,15 @@ class QueryBuilder
         // Special case for in clauses
         if (is_array($value) && !$onclause) {
             // Special case for empty in clauses
-            if (!count($value)) return $affix == '!' ? [null, null, null, "true"] : [null, null, null, "false"];
+            if (!count($value)) {
+                return $affix == '!' ? [null, null, null, "true"] : [null, null, null, "false"];
+            }
             
             return [$column, $affix == '!' ? "not in" : "in", $value, null];
         }
         
         // Special case for # "count" clause
-        if (strpos($affix, '#') !== false)
-        {
+        if (strpos($affix, '#') !== false) {
             // Excise the # from the affix
             $affix = substr($affix, 0, strpos($affix, '#')) . substr($affix, strpos($affix, '#') + 1);
             $special = 'count';
@@ -500,7 +509,9 @@ class QueryBuilder
     
     public function resolveJoins()
     {
-        if (!$this->joins) return '';
+        if (!$this->joins) {
+            return '';
+        }
         
         $joinstring = '';
         
@@ -511,7 +522,7 @@ class QueryBuilder
             } elseif ($join['subquery']) {
                 $sql = $join['subquery'];
                 if ($sql instanceof QueryBuilder) {
-                    list ($sql, $subdata) = $join['subquery']->resolve();
+                    list($sql, $subdata) = $join['subquery']->resolve();
                     $this->data = array_merge($this->data, $subdata);
                 }
                 
@@ -533,14 +544,14 @@ class QueryBuilder
                         if ($value instanceof SqlString) {
                             $clauses[] = $this->escapeColumn($column) . " $comp " . $value;
                         } else {
-                            $clauses[] = $this->escapeColumn($column) . ' ' . $comp . ' ' . $this->escapeColumn($value);    
+                            $clauses[] = $this->escapeColumn($column) . ' ' . $comp . ' ' . $this->escapeColumn($value);
                         }
                     }
                 }
             }
             
             if ($clauses) {
-                $joinstring .= ' ON ' . implode(' AND ', $clauses);    
+                $joinstring .= ' ON ' . implode(' AND ', $clauses);
             }
         }
         
@@ -608,7 +619,6 @@ class QueryBuilder
         }
         
         foreach ($this->set as $val) {
-            
             if ($val instanceof SqlString) {
                 $value[] = (string) $val;
             } else {
@@ -628,14 +638,16 @@ class QueryBuilder
     {
         $column = [];
         foreach ($this->columns as $col) {
-            $column[] = $this->escapeColumn($col);    
+            $column[] = $this->escapeColumn($col);
         }
         return implode(', ', $column);
     }
     
     public function resolveWhere()
     {
-        if (!$this->where) return '';
+        if (!$this->where) {
+            return '';
+        }
         $clauses = [];
         foreach ($this->where as $where) {
             $clauses[] = $this->resolveWhereClause($where);
@@ -654,7 +666,9 @@ class QueryBuilder
     
     public function resolveGroup()
     {
-        if (!count($this->groupBy)) return '';
+        if (!count($this->groupBy)) {
+            return '';
+        }
         
         $columns = array_map([$this, 'escapeColumn'], $this->groupBy);
         return ' GROUP BY ' . implode(', ', $columns);
@@ -662,7 +676,9 @@ class QueryBuilder
     
     public function resolveHaving()
     {
-        if (!$this->having) return '';
+        if (!$this->having) {
+            return '';
+        }
         $clauses = [];
         foreach ($this->having as $where) {
             $clauses[] = $this->resolveWhereClause($where);
@@ -672,12 +688,10 @@ class QueryBuilder
     
     public function resolveLimit()
     {
-        if (is_null($this->limit) && is_null($this->offset))
-        {
+        if (is_null($this->limit) && is_null($this->offset)) {
             return '';
         }
-        if (is_null($this->offset))
-        {
+        if (is_null($this->offset)) {
             return " LIMIT {$this->limit}";
         }
         return " LIMIT {$this->offset},{$this->limit}";
@@ -687,7 +701,9 @@ class QueryBuilder
     {
         $sortlist = [];
         foreach ($this->sortBy as $sort) {
-            if ($sort['sort']) $sortlist[] = $this->escapeColumn($sort['sort']) . ' ' . $sort['dir'];
+            if ($sort['sort']) {
+                $sortlist[] = $this->escapeColumn($sort['sort']) . ' ' . $sort['dir'];
+            }
         }
         
         if ($sortlist) {
@@ -700,22 +716,30 @@ class QueryBuilder
     public function escapeTable($table)
     {
         # [FIXME] Alternative engines
-        if (!is_array($table)) return '`' . $table . '`';
+        if (!is_array($table)) {
+            return '`' . $table . '`';
+        }
         if (count($table) == 1) {
             list($key) = array_keys($table);
-            if (is_numeric($key)) return '`' . $table[$key] . '`';
+            if (is_numeric($key)) {
+                return '`' . $table[$key] . '`';
+            }
             return '`' . $key . '` as `' . $table[$key] . '`';
         }
         
         if (count($table) == 2) {
             list($key, $key2) = array_keys($table);
-            if (is_numeric($key2)) return '`' . $table[$key] . '`.`' . $table[$key2] . '`';
+            if (is_numeric($key2)) {
+                return '`' . $table[$key] . '`.`' . $table[$key2] . '`';
+            }
             return '`' . $table[$key] . '`.`' . $key2 . '` as `' . $table[$key2] . '`';
         }
 
         if (count($table) == 3) {
             list($key, $key2, $key3) = array_keys($table);
-            if (is_numeric($key3)) return '`' . $table[$key] . '`.`' . $table[$key2] . '`.`' . $table[$key3] . '`';
+            if (is_numeric($key3)) {
+                return '`' . $table[$key] . '`.`' . $table[$key2] . '`.`' . $table[$key3] . '`';
+            }
             return '`' . $table[$key] . '`.`' . $table[$key2] . '`.`' . $key3 . '` as `' . $table[$key3] . '`';
         }
         
@@ -725,7 +749,9 @@ class QueryBuilder
     public function escapeColumn($rawcolumn)
     {
         // Cowardly refuse to process SqlStrings
-        if ($rawcolumn instanceof SqlString) return $rawcolumn;
+        if ($rawcolumn instanceof SqlString) {
+            return $rawcolumn;
+        }
         
         # [FIXME] Alternative engines
         $q = '`';
@@ -751,10 +777,18 @@ class QueryBuilder
         $third = count($column) == 5 ? $column[4] : '';
         
         // Quote parts
-        if ($first && $first != '*')   $first =  $q . $first  . $q;
-        if ($second && $second != '*') $second = $q . $second . $q;
-        if ($third && $third != '*')   $third =  $q . $third  . $q;
-        if ($alias)                    $alias =  $q . $alias  . $q;
+        if ($first && $first != '*') {
+            $first =  $q . $first  . $q;
+        }
+        if ($second && $second != '*') {
+            $second = $q . $second . $q;
+        }
+        if ($third && $third != '*') {
+            $third =  $q . $third  . $q;
+        }
+        if ($alias) {
+            $alias =  $q . $alias  . $q;
+        }
         
         // Create column
         if ($third) {
@@ -765,7 +799,9 @@ class QueryBuilder
             $return = $first;
         }
         
-        if ($alias) $return .= ' as ' . $alias;
+        if ($alias) {
+            $return .= ' as ' . $alias;
+        }
         
         return $return;
     }

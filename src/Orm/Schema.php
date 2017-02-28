@@ -64,7 +64,8 @@ class Schema
     protected $namespace;
     protected $version;
     
-    protected function __construct($model, \Automatorm\Interfaces\Connection $database, $namespace) {
+    protected function __construct($model, \Automatorm\Interfaces\Connection $database, $namespace)
+    {
         $this->model = $model;
         $this->namespace = $namespace;
         $this->version = static::CURRENT_VERSION;
@@ -136,7 +137,7 @@ class Schema
             }
         }
         
-        // Now look for pivot tables 
+        // Now look for pivot tables
         foreach ($model as $pivottablename => $pivot) {
             // If we have found a table with only foreign keys then this must be a pivot table
             if (count($pivot['many-to-one']) > 1 and count($pivot['columns']) == count($pivot['many-to-one'])) {
@@ -147,12 +148,11 @@ class Schema
                 }
                 
                 // For each foreign key, store details in the table it point to on how to get to the OTHER table in the "Many to Many" relationship
-                foreach ($tableinfo as $i => $table)
-                {
+                foreach ($tableinfo as $i => $table) {
                     // If the column name is named based on the foreign table name, then use the pivot table name as the property name
                     // This is the normal/usual case
                     if ($table['column'] == self::underscoreCase($table['table']) . '_id') {
-                        $property_name = self::underscoreCase($pivottablename);    
+                        $property_name = self::underscoreCase($pivottablename);
                     } else {
                         // Else append the column name to the pivot table name.
                         // This is mostly for when a pivot table references the same table twice, and so
@@ -168,7 +168,6 @@ class Schema
                         'connections' => $othertables,
                         'id' => $table['column'],
                     );
-                    
                 }
                 
                 $model[$pivottablename]['type'] = 'pivot';
@@ -176,7 +175,9 @@ class Schema
                 // Remove the M-1 keys for these tables to fully encapsulate the M-M scheme.
                 foreach ($tableinfo as $table) {
                     foreach ((array) $model[ $table['table'] ][ 'one-to-many' ] as $key => $val) {
-                        if ($val['table'] == $pivottablename) unset ($model[ $table['table'] ][ 'one-to-many' ][$key]);
+                        if ($val['table'] == $pivottablename) {
+                            unset($model[ $table['table'] ][ 'one-to-many' ][$key]);
+                        }
                     }
                 }
             }
@@ -186,24 +187,30 @@ class Schema
     }
 
     // Normalised an under_scored or CamelCased phrase to "under scored" or "camel cased"
-    private static $stringCacheN = []; 
+    private static $stringCacheN = [];
     public static function normaliseCase($string)
     {
-        if (isset(static::$stringCacheN[$string])) return static::$stringCacheN[$string];
+        if (isset(static::$stringCacheN[$string])) {
+            return static::$stringCacheN[$string];
+        }
         return static::$stringCacheN[$string] = trim(strtolower(preg_replace('/([A-Z])|_/', ' $1', $string)));
     }
     
     private static $stringCacheC = [];
     public static function camelCase($string)
     {
-        if (isset(static::$stringCacheC[$string])) return static::$stringCacheC[$string];
+        if (isset(static::$stringCacheC[$string])) {
+            return static::$stringCacheC[$string];
+        }
         return static::$stringCacheC[$string] = str_replace(' ', '', ucwords(self::normaliseCase($string)));
     }
     
     private static $stringCacheU = [];
     public static function underscoreCase($string)
     {
-        if (isset(static::$stringCacheU[$string])) return static::$stringCacheU[$string];
+        if (isset(static::$stringCacheU[$string])) {
+            return static::$stringCacheU[$string];
+        }
         return static::$stringCacheU[$string] = str_replace(' ', '_', self::normaliseCase($string));
     }
     
@@ -212,7 +219,9 @@ class Schema
     public function guessContext($classOrTable)
     {
         // Return 'cached' result
-        if (isset(static::$contextCache[$classOrTable])) return static::$contextCache[$classOrTable];
+        if (isset(static::$contextCache[$classOrTable])) {
+            return static::$contextCache[$classOrTable];
+        }
         
         // Namespace classname? Remove that namespace before continuing
         if (strrpos($classOrTable, '\\') !== false) {
