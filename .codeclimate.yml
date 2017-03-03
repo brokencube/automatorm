@@ -25,6 +25,9 @@ engines:
     enabled: true
     config:
       file_extensions: "php"
+    checks:
+      PhanUndeclaredInterface:
+        enabled: false
 ratings:
   paths:
   - src/**
