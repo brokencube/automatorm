@@ -413,21 +413,24 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                     foreach ($valueList as $value) {
                         // Compare based on affix (else == )
                         switch ($affix) {
-                            
-                            case '=': case '==': default:
+                            case '=':
+                            case '==':
+                            default:
                                 if ($item->$property == $value) {
                                     // Found match - move on to next filter
                                     continue 3; // Back to foreach $filter
                                 }
-                            break;
+                                break;
 
-                            case '!=': case '!': case '<>':
+                            case '!=':
+                            case '!':
+                            case '<>':
                                 if ($item->$property == $value) {
                                     // Found a negative match, remove this item and move on to next property
                                     unset($copy[$itemKey]);
                                     continue 4; // Back to foreach $copy
                                 }
-                            break;
+                                break;
 
                             case '>':
                                 if ($item->$property <= $value) {
@@ -435,7 +438,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                                     unset($copy[$itemKey]);
                                     continue 4; // Back to foreach $copy
                                 }
-                            break;
+                                break;
 
                             case '>=':
                                 if ($item->$property < $value) {
@@ -443,7 +446,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                                     unset($copy[$itemKey]);
                                     continue 4; // Back to foreach $copy
                                 }
-                            break;
+                                break;
 
                             case '<':
                                 if ($item->$property >= $value) {
@@ -451,7 +454,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                                     unset($copy[$itemKey]);
                                     continue 4; // Back to foreach $copy
                                 }
-                            break;
+                                break;
 
                             case '<=':
                                 if ($item->$property > $value) {
@@ -459,7 +462,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                                     unset($copy[$itemKey]);
                                     continue 4; // Back to foreach $copy
                                 }
-                            break;
+                                break;
                         }
                     }
                     

@@ -118,10 +118,10 @@ class Model implements \JsonSerializable
         foreach ($data as $row) {
             if (!$obj = Model::$instance[$namespace][$table][$row['id']]) {
                 // Database data object unique to this object
-                $data_obj = Data::make($row, $table, $schema);
+                $dataObj = Data::make($row, $table, $schema);
                 
                 // Create the object!!
-                $obj = new $class($data_obj);
+                $obj = new $class($dataObj);
                 
                 // Store it in the object cache.
                 Model::$instance[$namespace][$table][$row['id']] = $obj;
@@ -229,13 +229,13 @@ class Model implements \JsonSerializable
         // Make a new blank data object
         $data = new Data([], $table, $schema, false, true);
         
-        $table_schema = $schema->getTable($table);
+        $tableSchema = $schema->getTable($table);
         // "Foreign" tables use a "parent" table for their primary key. We need that parent object for it's id.
-        if ($table_schema['type'] == 'foreign') {
+        if ($tableSchema['type'] == 'foreign') {
             if (!$parentObject) {
                 throw new Exception\Model('NO_PARENT_OBJECT', [$namespace, $class, $table, static::$tablename]);
             }
-            $model_data->id = $parentObject->id;
+            $data->id = $parentObject->id;
         }
         
         return $data;
