@@ -200,7 +200,7 @@ class Model implements \JsonSerializable
     // Get data from database from which we can construct Model objects
     final public static function factoryData($where, $table, Schema $schema, array $options = null)
     {
-        return $schema->database->getDataAccessor()->getData(
+        return $schema->connection->getDataAccessor()->getData(
             $table,
             $where,
             $options
@@ -210,7 +210,7 @@ class Model implements \JsonSerializable
     // Get data from database from which we can construct Model objects
     final public static function factoryDataCount($where, $table, Schema $schema, array $options = null)
     {
-        return $schema->database->getDataAccessor()->getDataCount(
+        return $schema->connection->getDataAccessor()->getDataCount(
             $table,
             $where,
             $options

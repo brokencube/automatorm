@@ -53,7 +53,7 @@ class Dump
             
             $output = "<span><strong>".get_class()."</strong></span>\n";
             $output .= "  <span><strong>id</strong></span> => ".$this->id."\n";
-            $output .= "  <span><strong>connection</strong></span> => ".$this->database."\n";
+            $output .= "  <span><strong>connection</strong></span> => ".$this->connection->name."\n";
             $output .= "  <span><strong>table</strong></span> => ".$this->table."\n";
                         
             $output .= "  <span><strong>object_properties</strong></span> =>\n";

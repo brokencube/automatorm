@@ -679,9 +679,9 @@ class Data
         return $this->__table;
     }
     
-    public function getDatabase()
+    public function getConnection()
     {
-        return $this->__schema->database;
+        return $this->__schema->connection;
     }
     
     public function getModel()
@@ -701,7 +701,7 @@ class Data
     
     public function getDataAccessor()
     {
-        return $this->__schema->database->getDataAccessor();
+        return $this->__schema->connection->getDataAccessor();
     }
     
     public function externalKeyExists($var)

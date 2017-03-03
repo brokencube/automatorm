@@ -1,6 +1,9 @@
 <?php
 namespace Automatorm\Interfaces;
 
+use Automatorm\Interfaces\DataAccess as DataAccessInterface;
+use Automatorm\Interfaces\SchemaGenerator as SchemaGeneratorInterface;
+
 interface Connection
 {
     /**
@@ -19,5 +22,17 @@ interface Connection
      */
     public function disconnect();
     
+    /**
+     * Retrieve an instance of an appropriate dataAccessor.
+     *
+     * @return DataAccessInterface
+     */
     public function getDataAccessor();
+    
+    /**
+     * Retrieve an instance of an appropriate dataAccessor.
+     *
+     * @return SchemaGeneratorInterface
+     */
+    public function getSchemaGenerator();
 }

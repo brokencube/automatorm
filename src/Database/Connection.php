@@ -3,6 +3,7 @@ namespace Automatorm\Database;
 
 use Automatorm\Exception as Ex;
 use Automatorm\Orm\DataAccess;
+use Automatorm\Orm\SchemaGenerator;
 use Automatorm\Interfaces\Connection as ConnectionInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
@@ -145,5 +146,10 @@ class Connection implements LoggerAwareInterface, ConnectionInterface
     public function getDataAccessor()
     {
         return new DataAccess($this);
+    }
+
+    public function getSchemaGenerator()
+    {
+        return new SchemaGenerator($this);
     }
 }

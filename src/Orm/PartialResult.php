@@ -26,7 +26,7 @@ class PartialResult
         $this->schema = $source->_data->getSchema();
         $this->sourceSchema = $this->currentSchema = $source->_data->getModel();
         $this->currentTable = $this->sourceSchema['table_name'];
-        $this->database = $source->_data->getDatabase();
+        $this->database = $source->_data->getConnection();
         
         $this->query = QueryBuilder::select([$this->currentTable => 't1']);
         $this->query->where(['t1.id' => $source->id]);

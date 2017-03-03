@@ -4,13 +4,14 @@ namespace Automatorm\Orm;
 use Automatorm\Database\Query;
 use Automatorm\Database\QueryBuilder;
 use Automatorm\Database\SqlString;
-use Automatorm\Interfaces\Connection;
+use Automatorm\Interfaces\Connection as ConnectionInterface;
+use Automatorm\Interfaces\DataAccess as DataAccessInterface;
 
-class DataAccess
+class DataAccess implements DataAccessInterface
 {
     protected $connection;
     
-    public function __construct(Connection $connection)
+    public function __construct(ConnectionInterface $connection)
     {
         $this->connection = $connection;
     }
@@ -132,7 +133,7 @@ class DataAccess
             $query->where($where);
         }
         
-        list($raw) = Query::run($query, $this->connection);
-        return $raw;
+        list($data) = Query::run($query, $this->connection);
+        return $data;
     }
 }
