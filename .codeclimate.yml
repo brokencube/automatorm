@@ -26,6 +26,8 @@ engines:
     checks:
       PhanUndeclaredInterface:
         enabled: false
+      PhanUndeclaredClassMethod:
+        enabled: false
 ratings:
   paths:
   - src/**
