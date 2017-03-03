@@ -394,7 +394,7 @@ class Data
             if ($where) {
                 foreach ($where as $clause_column => $clause_value) {
                     // Rewrite $where clauses to insert `pivotjoin` table in column name
-                preg_match('/^([!=<>%]*)(.+?)([!=<>%]*)$/', $clause_column, $parts);
+                    preg_match('/^([!=<>%]*)(.+?)([!=<>%]*)$/', $clause_column, $parts);
                     $prefix = $parts[1] ?: $parts[3];
                     $clause_column = $parts[2];
                 
@@ -489,7 +489,7 @@ class Data
             if ($where) {
                 foreach ($where as $clause_column => $clause_value) {
                     // Rewrite $where clauses to insert `pivotjoin` table in column name
-                preg_match('/^([!=<>%]*)(.+?)([!=<>%]*)$/', $clause_column, $parts);
+                    preg_match('/^([!=<>%]*)(.+?)([!=<>%]*)$/', $clause_column, $parts);
                     $prefix = $parts[1] ?: $parts[3];
                     $clause_column = $parts[2];
                 

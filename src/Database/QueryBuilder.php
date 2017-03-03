@@ -134,9 +134,9 @@ class QueryBuilder
     
     // BUILDER FUNCTIONS
     /**
-     * Set columns for "SELECT" style queries
+     * Set query type
      *
-     * @param mixed[] $columns List of select clauses/columns
+     * @param string $type Query type
      * @return self
      */
     public function type($type)
@@ -156,8 +156,15 @@ class QueryBuilder
             default:
                 throw new Exception\QueryBuilder('Unknown Query Type');
         }
+        return $this;
     }
     
+    /**
+     * Set main tablename / subquery
+     *
+     * @param mixed $table Table name, QueryBuilder object, or Table parts array
+     * @return self
+     */
     public function table($table)
     {
         if ($table instanceof QueryBuilder) {
@@ -165,8 +172,15 @@ class QueryBuilder
         } else {
             $this->table = $table;
         }
+        return $this;
     }
     
+    /**
+     * Set columns for "SELECT" style queries
+     *
+     * @param mixed[] $columns List of select clauses/columns
+     * @return self
+     */
     public function columns(array $columns)
     {
         $this->columns = $columns;
