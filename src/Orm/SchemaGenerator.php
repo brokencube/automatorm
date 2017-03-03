@@ -18,7 +18,7 @@ class SchemaGenerator implements SchemaGeneratorInterface
     // Generate Schema
     public function generate()
     {
-        $connection = $this->connection();
+        $connection = $this->connection;
         
         $model = [];
         

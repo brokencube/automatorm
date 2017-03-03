@@ -67,6 +67,7 @@ class DataAccess implements DataAccessInterface
         
         $query->transaction();
         $values = $query->execute();
+        $query->commit();
         
         // Don't return anything if we just deleted this row.
         if ($mode == 'delete') {
