@@ -277,18 +277,18 @@ class QueryBuilder
         $type = 'JOIN';
         if ($rawtype) {
             switch (strtolower($rawtype)) {
-            case 'left':
-                $type = 'LEFT JOIN';
-                break;
-            case 'left outer':
-                $type = 'LEFT OUTER JOIN';
-                break;
-            case 'cross':
-                $type = 'CROSS JOIN';
-                break;
-            default:
-                throw new Exception\QueryBuilder('Unknown Join Type');
-        }
+                case 'left':
+                    $type = 'LEFT JOIN';
+                    break;
+                case 'left outer':
+                    $type = 'LEFT OUTER JOIN';
+                    break;
+                case 'cross':
+                    $type = 'CROSS JOIN';
+                    break;
+                default:
+                    throw new Exception\QueryBuilder('Unknown Join Type');
+            }
         }
         
         $this->joins[] = ['table' => $table, 'type' => $type, 'where' => [], 'on' => []];

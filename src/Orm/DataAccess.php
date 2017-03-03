@@ -23,14 +23,14 @@ class DataAccess implements DataAccessInterface
 
         // Insert/Update the data, and store the insert id into a variable
         if ($mode == 'delete') {
-            $q = QueryBuilder::delete($table, ['id' => $id]);
-            $query->sql($q);
+            $sql = QueryBuilder::delete($table, ['id' => $id]);
+            $query->sql($sql);
         } elseif ($mode == 'insert') {
-            $q = QueryBuilder::insert($table, $data);
-            $query->sql($q)->sql("SELECT last_insert_id() into @id");
+            $sql = QueryBuilder::insert($table, $data);
+            $query->sql($sql)->sql("SELECT last_insert_id() into @id");
         } elseif ($mode == 'update') {
-            $q = QueryBuilder::update($table, $data)->where(['id' => $id]);
-            $query->sql($q)->sql("SELECT {$id} into @id");
+            $sql = QueryBuilder::update($table, $data)->where(['id' => $id]);
+            $query->sql($sql)->sql("SELECT {$id} into @id");
         }
         
         if ($mode != 'delete') {
@@ -66,7 +66,7 @@ class DataAccess implements DataAccessInterface
         }
         
         $query->transaction();
-        $values = $query->execute();
+        $query->execute();
         $query->commit();
         
         // Don't return anything if we just deleted this row.

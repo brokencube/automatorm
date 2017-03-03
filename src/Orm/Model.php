@@ -367,7 +367,7 @@ class Model implements \JsonSerializable
     public function __wakeup()
     {
         // Store the object in the object cache
-        Model::$instance[$namespace][$this->table][strtolower(get_called_class())][$this->id] = $this;
+        Model::$instance[$this->namespace][$this->table][strtolower(get_called_class())][$this->id] = $this;
         
         if (!$this->_data) {
             // If we don't have a data object, then this object wasn't cached, regenerate the Data object.

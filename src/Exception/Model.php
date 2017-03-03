@@ -20,8 +20,8 @@ class Model extends BaseException
             case 'NO_GENERATED_SCHEMA':
                 return 'NO_GENERATED_SCHEMA: Could not find a schema definition for namespace: ' . $data;
             case 'NO_SCHEMA':
-                list($class_or_table, $normalised, $class) = $data;
-                return 'NO_SCHEMA: Could not find a schema definition for this object (' . $class_or_table . '). Are you sure the classname and table are the same (case-insensitive). Otherwise, try calling Model::generate_schema(true) to refresh the schema cache.';
+                list($classOrTable, $normalised, $class) = $data;
+                return 'NO_SCHEMA: Could not find a schema definition for this object (' . $classOrTable . '). Are you sure the classname and table are the same (case-insensitive). Otherwise, try calling Model::generate_schema(true) to refresh the schema cache.';
             
             case 'MODEL_DATA:SET_WHEN_LOCKED':
                 list($column, $value) = $data;
@@ -91,8 +91,8 @@ class Model extends BaseException
                 return 'MODEL_DATA:CANNOT_DELETE_UNCOMMITED_DATA: You cannot mark a Data object for deletion if it does not represent an existing row in the database.';
             
             case 'MODEL_DATA:INCORRECT_MODEL_FOR_RELATIONSHIP':
-                list($column, $supplied_table, $expected_table) = $data;
-                return 'MODEL_DATA:INCORRECT_MODEL_FOR_RELATIONSHIP: Property "'.$column.'" expected a Model relating to table "'.$expected_table.'" but a Model for "'.$supplied_table.'" was given instead.';
+                list($column, $suppliedTable, $expectedTable) = $data;
+                return 'MODEL_DATA:INCORRECT_MODEL_FOR_RELATIONSHIP: Property "'.$column.'" expected a Model relating to table "'.$expectedTable.'" but a Model for "'.$suppliedTable.'" was given instead.';
             default:
                 return "Unknown error code ({$code})";
         }

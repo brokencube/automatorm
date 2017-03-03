@@ -10,6 +10,8 @@ use Automatorm\Exception;
 
 class SchemaGenerator implements SchemaGeneratorInterface
 {
+    protected $connection;
+    
     public function __construct(ConnectionInterface $connection)
     {
         $this->connection = $connection;
@@ -72,12 +74,12 @@ class SchemaGenerator implements SchemaGeneratorInterface
                     // Otherwise, append the column name to the table name to make sure it is unique.
                     // (e.g "your_account" table and "my_account_id" -> your_account_my_account)
                     if ($columnRoot == $row['referenced_table_name']) {
-                        $property_name = Schema::underscoreCase($tableName);
+                        $propertyName = Schema::underscoreCase($tableName);
                     } else {
-                        $property_name = Schema::underscoreCase($tableName) . '_' . $columnRoot;
+                        $propertyName = Schema::underscoreCase($tableName) . '_' . $columnRoot;
                     }
                     
-                    $model[$refTableName]['one-to-many'][$property_name] = array('table' => $tableName, 'column_name' => $row['column_name']);
+                    $model[$refTableName]['one-to-many'][$propertyName] = array('table' => $tableName, 'column_name' => $row['column_name']);
                 }
             }
         }
@@ -97,18 +99,18 @@ class SchemaGenerator implements SchemaGeneratorInterface
                     // If the column name is named based on the foreign table name, then use the pivot table name as the property name
                     // This is the normal/usual case
                     if ($table['column'] == Schema::underscoreCase($table['table']) . '_id') {
-                        $property_name = Schema::underscoreCase($pivottablename);
+                        $propertyName = Schema::underscoreCase($pivottablename);
                     } else {
                         // Else append the column name to the pivot table name.
                         // This is mostly for when a pivot table references the same table twice, and so
                         // needs to have a unique name for at least one of the columns (which is not based on the table name)
-                        $property_name = Schema::underscoreCase($pivottablename) . '_' . $table['column_raw'];
+                        $propertyName = Schema::underscoreCase($pivottablename) . '_' . $table['column_raw'];
                     }
                     
                     // Outersect of tables to create an array of all OTHER foreign keys in this table, for this foreign key.
                     $othertables = array_values(array_diff_assoc($tableinfo, array($i => $table)));
                     
-                    $model[ $table['table'] ][ 'many-to-many' ][ $property_name ] = array(
+                    $model[ $table['table'] ][ 'many-to-many' ][ $propertyName ] = array(
                         'pivot' => $pivottablename,
                         'connections' => $othertables,
                         'id' => $table['column'],
