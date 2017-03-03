@@ -28,6 +28,8 @@ engines:
         enabled: false
       PhanUndeclaredClassMethod:
         enabled: false
+      PhanUndeclaredTrait:
+        enabled: false
 ratings:
   paths:
   - src/**
