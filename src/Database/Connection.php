@@ -96,18 +96,16 @@ class Connection implements LoggerAwareInterface, ConnectionInterface
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
             ];
             $this->type = $details['type'] ?: 'mysql';
-
+            
             if ($this->unix_socket && $this->host) {
                 throw new Ex\Database("Must use host OR unix_socket - both supplied", $details);
             }
             
-            return;
+            $this->schemaGenerator = new SchemaGenerator($this);
+            $this->dataAccess = new DataAccess($this);
+        } else {
+            throw new Ex\Database("Not enough details to construct Database object", $details);
         }
-        
-        $this->schemaGenerator = new SchemaGenerator($this);
-        $this->dataAccess = new DataAccess($this);
-        
-        throw new Ex\Database("Not enough details to construct Database object", $details);
     }
     
     /**
