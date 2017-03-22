@@ -78,12 +78,20 @@ class Data
     }
 
     // Create a open cloned copy of this object, ready to reinsert as a new row.
-    public function duplicate()
+    public function duplicate($clone_M2M_properties = false)
     {
         $clone = clone $this;
         $clone->__new = true;
         $clone->__delete = false;
         unset($clone->__data['id']);
+        
+        // Clone M-M joins
+        if ($clone_M2M_properties) {
+            foreach ($this->__model['many-to-many'] as $key => $model) {
+                $clone->__external[$key] = $this->{$key};
+            }
+        }
+        
         return $clone;
     }
     
