@@ -380,13 +380,14 @@ class Model implements \JsonSerializable
         return $this;
     }
     
-    final public function data($returnOriginal = false)
+    final public function data()
     {
-        if ($returnOriginal) {
-            return $this->_data;
-        } else {
-            return clone $this->_data;
-        }
+        return clone $this->_data;    
+    }
+    
+    final public function dataOriginal()
+    {
+        return $this->_data;
     }
     
     // Swap out the Data object in this Model for an updated one (i.e. after doing an update)

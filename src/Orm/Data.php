@@ -69,15 +69,34 @@ class Data
         $this->__external = array();
     }
 
-    // Create a open cloned copy of this object, ready to reinsert as a new row.
-    public function duplicate()
+    /**
+     * Create a open cloned copy of this object, ready to reinsert as a new row.
+     *
+     * @param bool $clone_M2M_properties Clone M2M properties as well
+     * @return self
+     */
+    public function duplicate($clone_M2M_properties = false)
     {
         $clone = clone $this;
         $clone->__new = true;
         $clone->__delete = false;
         unset($clone->__data['id']);
+        
+        // Clone M-M joins
+        if ($clone_M2M_properties) {
+            foreach ($this->__model['many-to-many'] as $key => $model) {
+                $clone->__external[$key] = $this->{$key};
+            }
+        }
+        
         return $clone;
     }
+
+    /**
+     * Lock id of the object. Once locked, this data object will always represent the id specified.
+     *
+     * @return self
+     */
     
     public function lock()
     {
@@ -85,6 +104,11 @@ class Data
         return $this;
     }
     
+    /**
+     * Mark data object for deletion when commited
+     *
+     * @return self
+     */
     public function delete()
     {
         if ($this->__new) {
@@ -601,7 +625,7 @@ class Data
             } elseif ($value instanceof Model) {
                 // Trying to pass in the wrong table for the relationship!
                 // That is, the table name on the foreign key does not match the table name in the passed Model object
-                $value_table = Schema::normaliseCase($value->data(true)->__table);
+                $value_table = Schema::normaliseCase($value->dataOriginal()->__table);
                 $expected_table = $this->__model['many-to-one'][$var];
                 
                 if ($value_table !== $expected_table) {
