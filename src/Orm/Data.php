@@ -77,7 +77,12 @@ class Data
         $this->__external = array();
     }
 
-    // Create a open cloned copy of this object, ready to reinsert as a new row.
+    /**
+     * Create a open cloned copy of this object, ready to reinsert as a new row.
+     *
+     * @param bool $clone_M2M_properties Clone M2M properties as well
+     * @return self
+     */
     public function duplicate($clone_M2M_properties = false)
     {
         $clone = clone $this;
@@ -94,6 +99,12 @@ class Data
         
         return $clone;
     }
+
+    /**
+     * Lock id of the object. Once locked, this data object will always represent the id specified.
+     *
+     * @return self
+     */
     
     public function lock()
     {
@@ -101,6 +112,11 @@ class Data
         return $this;
     }
     
+    /**
+     * Mark data object for deletion when commited
+     *
+     * @return self
+     */
     public function delete()
     {
         if ($this->__new) throw new Exception\Model('MODEL_DATA:CANNOT_DELETE_UNCOMMITED_DATA');
@@ -259,7 +275,7 @@ class Data
             }
             
             return $results;
-        }        
+        }
     }
 
     public static function groupJoinCount(Collection $collection, $var, $where = [])
