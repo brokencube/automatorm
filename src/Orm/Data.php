@@ -590,7 +590,7 @@ class Data
             } elseif ($value instanceof Model) {
                 // Trying to pass in the wrong table for the relationship!
                 // That is, the table name on the foreign key does not match the table name in the passed Model object
-                $value_table = Schema::normaliseCase($value->data(true)->__table);
+                $value_table = Schema::normaliseCase($value->dataOriginal()->__table);
                 $expected_table = $this->__model['many-to-one'][$var];
                 
                 if ($value_table !== $expected_table) {
