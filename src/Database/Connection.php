@@ -71,6 +71,9 @@ class Connection implements LoggerAwareInterface, ConnectionInterface
     protected $options;
     protected $connection;
     
+    protected $schemaGenerator;
+    protected $dataAccess;
+    
     protected function __construct($details, $name = 'default', array $options = null, LoggerInterface $logger = null)
     {
         $this->logger = $logger;
@@ -101,6 +104,8 @@ class Connection implements LoggerAwareInterface, ConnectionInterface
             return;
         }
         
+        $this->schemaGenerator = new SchemaGenerator($this);
+        $this->dataAccess = new DataAccess($this);
         
         throw new Ex\Database("Not enough details to construct Database object", $details);
     }
@@ -145,11 +150,11 @@ class Connection implements LoggerAwareInterface, ConnectionInterface
     
     public function getDataAccessor()
     {
-        return new DataAccess($this);
+        return $this->dataAccess;
     }
 
     public function getSchemaGenerator()
     {
-        return new SchemaGenerator($this);
+        return $this->schemaGenerator;
     }
 }

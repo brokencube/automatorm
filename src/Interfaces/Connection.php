@@ -7,10 +7,7 @@ use Automatorm\Interfaces\SchemaGenerator as SchemaGeneratorInterface;
 interface Connection
 {
     /**
-     * Return a PDO instance based on the supplied connection details.
-     * This object should always return the same PDO instance until ->disconnect() is called.
-     *
-     * @return PDO Instance of PDO connection
+     * Return an object that can be used by the DataAccessor to retrieve results
      */
     public function connect();
     
