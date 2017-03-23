@@ -39,18 +39,19 @@ class Schema
         
         // Register namespace with connection
         static::$namespaces[$namespace] = $connection;
+        $cache = null;
         
         // Get schema from cache
-        if (static::$cache) {
+        if ($cachebust || !static::$cache) {
+            $model = $connection->getSchemaGenerator()->generate();
+        } else {
             $cache = is_object(static::$cache) ? static::$cache : new static::$cache();
             $key = 'schema_' . md5($namespace . static::CURRENT_VERSION);
             $model = $cache->get($key);
-        }
-        
-        // If no cache, generate the schema
-        if ($cachebust or !$model) {
-            $model = $connection->getSchemaGenerator()->generate();
-            if ($cache) {
+            
+            // If no cache, generate the schema
+            if (!$model) {
+                $model = $connection->getSchemaGenerator()->generate();
                 $cache->put($key, $model, 60 * 60 * 24 * 7);
             }
         }
