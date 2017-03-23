@@ -108,9 +108,6 @@ class DataAccess implements DataAccessInterface
 
     public function getData($table, $where, $options)
     {
-        var_dump($this->tabledata);
-        var_dump($table);
-        
         $tablename = Schema::normaliseCase($table);
         $returnData = [];
         
