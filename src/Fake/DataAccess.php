@@ -110,7 +110,7 @@ class DataAccess implements DataAccessInterface
     {
         $tablename = Schema::normaliseCase($table);
         $returnData = [];
-        
+
         foreach ($this->tabledata[$tablename] as $id => $row) {
             foreach ($where as $column => $clause) {
                 if (is_array($clause)) {
@@ -155,11 +155,11 @@ class DataAccess implements DataAccessInterface
         foreach ($this->tabledata[$tablename] as $id => $row) {
             foreach ($where as $column => $clause) {
                 if (is_array($clause)) {
-                    if (in_array($this->tabledata[$tablename][$column], $clause) === false) {
+                    if (in_array($row[$column], $clause) === false) {
                         continue 2;
                     }
                 } else {
-                    if ($this->tabledata[$tablename][$column] != $clause) {
+                    if ($row[$column] != $clause) {
                         continue 2;
                     }
                 }
@@ -173,6 +173,7 @@ class DataAccess implements DataAccessInterface
     
     public function getM2MData($pivotTablename, $pivot, $ids, $joinwhere = null, $where = null)
     {
+        $data = [];
         /*
         $query = QueryBuilder::select([$pivotTablename => 'pivot'], ['pivot.*'])
             ->where(['`pivot`.'.$pivot['id'] => $ids])

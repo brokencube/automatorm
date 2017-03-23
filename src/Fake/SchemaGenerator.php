@@ -130,7 +130,7 @@ class SchemaGenerator implements SchemaGeneratorInterface
                             $propertyName = Schema::underscoreCase($tableName) . '_' . $columnRoot;
                         }
                         
-                        $model[$refTableName]['one-to-many'][$propertyName] = array('table' => $tableName, 'column_name' => $key['column_name']);
+                        $model[$refTableName]['one-to-many'][$propertyName] = array('table' => $tableName, 'column_name' => $columnName);
                     }
                 }
             }
