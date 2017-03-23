@@ -25,13 +25,13 @@ class SchemaGenerator implements SchemaGeneratorInterface
             
             $matches = [];
             $clean = trim(strtolower($line));
-            if (preg_match('/^\s*([a-z_]+)\s*|', $clean, $matches)) {
+            if (preg_match('/^\s*([a-z_]+)\s*\|/', $clean, $matches)) {
                 $tableName = trim($matches[1]);
                 $columns = [];
-                $rowDefinition = explode(',', substr($clean, strpos($clean, '|')));
+                $rowDefinition = explode(',', substr($clean, strpos($clean, '|') + 1));
                 foreach ($rowDefinition as $columnDefinition) {
                     $columnDefinition = explode(':', $columnDefinition);
-                    $columnname = $columnDefinition[0];
+                    $columnname = trim($columnDefinition[0]);
                     $type = 'text';
                     foreach (array_slice($columnDefinition, 1) as $key => $value) {
                         switch(trim($value)) {
@@ -69,14 +69,14 @@ class SchemaGenerator implements SchemaGeneratorInterface
             
             $matches = [];
             $clean = trim(strtolower($line));
-            if (preg_match('/^\s*([a-z_]+)\s*|', $clean, $matches)) {
+            if (preg_match('/^\s*([a-z_]+)\s*\|/', $clean, $matches)) {
                 if ($tableName) yield $tableName => $keys;
                 $keys = [];
                 $tableName = trim($matches[1]);
                 continue;
             }
             
-            if (preg_match('/^\s*([a-z_]+)\s*->\s*([a-z_]+)\s*|\s*([a-z_]+)\s*$', $clean, $matches)) {
+            if (preg_match('/^\s*([a-z_]+)\s*->\s*([a-z_]+)\s*|\s*([a-z_]+)\s*$/', $clean, $matches)) {
                 $keys[$matches[1]] = ['table' => $matches[2], 'column_name' => $matches[3]];
             }
         }
