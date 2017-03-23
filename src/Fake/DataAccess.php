@@ -108,17 +108,20 @@ class DataAccess implements DataAccessInterface
 
     public function getData($table, $where, $options)
     {
+        var_dump($this->tabledata);
+        var_dump($table);
+        
         $tablename = Schema::normaliseCase($table);
         $returnData = [];
         
         foreach ($this->tabledata[$tablename] as $id => $row) {
             foreach ($where as $column => $clause) {
                 if (is_array($clause)) {
-                    if (in_array($this->tabledata[$tablename][$column], $clause) === false) {
+                    if (in_array($row[$column], $clause) === false) {
                         continue 2;
                     }
                 } else {
-                    if ($this->tabledata[$tablename][$column] != $clause) {
+                    if ($row[$column] != $clause) {
                         continue 2;
                     }
                 }

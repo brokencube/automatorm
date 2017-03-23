@@ -94,7 +94,7 @@ class SchemaGenerator implements SchemaGeneratorInterface
         foreach ($this->generateTableList($data) as $tableName => $rows) {
             $normalised = Schema::normaliseCase($tableName);
             $model[$normalised] = [
-                'tablename' => $tableName,
+                'table_name' => $tableName,
                 'type' => 'table',
                 'columns' => $rows,
                 'one-to-one' => [],
