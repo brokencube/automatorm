@@ -41,14 +41,18 @@ class Schema
         static::$namespaces[$namespace] = $connection;
         
         // Get schema from cache
-        $cache = is_object(static::$cache) ? static::$cache : new static::$cache();
-        $key = 'schema_' . md5($namespace . static::CURRENT_VERSION);
-        $model = $cache->get($key);
+        if (static::$cache) {
+            $cache = is_object(static::$cache) ? static::$cache : new static::$cache();
+            $key = 'schema_' . md5($namespace . static::CURRENT_VERSION);
+            $model = $cache->get($key);
+        }
         
         // If no cache, generate the schema
         if ($cachebust or !$model) {
             $model = $connection->getSchemaGenerator()->generate();
-            $cache->put($key, $model, 60 * 60 * 24 * 7);
+            if ($cache) {
+                $cache->put($key, $model, 60 * 60 * 24 * 7);
+            }
         }
         
         $obj = new static($model, $connection, $namespace);
