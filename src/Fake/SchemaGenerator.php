@@ -76,7 +76,7 @@ class SchemaGenerator implements SchemaGeneratorInterface
                 continue;
             }
             
-            if (preg_match('/^\s*([a-z_]+)\s*->\s*([a-z_]+)\s*|\s*([a-z_]+)\s*$/', $clean, $matches)) {
+            if (preg_match('/^\s*([a-z_]+)\s*->\s*([a-z_]+)\s*\|\s*([a-z_]+)\s*$/', $clean, $matches)) {
                 $keys[$matches[1]] = ['table' => $matches[2], 'column_name' => $matches[3]];
             }
         }
@@ -115,8 +115,8 @@ class SchemaGenerator implements SchemaGeneratorInterface
                     $model[$tableName]['type'] = 'foreign';
                 } elseif ($key['column_name'] == 'id') {
                     // if this foreign key points at one 'id' column then this is a usable foreign 'key'
-                    if (substr($key['column_name'], -3) == '_id') {
-                        $columnRoot = substr($key['column_name'], 0, -3);
+                    if (substr($columnName, -3) == '_id') {
+                        $columnRoot = substr($columnName, 0, -3);
                         $model[$tableName]['many-to-one'][$columnRoot] = $refTableName;
                         
                         // Add the key constraint in reverse, trying to make a sensible name.
@@ -199,4 +199,6 @@ account|id:pk:int, first_name:text, last_name:text
 
 account_project|account_id:pk:int, project_id:pk:int
     1,1
+    account_id->account|id
+    project_id->project|id
  */
