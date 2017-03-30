@@ -45,7 +45,7 @@ class DataAccess implements DataAccessInterface
                 if ($currentTableName) {
                     if (count($rowdata) == count($currentTable['columns'])) {
                         $combined = array_combine(array_keys($currentTable['columns']), $rowdata);
-                        if ($combined['id']) {
+                        if (isset($combined['id'])) {
                             $this->tabledata[$currentTableName][$combined['id']] = $combined;
                         } else {
                             $this->tabledata[$currentTableName][] = $combined;
@@ -130,7 +130,8 @@ class DataAccess implements DataAccessInterface
         if (is_array($options)) {
             // Limit
             if (key_exists('limit', $options)) {
-                $returnData = array_slice($returnData, $options['offset'] ?: 0, $options['limit']);
+                $offset = key_exists('offset', $options) ? $options['offset'] : 0;
+                $returnData = array_slice($returnData, $offset, $options['limit']);
             }
             
             // Sort

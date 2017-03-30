@@ -143,9 +143,9 @@ class SchemaGenerator implements SchemaGeneratorInterface
             // If we have found a table with only foreign keys then this must be a pivot table
             if (count($pivot['many-to-one']) > 1 and count($pivot['columns']) == count($pivot['many-to-one'])) {
                 // Grab all foreign keys and rearrange them into arrays.
-                $tableinfo = array();
+                $tableinfo = [];
                 foreach ($pivot['many-to-one'] as $column => $tablename) {
-                    $tableinfo[] = array('column' => $column . '_id', 'column_raw' => $column, 'table' => $tablename);
+                    $tableinfo[] = ['column' => $column . '_id', 'column_raw' => $column, 'table' => $tablename];
                 }
                 
                 // For each foreign key, store details in the table it point to on how to get to the OTHER table in the "Many to Many" relationship
@@ -162,7 +162,12 @@ class SchemaGenerator implements SchemaGeneratorInterface
                     }
                     
                     // Outersect of tables to create an array of all OTHER foreign keys in this table, for this foreign key.
-                    $othertables = array_values(array_diff_assoc($tableinfo, array($i => $table)));
+                    $othertables = [];
+                    foreach ($tableinfo as $key => $value) {
+                        if ($value['column'] !== $table['column'] && $value['table'] !== $table['table']) {
+                            $othertables[$key] = $value;
+                        }
+                    }
                     
                     $model[ $table['table'] ][ 'many-to-many' ][ $propertyName ] = array(
                         'pivot' => $pivottablename,
