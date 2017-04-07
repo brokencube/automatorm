@@ -2,6 +2,7 @@
 namespace Automatorm\Orm;
 
 use Automatorm\Exception;
+use Automatorm\Database\SqlString;
 
 class Data
 {
@@ -84,7 +85,7 @@ class Data
         
         // Clone M-M joins
         if ($clone_M2M_properties) {
-            foreach ($this->__model['many-to-many'] as $key => $model) {
+            foreach (array_keys($this->__model['many-to-many']) as $key) {
                 $clone->__external[$key] = $this->{$key};
             }
         }
@@ -273,8 +274,6 @@ class Data
         }
         
         $proto = $collection[0]->_data;
-        
-        $results = new Collection();
         
         /* FOREIGN KEYS */
         if (key_exists($var, (array) $proto->__model['one-to-one'])) {
@@ -585,82 +584,21 @@ class Data
         
         // Updating normal columns
         if (key_exists($var, $this->__model['columns'])) {
-            if ($this->__model['columns'][$var] == 'datetime'
-                or $this->__model['columns'][$var] == 'timestamp'
-                or $this->__model['columns'][$var] == 'date'
-            ) {
-                // Special checks for datetimes
-                // Special case for "null"
-                if (is_null($value)) {
-                    $this->__data[$var] = null;
-                } elseif ($value instanceof Time) {
-                    $this->__data[$var] = $value;
-                } elseif ($value instanceof \DateTime) {
-                    $this->__data[$var] = new Time($value->format(Time::MYSQL_DATE), new \DateTimeZone('UTC'));
-                } elseif (($datetime = strtotime($value)) !== false) { // Fall back to standard strings
-                    $this->__data[$var] = new Time(date(Time::MYSQL_DATE, $datetime), new \DateTimeZone('UTC'));
-                } elseif (is_int($value)) { // Fall back to unix timestamp
-                    $this->__data[$var] = new Time(date(Time::MYSQL_DATE, $value), new \DateTimeZone('UTC'));
-                } else {
-                    // Oops!
-                    throw new Exception\Model('MODEL_DATA:DATETIME_VALUE_EXPECTED_FOR_COLUMN', array($var, $value));
-                }
-            } elseif (is_scalar($value) or is_null($value) or $value instanceof DB_String) {
-                // Standard values
-                $this->__data[$var] = $value;
-            } else {
-                // Objects, arrays etc that cannot be stored in a db column. Explosion!
-                throw new Exception\Model('MODEL_DATA:SCALAR_VALUE_EXPECTED_FOR_COLUMN', array($var, $value));
-            }
-            
-            return;
+            return $this->__data[$var] = $this->setColumnData($var, $value);
         }
         
         // table_id -> Table - Foreign keys to other tables
         if (key_exists($var, (array) $this->__model['many-to-one'])) {
-            if (is_null($value)) {
-                $this->__data[$var.'_id'] = null;
-                $this->__external[$var] = null;
-                return;
-            } elseif ($value instanceof Model) {
-                // Trying to pass in the wrong table for the relationship!
-                // That is, the table name on the foreign key does not match the table name in the passed Model object
-                $value_table = Schema::normaliseCase($value->dataOriginal()->__table);
-                $expected_table = $this->__model['many-to-one'][$var];
-                
-                if ($value_table !== $expected_table) {
-                    throw new Exception\Model('MODEL_DATA:INCORRECT_MODEL_FOR_RELATIONSHIP', [$var, $value_table, $expected_table]);
-                }
-                $this->__data[$var.'_id'] = $value->id;
-                $this->__external[$var] = $value;
-                return;
-            } else {
-                throw new Exception\Model('MODEL_DATA:MODEL_EXPECTED_FOR_KEY', [$var, $value]);
-            }
+            list(
+                $this->__data[$var . '_id'],
+                $this->__external[$var]
+            ) = $this->setManyToOneData($var, $value);
+            return;
         }
         
         // Pivot tables - needs an array of appropriate objects for this column
         if (key_exists($var, (array) $this->__model['many-to-many'])) {
-            if (is_array($value)) {
-                $value = new Collection($value);
-            }
-            if (!$value) {
-                $value = new Collection();
-            }
-            
-            // Still not got a valid collection? Boom!
-            if (!$value instanceof Collection) {
-                throw new Exception\Model('MODEL_DATA:ARRAY_EXPECTED_FOR_PIVOT', array($var, $value));
-            }
-            
-            foreach ($value as $obj) {
-                if (!$obj instanceof Model) {
-                    throw new Exception\Model('MODEL_DATA:MODEL_EXPECTED_IN_PIVOT_ARRAY', array($var, $value, $obj));
-                }
-            }
-            
-            $this->__external[$var] = $value;
-            return;
+            return $this->__external[$var] = $this->setManyToManyData($var, $value);
         }
         
         // Table::this_id -> this - Foreign keys on other tables pointing to this one - we cannot 'set' these here.
@@ -671,6 +609,80 @@ class Data
         
         // Undefined column
         throw new Exception\Model('MODEL_DATA:UNEXPECTED_COLUMN_NAME', array($this->__model, $var, $value));
+    }
+    
+    protected function setColumnData($var, $value)
+    {
+        if ($this->__model['columns'][$var] == 'datetime'
+            or $this->__model['columns'][$var] == 'timestamp'
+            or $this->__model['columns'][$var] == 'date'
+        ) {
+            // Special checks for datetimes
+            // Special case for "null"
+            if (is_null($value)) {
+                return null;
+            } elseif ($value instanceof Time) {
+                return $value;
+            } elseif ($value instanceof \DateTime) {
+                return new Time($value->format(Time::MYSQL_DATE), new \DateTimeZone('UTC'));
+            } elseif (($datetime = strtotime($value)) !== false) { // Fall back to standard strings
+                return new Time(date(Time::MYSQL_DATE, $datetime), new \DateTimeZone('UTC'));
+            } elseif (is_int($value)) { // Fall back to unix timestamp
+                return new Time(date(Time::MYSQL_DATE, $value), new \DateTimeZone('UTC'));
+            } else {
+                // Oops!
+                throw new Exception\Model('MODEL_DATA:DATETIME_VALUE_EXPECTED_FOR_COLUMN', array($var, $value));
+            }
+        } elseif (is_scalar($value) or is_null($value) or $value instanceof SqlString) {
+            // Standard values
+            return $value;
+        }
+        
+        // Objects, arrays etc that cannot be stored in a db column. Explosion!
+        throw new Exception\Model('MODEL_DATA:SCALAR_VALUE_EXPECTED_FOR_COLUMN', array($var, $value));
+    }
+    
+    protected function setManyToOneData($var, $value)
+    {
+        if (is_null($value)) {
+            return [null, null];
+        } elseif ($value instanceof Model) {
+            // Trying to pass in the wrong table for the relationship!
+            // That is, the table name on the foreign key does not match the table name in the passed Model object
+            $value_table = Schema::normaliseCase($value->dataOriginal()->__table);
+            $expected_table = $this->__model['many-to-one'][$var];
+            
+            if ($value_table !== $expected_table) {
+                throw new Exception\Model('MODEL_DATA:INCORRECT_MODEL_FOR_RELATIONSHIP', [$var, $value_table, $expected_table]);
+            }
+            return [$value->id, $value];
+        } else {
+            throw new Exception\Model('MODEL_DATA:MODEL_EXPECTED_FOR_KEY', [$var, $value]);
+        }        
+    }
+    
+    protected function setManyToManyData($var, $value)
+    {
+        if (is_null($value)) {
+            return new Collection();
+        }
+        
+        if (is_array($value)) {
+            $value = new Collection($value);
+        }
+        
+        // Still not got a valid collection? Boom!
+        if (!$value instanceof Collection) {
+            throw new Exception\Model('MODEL_DATA:ARRAY_EXPECTED_FOR_PIVOT', [$var, $value]);
+        }
+        
+        foreach ($value as $obj) {
+            if (!$obj instanceof Model) {
+                throw new Exception\Model('MODEL_DATA:MODEL_EXPECTED_IN_PIVOT_ARRAY', [$var, $value, $obj]);
+            }
+        }
+        
+        return $value;
     }
     
     public function commit()
