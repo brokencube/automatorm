@@ -122,9 +122,8 @@ class DataAccess implements DataAccessInterface
                         continue 2;
                     }
                 }
-                
-                $returnData[] = $row;
             }
+            $returnData[] = $row;
         }
         
         if (is_array($options)) {

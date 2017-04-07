@@ -116,7 +116,7 @@ class Model implements \JsonSerializable
         $collection = new Collection();
         
         foreach ($data as $row) {
-            if (!$obj = Model::$instance[$namespace][$table][$row['id']]) {
+            if (!$obj = isset(Model::$instance[$namespace][$table][$row['id']]) ? Model::$instance[$namespace][$table][$row['id']] : false) {
                 // Database data object unique to this object
                 $dataObj = Data::make($row, $table, $schema);
                 

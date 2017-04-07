@@ -34,12 +34,7 @@ TEST;
         $this->schema = Schema::generate($this->connection, "Automatorm\\UnitTest\\Fake", true);
     }
     
-    public function testGetReturnsProperty()
-    {
-        $project = \Automatorm\UnitTest\Fake\Project::get(1);
-        $this->assertEquals($project->description, "my project");
-    }
-    
+    // ::get
     public function testGetReturnsObject()
     {
         $project = \Automatorm\UnitTest\Fake\Project::get(1);
@@ -50,5 +45,78 @@ TEST;
     {
         $project = \Automatorm\UnitTest\Fake\Project::get(3);
         $this->assertNull($project);
+    }
+
+    public function testGetReturnsProperty()
+    {
+        $project = \Automatorm\UnitTest\Fake\Project::get(1);
+        $this->assertEquals($project->description, "my project");
+    }
+
+    // ::find
+    public function testFindReturnsObject()
+    {
+        $project = \Automatorm\UnitTest\Fake\Project::find(['id' => 1]);
+        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project);
+    }
+
+    public function testFailedFindReturnsNull()
+    {
+        $project = \Automatorm\UnitTest\Fake\Project::find(['id' => 3]);
+        $this->assertNull($project);
+    }
+
+    public function testFindReturnsProperty()
+    {
+        $project = \Automatorm\UnitTest\Fake\Project::find(['id' => 1]);
+        $this->assertEquals($project->description, "my project");
+    }
+    
+    // ::findAll Single
+    public function testFindAllReturnsCollection()
+    {
+        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id' => 1]);
+        $this->assertInstanceOf(\Automatorm\Orm\Collection::class, $project);
+    }
+
+    public function testFailedFindAllReturnsCollection()
+    {
+        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id' => 3]);
+        $this->assertInstanceOf(\Automatorm\Orm\Collection::class, $project);
+    }
+
+    public function testFindAllReturnsCollectionOfProject()
+    {
+        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id' => 1]);
+        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $this->assertEquals(1, $project->count());
+    }
+
+    public function testFailedFindAllReturnsEmptyCollection()
+    {
+        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id' => 3]);
+        $this->assertNull($project->first());
+        $this->assertEquals(0, $project->count());
+    }
+
+    public function testFindAllReturnsCollectionOfProperties()
+    {
+        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id' => 1]);
+        $this->assertInstanceOf(\Automatorm\Orm\Collection::class, $project->description);
+        $this->assertEquals(1, $project->description->count());
+        $this->assertEquals($project->first()->description, "my project");
+        $this->assertEquals($project->description->first(), "my project");
+    }
+    
+    // ::findAll Many
+    public function testUnboundFindAllReturnsCollectionOfAll()
+    {
+        $project = \Automatorm\UnitTest\Fake\Project::findAll();
+        $this->assertInstanceOf(\Automatorm\Orm\Collection::class, $project);
+        $this->assertEquals(2, $project->count());
+        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first(), 'First object is not instance of Automatorm\UnitTest\Fake\Project');
+        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->last(), 'Last object is not instance of Automatorm\UnitTest\Fake\Project');
+        $this->assertEquals(1, $project->first()->id);
+        $this->assertEquals(2, $project->last()->id);
     }
 }
