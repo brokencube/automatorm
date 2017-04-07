@@ -4,8 +4,8 @@ namespace Automatorm\Orm;
 use Automatorm\Exception;
 
 /* MVC Model Class giving a lightweight ORM interface with an indirect active record pattern.
- * The rationale for this superclass is to make it trivial to create an object representing a single row in a database table (and a class
- * representing a database table).
+ * The rationale for this superclass is to make it trivial to create an object representing
+ * a single row in a database table (and a class representing a database table).
  *
  * Features:
  * * Auto generation of object properties - TableName::get($id)->column_name syntax
@@ -24,8 +24,8 @@ class Model implements \JsonSerializable
     // Flags
     const COUNT_ONLY = 1;
     
-    public static $tablename;       // Override table associated with this class
-    protected static $instance;     // An internal store of already created objects so that objects for each row only get created once
+    public static $tablename;   // Override table associated with this class
+    protected static $instance; // An internal store of created objects so that objects for each row only get created once
     
     /* PUBLIC CONSTRUCTION METHODS */
     /**
@@ -146,7 +146,7 @@ class Model implements \JsonSerializable
     final public static function factoryObjectCache($ids, $classOrTable = null, Schema $schema = null, $forceRefresh = false)
     {
         $schema = $schema ?: Schema::get(static::getNamespace());
-        list($class, $table) = $schema->guessContext($classOrTable ?: get_called_class());
+        list(,$table) = $schema->guessContext($classOrTable ?: get_called_class());
         $namespace = $schema->namespace;
         
         // If we have a single id
@@ -200,21 +200,13 @@ class Model implements \JsonSerializable
     // Get data from database from which we can construct Model objects
     final public static function factoryData($where, $table, Schema $schema, array $options = null)
     {
-        return $schema->connection->getDataAccessor()->getData(
-            $table,
-            $where,
-            $options
-        );
+        return $schema->connection->getDataAccessor()->getData($table, $where, $options);
     }
 
     // Get data from database from which we can construct Model objects
     final public static function factoryDataCount($where, $table, Schema $schema, array $options = null)
     {
-        return $schema->connection->getDataAccessor()->getDataCount(
-            $table,
-            $where,
-            $options
-        );
+        return $schema->connection->getDataAccessor()->getDataCount($table, $where, $options);
     }
     
     // Return an empty Model_Data object for this class/table so that a new object can be constructed (and a new row entered in the table).
@@ -382,7 +374,7 @@ class Model implements \JsonSerializable
     
     final public function data()
     {
-        return clone $this->_data;    
+        return clone $this->_data;
     }
     
     final public function dataOriginal()
@@ -403,7 +395,7 @@ class Model implements \JsonSerializable
         $modelschema = $this->_data->getModel();
         
         // Clean out cached column data
-        foreach ($modelschema['columns'] as $column => $type) {
+        foreach (array_keys($modelschema['columns']) as $column) {
             if ($column != 'id' && property_exists($this, $column)) {
                 unset($this->{$column});
             }
@@ -419,7 +411,7 @@ class Model implements \JsonSerializable
         
         // Clean out cached external data
         $foreignkeys = (array) $modelschema['one-to-one'] + (array) $modelschema['one-to-many'] + (array) $modelschema['many-to-many'] + (array) $modelschema['many-to-one'];
-        foreach ($foreignkeys as $column => $value) {
+        foreach (array_keys($foreignkeys) as $column) {
             if ($column && $column != 'id') {
                 unset($this->{$column});
             }
