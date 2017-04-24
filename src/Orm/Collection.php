@@ -284,7 +284,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
         $order = array_values($listOfIds);
         
         return $this->sort(function ($a, $b) use ($order) {
-            return array_search($b->id, $order) - array_search($a->id, $order);
+            return array_search($a->id, $order) - array_search($b->id, $order);
         });
     }
 
