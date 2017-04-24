@@ -268,6 +268,25 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
         uasort($copy, $function);
         return new static($copy);
     }
+    
+    /**
+     * Return a new sorted Collection using the already ordered list of Ids
+     * Only works for collections containing Model objects
+     *
+     * @param callable $function Callable to use to sort the array
+     * @return self New Collection containing the sorted items
+     */
+    public function sortById(array $listOfIds)
+    {
+        if (!$this->first() instanceof Model) {
+            throw new Exception\BaseException('sortById can only be called on collections of Model objects');
+        }
+        $order = array_values($listOfIds);
+        
+        return $this->sort(function ($a, $b) use ($order) {
+            return array_search($b->id, $order) - array_search($a->id, $order);
+        });
+    }
 
     /**
      * Return a new sorted Collection using provided sort function (through uasort() + strnatcasecmp())
