@@ -152,7 +152,7 @@ class Query implements LoggerAwareInterface
         $count = 0;
         foreach ($query->sql as $sql) {
             $preview = preg_replace('/\s+/m', ' ', substr($sql->sql, 0, 100));
-            $time = number_format($query->debug[0]['time'] * 1000, 2);
+            $time = number_format($query->debug[$count]['time'] * 1000, 2);
             
             $message = "{$time}ms Con:{$query->connection->name} | $preview";
             $this->logger->notice(
@@ -164,6 +164,7 @@ class Query implements LoggerAwareInterface
                     'error' => $query->error
                 ]
             );
+            $count++;
         }
     }
 }
