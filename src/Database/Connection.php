@@ -25,7 +25,7 @@ class Connection implements LoggerAwareInterface, ConnectionInterface
     /************************
      * CONNECTION FUNCTIONS *
      ************************/
-    public static function register(array $db, $name = 'default', array $options = null, LoggerInterface $logger = null)
+    public static function register(array $db, $name = 'default', LoggerInterface $logger = null, array $options = null)
     {
         if (key_exists($name, self::$details)) {
             throw new Ex\Database("Database connection '{$name}' already registered", $name);
