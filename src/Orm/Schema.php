@@ -5,20 +5,13 @@ namespace Automatorm\Orm;
 use Automatorm\Exception;
 use Automatorm\Database\Query;
 use Automatorm\Database\Connection;
-use Automatorm\Cache\CacheInterface;
-use HodgePodge\Core\Cache;
+use Psr\SimpleCache\CacheInterface as Psr16;
+use Psr\Cache\CacheItemPoolInterface as Psr6;
 
 class Schema
 {
     const CURRENT_VERSION = 7;
 
-    // Cache Bridge
-    protected static $cache = '\\Automatorm\\Cache\\HodgePodgeCache';
-    public static function registerCache($cache)
-    {
-        static::$cache = $cache;
-    }
-    
     // Singleton
     public static $singleton = [];
     public static $namespaces = [];
@@ -31,7 +24,7 @@ class Schema
         return static::$singleton[$namespace];
     }
 
-    public static function generate($connection, $namespace = 'models', $cachebust = false)
+    public static function generate($connection, $namespace = 'models', $cache = null)
     {
         if (!$connection instanceof \Automatorm\Interfaces\Connection) {
             $connection = Connection::get($connection);
@@ -39,20 +32,41 @@ class Schema
         
         // Register namespace with connection
         static::$namespaces[$namespace] = $connection;
-        $cache = null;
-        
         // Get schema from cache
-        if ($cachebust || !static::$cache) {
+        if (!$cache) {
             $model = $connection->getSchemaGenerator()->generate();
         } else {
-            $cache = is_object(static::$cache) ? static::$cache : new static::$cache();
             $key = 'schema_' . md5($namespace . static::CURRENT_VERSION);
-            $model = $cache->get($key);
+            
+            if (!$cache instanceof Psr16 && !$cache instanceof Psr6) {
+                throw new \InvalidArgumentException('Supplied $cache does not implement PSR6/16 interface');
+            }
+            
+            if ($cache instanceof Psr16) {
+                $model = $this->cache->get($key);
+            }
+                
+            if ($cache instanceof Psr6) {
+                $item = $cache->getItem($key);
+                if ($item->isHit()) {
+                    $model = $item->get();
+                }
+            }
             
             // If no cache, generate the schema
             if (!$model) {
                 $model = $connection->getSchemaGenerator()->generate();
-                $cache->put($key, $model, 60 * 60 * 24 * 7);
+                
+                if ($this->cache instanceof Psr16) {
+                    $this->cache->set($key, $model, 3600);
+                }
+                    
+                if ($this->cache instanceof Psr6) {
+                    $item = $this->cache->getItem($key);
+                    $item->set($model);
+                    $item->expiresAt(new \DateTime('now + 3600 seconds'));
+                    $this->cache->save($item);
+                }
             }
         }
         
