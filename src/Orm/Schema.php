@@ -10,7 +10,7 @@ use Psr\Cache\CacheItemPoolInterface as Psr6;
 
 class Schema
 {
-    const CURRENT_VERSION = 7;
+    const CURRENT_VERSION = 8;
 
     // Singleton
     public static $singleton = [];
@@ -43,7 +43,7 @@ class Schema
             }
             
             if ($cache instanceof Psr16) {
-                $model = $this->cache->get($key);
+                $model = $cache->get($key);
             }
                 
             if ($cache instanceof Psr6) {
@@ -57,15 +57,15 @@ class Schema
             if (!$model) {
                 $model = $connection->getSchemaGenerator()->generate();
                 
-                if ($this->cache instanceof Psr16) {
-                    $this->cache->set($key, $model, 3600);
+                if ($cache instanceof Psr16) {
+                    $cache->set($key, $model, 3600);
                 }
                     
-                if ($this->cache instanceof Psr6) {
-                    $item = $this->cache->getItem($key);
+                if ($cache instanceof Psr6) {
+                    $item = $cache->getItem($key);
                     $item->set($model);
                     $item->expiresAt(new \DateTime('now + 3600 seconds'));
-                    $this->cache->save($item);
+                    $cache->save($item);
                 }
             }
         }
