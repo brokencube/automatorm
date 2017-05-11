@@ -204,7 +204,7 @@ class Dump
                 $type = 'Collection';
                 break;
             
-            case $value instanceof Time:
+            case $value instanceof DateTimeInterface:
                 $type = 'DateTime';
                 $display3 = $value->format('Y-m-d H:i:s');
                 break;

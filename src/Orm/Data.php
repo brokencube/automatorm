@@ -55,7 +55,7 @@ class Data
                 or $this->__model['columns'][$key] == 'timestamp'
                 or $this->__model['columns'][$key] == 'date'
             )) {
-                $this->__data[$key] = new Time($value, new \DateTimeZone('UTC'));
+                $this->__data[$key] = new \DateTimeImmutable($value, new \DateTimeZone('UTC'));
             } else {
                 $this->__data[$key] = $value;
             }
@@ -621,14 +621,12 @@ class Data
             // Special case for "null"
             if (is_null($value)) {
                 return null;
-            } elseif ($value instanceof Time) {
+            } elseif ($value instanceof \DateTimeInterface) {
                 return $value;
-            } elseif ($value instanceof \DateTime) {
-                return new Time($value->format(Time::MYSQL_DATE), new \DateTimeZone('UTC'));
             } elseif (($datetime = strtotime($value)) !== false) { // Fall back to standard strings
-                return new Time(date(Time::MYSQL_DATE, $datetime), new \DateTimeZone('UTC'));
+                return new \DateTimeImmutable('@' . $datetime, new \DateTimeZone('UTC'));
             } elseif (is_int($value)) { // Fall back to unix timestamp
-                return new Time(date(Time::MYSQL_DATE, $value), new \DateTimeZone('UTC'));
+                return new \DateTimeImmutable('@' . $value, new \DateTimeZone('UTC'));
             } else {
                 // Oops!
                 throw new Exception\Model('MODEL_DATA:DATETIME_VALUE_EXPECTED_FOR_COLUMN', array($var, $value));
