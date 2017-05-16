@@ -89,7 +89,7 @@ class Model implements \JsonSerializable
         $namespace = $schema->namespace;
         
         // Get data from database
-        $data = Model::factoryData($where, $table, $schema, $options);
+        $data = Data::factoryData($where, $table, $schema, $options);
         
         // If we're in one object mode, and have no data, return null rather than an empty Model_Collection!
         if ($singleResult and !$data) {
@@ -179,18 +179,6 @@ class Model implements \JsonSerializable
         } else {
             return null;
         }
-    }
-    
-    // Get data from database from which we can construct Model objects
-    final public static function factoryData($where, $table, Schema $schema, array $options = null)
-    {
-        return $schema->connection->getDataAccessor()->getData($table, $where, $options);
-    }
-
-    // Get data from database from which we can construct Model objects
-    final public static function factoryDataCount($where, $table, Schema $schema, array $options = null)
-    {
-        return $schema->connection->getDataAccessor()->getDataCount($table, $where, $options);
     }
     
     // Return an empty Model_Data object for this class/table so that a new object can be constructed (and a new row entered in the table).
@@ -354,18 +342,12 @@ class Model implements \JsonSerializable
     
     final public function data()
     {
-        return clone $this->_data;
-    }
-    
-    final public function dataOriginal()
-    {
         return $this->_data;
     }
     
-    public function commit(Data $db)
+    public function commit()
     {
-        $db->commit();
-        $this->_data = $db;
+        $this->_data->commit();
         $this->dataClearCache();
     }
     
@@ -408,7 +390,7 @@ class Model implements \JsonSerializable
     final public function dataRefresh()
     {
         $schema = Schema::get($this->namespace);
-        list($data) = Model::factoryData(['id' => $this->id], $this->table, $schema);
+        list($data) = Data::factoryData(['id' => $this->id], $this->table, $schema);
         
         // Database data object unique to this object
         $this->_data = new Data($data, $this->table, $schema);

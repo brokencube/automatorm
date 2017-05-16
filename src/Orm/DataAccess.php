@@ -83,7 +83,7 @@ class DataAccess implements DataAccessInterface
         return $id;
     }
 
-    public function getData($table, $where, $options)
+    public function getData($table, $where, array $options = [])
     {
         // Select * from $table where $where
         $query = QueryBuilder::select($table)->where($where);

@@ -27,6 +27,13 @@ class Data
         $this->__model = $schema->getTable($table);
         $this->__new = $new;
         
+        $this->updateData($data);
+    }
+    
+    public function updateData($data)
+    {
+        $this->__data = [];
+        
         // Pull in data from $data
         foreach ($data as $key => $value) {
             // Make a special object for dates
@@ -242,7 +249,7 @@ class Data
             /* Call Tablename::factory(foreign key id) to get the object we want */
             $table = $proto->__model['many-to-one'][$var];
             
-            list($data) = Model::factoryDataCount(['id' => $ids] + $where, $table, $proto->__schema);
+            list($data) = static::factoryDataCount(['id' => $ids] + $where, $table, $proto->__schema);
             return $data['count'];
         }
         
@@ -252,7 +259,7 @@ class Data
             
             /* Call Tablename::factory(foreign key id) to get the object we want */
             $table = $proto->__model['many-to-one'][$var];
-            list($data) = Model::factoryDataCount(['id' => $ids] + $where, $table, $proto->__schema);
+            list($data) = static::factoryDataCount(['id' => $ids] + $where, $table, $proto->__schema);
             return $data['count'];
         }
         
@@ -264,7 +271,7 @@ class Data
             $ids = $collection->id->toArray();
             
             // Use the model factory to find the relevant items
-            list($data) = Model::factoryDataCount([$column => $ids] + $where, $table, $proto->__schema);
+            list($data) = static::factoryDataCount([$column => $ids] + $where, $table, $proto->__schema);
             return $data['count'];
         }
         
@@ -301,7 +308,7 @@ class Data
             $flat_ids = array_unique($flat_ids);
             
             // Use the model factory to retrieve the objects from the list of ids (using cache first)
-            list($data) = Model::factoryDataCount(['id' => $flat_ids] + $where, $pivot['connections'][0]['table'], $proto->__schema);
+            list($data) = static::factoryDataCount(['id' => $flat_ids] + $where, $pivot['connections'][0]['table'], $proto->__schema);
             return $data['count'];
         }
     }
@@ -450,7 +457,7 @@ class Data
             $column = $this->__model['one-to-many'][$var]['column_name'];
             
             // Use the model factory to find the relevant items
-            list($data) = Model::factoryDataCount($where + [$column => $id], $table, $this->__schema);
+            list($data) = static::factoryDataCount($where + [$column => $id], $table, $this->__schema);
             return $data['count'];
         }
         
@@ -659,6 +666,10 @@ class Data
         
         $this->__new = false;
         
+        // Get clean version of data from database (in case of db triggers etc)
+        list($data) = $this->getDataAccessor()->getData($this->__table, ['id' => $id]);
+        $this->updateData($data);
+        
         // Clear update fields
         $this->__update = [];
         $this->__updateExternal = [];
@@ -744,4 +755,16 @@ class Data
         $this->__schema = Schema::get($this->__namespace);
         $this->__model = $this->__schema->getTable($this->__table);
     }
+    
+    // Get data from database from which we can construct Model objects
+    final public static function factoryData($where, $table, Schema $schema, array $options = null)
+    {
+        return $schema->connection->getDataAccessor()->getData($table, $where, $options);
+    }
+
+    // Get data from database from which we can construct Model objects
+    final public static function factoryDataCount($where, $table, Schema $schema, array $options = null)
+    {
+        return $schema->connection->getDataAccessor()->getDataCount($table, $where, $options);
+    }    
 }
