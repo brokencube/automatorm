@@ -6,45 +6,25 @@ use Automatorm\Database\SqlString;
 
 class Data
 {
-    protected $__data = array();     // Data from columns on this table
-    protected $__external = array(); // Links to foreign key objects
-    protected $__schema;             // Schema object for this database
-    protected $__namespace;          // Namespace of the Model for this data - used to find Schema again
-    protected $__table;              // Class this data is associated with
-    protected $__model;              // Fragment of Schema object for this table
-    protected $__locked = true;      // Can we use __set() - for updates/inserts
-    protected $__new = false;        // Is this to be a new row? (used with Model::new_db())
-    protected $__delete = false;     // Row is marked for deletion
+    protected $__data = [];           // Data from columns on this table
+    protected $__update = [];         // Data to be updated
+    protected $__external = [];       // Links to foreign key objects
+    protected $__updateExternal = []; // Foreign key data to be updated
+    protected $__schema;              // Schema object for this database
+    protected $__namespace;           // Namespace of the Model for this data - used to find Schema again
+    protected $__table;               // Class this data is associated with
+    protected $__model;               // Fragment of Schema object for this table
+    protected $__new = false;         // Is this to be a new row? (used with Model::new_db())
+    protected $__delete = false;      // Row is marked for deletion
     
     protected static $__instance = [];
     
-    public static function make(array $data, $table, Schema $schema)
-    {
-        $key = $data['id'] . ':' . $table . ':' . $schema->namespace;
-        
-        if (isset(static::$__instance[$key])) {
-            $obj = static::$__instance[$key];
-        } else {
-            $obj = static::$__instance[$key] = new static($data, $table, $schema, true, false);
-        }
-        
-        return $obj;
-    }
-    
-    public static function updateCache(Data $db)
-    {
-        $db->lock();
-        $key = $db->data['id'] . ':' . $db->table . ':' . $db->schema->namespace;
-        return static::$__instance[$key] = $db;
-    }
-    
-    public function __construct(array $data, $table, Schema $schema, $locked = true, $new = false)
+    public function __construct(array $data, $table, Schema $schema, $new = false)
     {
         $this->__table = $table;
         $this->__schema = $schema;
         $this->__namespace = $schema->namespace;
         $this->__model = $schema->getTable($table);
-        $this->__locked = $locked;
         $this->__new = $new;
         
         // Pull in data from $data
@@ -62,14 +42,6 @@ class Data
         }
     }
     
-    // Generally used when this class is accessed through $modelobject->db()
-    // This returns an 'unlocked' version of this object that can be used to modify the database row.
-    public function __clone()
-    {
-        $this->__locked = false;
-        $this->__external = array();
-    }
-
     /**
      * Create a open cloned copy of this object, ready to reinsert as a new row.
      *
@@ -93,18 +65,6 @@ class Data
         return $clone;
     }
 
-    /**
-     * Lock id of the object. Once locked, this data object will always represent the id specified.
-     *
-     * @return self
-     */
-    
-    public function lock()
-    {
-        $this->__locked = true;
-        return $this;
-    }
-    
     /**
      * Mark data object for deletion when commited
      *
@@ -545,24 +505,24 @@ class Data
     public function __isset($var)
     {
         // Is it already set in local array?
-        if (isset($this->__data[$var])) {
+        if (array_key_exists($var, $this->__data)) {
             return true;
         }
-        if (isset($this->__external[$var])) {
+        if (array_key_exists($var, $this->__external)) {
             return true;
         }
         
         // Check through all the possible foreign keys for a matching name
-        if (key_exists($var, (array) $this->__model['one-to-one'])) {
+        if (array_key_exists($var, (array) $this->__model['one-to-one'])) {
             return true;
         }
-        if (key_exists($var, (array) $this->__model['many-to-one'])) {
+        if (array_key_exists($var, (array) $this->__model['many-to-one'])) {
             return true;
         }
-        if (key_exists($var, (array) $this->__model['one-to-many'])) {
+        if (array_key_exists($var, (array) $this->__model['one-to-many'])) {
             return true;
         }
-        if (key_exists($var, (array) $this->__model['many-to-many'])) {
+        if (array_key_exists($var, (array) $this->__model['many-to-many'])) {
             return true;
         }
         
@@ -571,11 +531,6 @@ class Data
     
     public function __set($var, $value)
     {
-        // Cannot change data if it is locked (i.e. it is attached to a Model object)
-        if ($this->__locked) {
-            throw new Exception\Model('MODEL_DATA:SET_WHEN_LOCKED', array($var, $value));
-        }
-        
         // Cannot update primary key on existing objects
         // (and cannot set id for new objects that don't have a foreign primary key)
         if ($var == 'id' && $this->__new == false && $this->__model['type'] != 'foreign') {
@@ -584,21 +539,21 @@ class Data
         
         // Updating normal columns
         if (key_exists($var, $this->__model['columns'])) {
-            return $this->__data[$var] = $this->setColumnData($var, $value);
+            return $this->__update[$var] = $this->setColumnData($var, $value);
         }
         
         // table_id -> Table - Foreign keys to other tables
         if (key_exists($var, (array) $this->__model['many-to-one'])) {
             list(
-                $this->__data[$var . '_id'],
-                $this->__external[$var]
+                $this->__update[$var . '_id'],
+                $this->__updateExternal[$var]
             ) = $this->setManyToOneData($var, $value);
             return;
         }
         
         // Pivot tables - needs an array of appropriate objects for this column
         if (key_exists($var, (array) $this->__model['many-to-many'])) {
-            return $this->__external[$var] = $this->setManyToManyData($var, $value);
+            return $this->__updateExternal[$var] = $this->setManyToManyData($var, $value);
         }
         
         // Table::this_id -> this - Foreign keys on other tables pointing to this one - we cannot 'set' these here.
@@ -697,12 +652,19 @@ class Data
             $mode,
             $this->__table,
             $this->__data['id'],
-            $this->__data,
-            $this->__external,
+            $this->__update,
+            $this->__updateExternal,
             $this->__model
         );
         
         $this->__new = false;
+        
+        // Clear update fields
+        $this->__update = [];
+        $this->__updateExternal = [];
+        
+        // Clear cached foreign key data
+        $this->__external = [];
         
         return $id;
     }

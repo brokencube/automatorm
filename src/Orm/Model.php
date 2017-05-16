@@ -57,22 +57,6 @@ class Model implements \JsonSerializable
     }
     
     /**
-     * Get name of database connection for this object
-     *
-     * @return string
-     */
-    public static function getConnection()
-    {
-        $class = get_called_class();
-        $namespace = substr($class, 0, strrpos($class, '\\'));
-        if (key_exists($namespace, Schema::$namespaces)) {
-            return Schema::$namespaces[$namespace];
-        }
-        
-        return 'default';
-    }
-
-    /**
      * Find a single(!) object via an arbitary $where clause
      *
      * @param mixed[] $where Where clause to search for
@@ -118,7 +102,7 @@ class Model implements \JsonSerializable
         foreach ($data as $row) {
             if (!$obj = isset(Model::$instance[$namespace][$table][$row['id']]) ? Model::$instance[$namespace][$table][$row['id']] : false) {
                 // Database data object unique to this object
-                $dataObj = Data::make($row, $table, $schema);
+                $dataObj = new Data($row, $table, $schema);
                 
                 // Create the object!!
                 $obj = new $class($dataObj);
@@ -378,11 +362,16 @@ class Model implements \JsonSerializable
         return $this->_data;
     }
     
-    // Swap out the Data object in this Model for an updated one (i.e. after doing an update)
-    final public function dataUpdate(Data $db)
+    public function commit(Data $db)
     {
-        $this->_data = Data::updateCache($db);
+        $db->commit();
+        $this->_data = $db;
         $this->dataClearCache();
+    }
+    
+    public static function commitNew(Data $db)
+    {
+        return static::get($db->commit());
     }
 
     // When updating data object, clear "cached" versions of column data saved in __get()
@@ -423,7 +412,6 @@ class Model implements \JsonSerializable
         
         // Database data object unique to this object
         $this->_data = new Data($data, $this->table, $schema);
-        Data::updateCache($this->_data);
         
         // Call replacement constructor after storing in the cache list (to prevent recursion)
         $this->dataClearCache();

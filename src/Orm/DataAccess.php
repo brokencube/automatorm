@@ -65,9 +65,9 @@ class DataAccess implements DataAccessInterface
             }
         }
         
-        $query->transaction();
-        $query->execute();
-        $query->commit();
+        $query->transaction(); // Start Transaction
+        $query->execute();     // Execute Statements
+        $query->commit();      // Commit Transaction
         
         // Don't return anything if we just deleted this row.
         if ($mode == 'delete') {
