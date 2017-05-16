@@ -26,7 +26,7 @@ interface DataAccess
      *
      * @return array Array of data in $row[$column => $value] format
      */
-    public function getData($table, $where, $options);
+    public function getData($table, $where, array $options = []);
     
     /**
      * Return number of matching data records from data source
@@ -36,7 +36,7 @@ interface DataAccess
      *
      * @return int Number of results that would be returned
      */
-    public function getDataCount($table, $where, $options);
+    public function getDataCount($table, $where, array $options = []);
     
     /**
      * Return data based on a M2M relationship

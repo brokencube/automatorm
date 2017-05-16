@@ -106,7 +106,7 @@ class DataAccess implements DataAccessInterface
         return $id;
     }
 
-    public function getData($table, $where, $options)
+    public function getData($table, $where, array $options = [])
     {
         $tablename = Schema::normaliseCase($table);
         $returnData = [];
@@ -147,7 +147,7 @@ class DataAccess implements DataAccessInterface
         return $returnData;
     }
     
-    public function getDataCount($table, $where, $options)
+    public function getDataCount($table, $where, array $options = [])
     {
         $tablename = Schema::normaliseCase($table);
         $returnData = [];

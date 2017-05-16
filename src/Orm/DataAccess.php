@@ -107,7 +107,7 @@ class DataAccess implements DataAccessInterface
         return $data;
     }
     
-    public function getDataCount($table, $where, $options)
+    public function getDataCount($table, $where, array $options = [])
     {
         // Select * from $table where $where
         $query = QueryBuilder::count($table)->where($where);
