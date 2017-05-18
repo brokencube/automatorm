@@ -757,13 +757,13 @@ class Data
     }
     
     // Get data from database from which we can construct Model objects
-    final public static function factoryData($where, $table, Schema $schema, array $options = null)
+    final public static function factoryData($where, $table, Schema $schema, array $options = [])
     {
         return $schema->connection->getDataAccessor()->getData($table, $where, $options);
     }
 
     // Get data from database from which we can construct Model objects
-    final public static function factoryDataCount($where, $table, Schema $schema, array $options = null)
+    final public static function factoryDataCount($where, $table, Schema $schema, array $options = [])
     {
         return $schema->connection->getDataAccessor()->getDataCount($table, $where, $options);
     }    

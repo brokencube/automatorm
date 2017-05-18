@@ -191,7 +191,7 @@ class Model implements \JsonSerializable
         list($class, $table) = $schema->guessContext(get_called_class());
         
         // Make a new blank data object
-        $data = new Data([], $table, $schema, false, true);
+        $data = new Data([], $table, $schema, true);
         
         $tableSchema = $schema->getTable($table);
         // "Foreign" tables use a "parent" table for their primary key. We need that parent object for it's id.

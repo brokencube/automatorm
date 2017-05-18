@@ -671,7 +671,7 @@ class QueryBuilder
     
     public function resolveValue($value)
     {
-        if ($value instanceof \DateTime) {
+        if ($value instanceof \DateTimeInterface) {
             # [FIXME] Non Mysql Date values
             return $value->format('Y-m-d H:i:s');
         }
