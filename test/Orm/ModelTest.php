@@ -83,6 +83,7 @@ TEST;
     {
         $project = \Automatorm\UnitTest\Fake\Project::findAll(['id' => 3]);
         $this->assertInstanceOf(\Automatorm\Orm\Collection::class, $project);
+        $this->assertEquals(0, $project->count());
     }
 
     public function testFindAllReturnsCollectionOfProject()

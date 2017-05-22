@@ -81,7 +81,7 @@ class Model implements \JsonSerializable
     
     /* FACTORY METHODS */
     // Build an appropriate Model object based on id and class/table name
-    final public static function factory($where, $classOrTablename = null, $schema = null, array $options = null, $singleResult = false)
+    final public static function factory($where, $classOrTablename = null, $schema = null, array $options = [], $singleResult = false)
     {
         // Figure out the base class and table we need based on current context
         $schema = $schema ?: Schema::get(static::getNamespace());
