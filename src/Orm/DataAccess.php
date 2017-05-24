@@ -29,8 +29,11 @@ class DataAccess implements DataAccessInterface
             $sql = QueryBuilder::insert($table, $data);
             $query->sql($sql)->sql("SELECT last_insert_id() into @id");
         } elseif ($mode == 'update') {
-            $sql = QueryBuilder::update($table, $data)->where(['id' => $id]);
-            $query->sql($sql)->sql("SELECT {$id} into @id");
+            if ($data) {
+                $sql = QueryBuilder::update($table, $data)->where(['id' => $id]);
+                $query->sql($sql);
+            }
+            $query->sql("SELECT {$id} into @id");
         }
         
         if ($mode != 'delete') {
