@@ -107,7 +107,15 @@ class Data
         
         /* This property has already been defined, return it */
         if (isset($this->__external[$var])) {
-            return $this->__external[$var];
+            $data = $this->__external[$var];
+            
+            // If this data object isn't locked, it's likely being used for a insert/update.
+            // If ->var contains a Collection, this must be a M2M relationship - mark it for update
+            if (!$this->__locked && $data instanceof Collection) {
+                $this->__updateExternal[$var] = true;
+            }
+            
+            return $data;
         }
         
         /* This property hasn't been defined, so it's not one of the table columns. We want to look at foreign keys and pivots */
@@ -117,7 +125,15 @@ class Data
          */
         
         try {
-            return $this->join($var);
+            $data = $this->join($var);
+            
+            // If this Data object isn't locked, it's likely being used for a insert/update.
+            // If ->var contains a Collection, this must be a M2M relationship - mark it for update
+            if (!$this->__locked && $data instanceof Collection) {
+                $this->__updateExternal[$var] = true;
+            }
+            
+            return $data;
         } catch (Exception\Model $e) {
             if ($e->code == 'MODEL_DATA:UNKNOWN_FOREIGN_PROPERTY') {
                 return null;
