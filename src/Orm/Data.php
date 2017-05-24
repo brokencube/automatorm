@@ -7,17 +7,19 @@ use Automatorm\Database\SqlString;
 class Data
 {
     protected $__data = [];           // Data from columns on this table
-    protected $__update = [];         // Data to be updated
     protected $__external = [];       // Links to foreign key objects
-    protected $__updateExternal = []; // Foreign key data to be updated
+    
+    protected $__update = [];         // Keys to be updated
+    protected $__updateExternal = []; // Foreign keys to be updated
+    
     protected $__schema;              // Schema object for this database
     protected $__namespace;           // Namespace of the Model for this data - used to find Schema again
     protected $__table;               // Class this data is associated with
     protected $__model;               // Fragment of Schema object for this table
+    
+    protected $__locked = true;       // Can we use __set() - for updates/inserts
     protected $__new = false;         // Is this to be a new row? (used with Model::new_db())
     protected $__delete = false;      // Row is marked for deletion
-    
-    protected static $__instance = [];
     
     public function __construct(array $data, $table, Schema $schema, $new = false)
     {
@@ -26,6 +28,7 @@ class Data
         $this->__namespace = $schema->namespace;
         $this->__model = $schema->getTable($table);
         $this->__new = $new;
+        $this->__locked = !$new;
         
         $this->updateData($data);
     }
@@ -47,6 +50,14 @@ class Data
                 $this->__data[$key] = $value;
             }
         }
+    }
+
+    // Generally used when this class is accessed through $modelobject->db()
+    // This returns an 'unlocked' version of this object that can be used to modify the database row.
+    public function __clone()
+    {
+        $this->__locked = false;
+        $this->__external = array();
     }
     
     /**
@@ -538,6 +549,11 @@ class Data
     
     public function __set($var, $value)
     {
+        // Cannot change data if it is locked (i.e. it is attached to a Model object)
+        if ($this->__locked) {
+            throw new Exception\Model('MODEL_DATA:SET_WHEN_LOCKED', array($var, $value));
+        }
+        
         // Cannot update primary key on existing objects
         // (and cannot set id for new objects that don't have a foreign primary key)
         if ($var == 'id' && $this->__new == false && $this->__model['type'] != 'foreign') {
@@ -546,21 +562,21 @@ class Data
         
         // Updating normal columns
         if (key_exists($var, $this->__model['columns'])) {
-            return $this->__update[$var] = $this->setColumnData($var, $value);
+            return $this->__data[$var] = $this->setColumnData($var, $value);
         }
         
         // table_id -> Table - Foreign keys to other tables
         if (key_exists($var, (array) $this->__model['many-to-one'])) {
             list(
-                $this->__update[$var . '_id'],
-                $this->__updateExternal[$var]
+                $this->__data[$var . '_id'],
+                $this->__external[$var]
             ) = $this->setManyToOneData($var, $value);
             return;
         }
         
         // Pivot tables - needs an array of appropriate objects for this column
         if (key_exists($var, (array) $this->__model['many-to-many'])) {
-            return $this->__updateExternal[$var] = $this->setManyToManyData($var, $value);
+            return $this->__external[$var] = $this->setManyToManyData($var, $value);
         }
         
         // Table::this_id -> this - Foreign keys on other tables pointing to this one - we cannot 'set' these here.
@@ -575,6 +591,8 @@ class Data
     
     protected function setColumnData($var, $value)
     {
+        $this->__update[$var] = true;
+        
         if ($this->__model['columns'][$var] == 'datetime'
             or $this->__model['columns'][$var] == 'timestamp'
             or $this->__model['columns'][$var] == 'date'
@@ -604,12 +622,14 @@ class Data
     
     protected function setManyToOneData($var, $value)
     {
+        $this->__updateExternal[$var] = true;
+        
         if (is_null($value)) {
             return [null, null];
         } elseif ($value instanceof Model) {
             // Trying to pass in the wrong table for the relationship!
             // That is, the table name on the foreign key does not match the table name in the passed Model object
-            $value_table = Schema::normaliseCase($value->data()->__table);
+            $value_table = Schema::normaliseCase($value->dataOriginal()->__table);
             $expected_table = $this->__model['many-to-one'][$var];
             
             if ($value_table !== $expected_table) {
@@ -623,6 +643,8 @@ class Data
     
     protected function setManyToManyData($var, $value)
     {
+        $this->__updateExternal[$var] = true;
+        
         if (is_null($value)) {
             return new Collection();
         }
@@ -647,6 +669,7 @@ class Data
     
     public function commit()
     {
+        // Determine the type of SQL instruction to run
         if ($this->__delete) {
             $mode = 'delete';
         } elseif ($this->__new) {
@@ -655,20 +678,30 @@ class Data
             $mode = 'update';
         }
         
+        // Collect the updated columns/foreign keys
+        $columndata = [];
+        foreach (array_keys($this->__update) as $key) {
+            $columndata[$key] = $this->__data[$key];
+        }
+
+        $externaldata = [];
+        foreach (array_keys($this->__updateExternal) as $key) {
+            $externaldata[$key] = $this->__external[$key];
+        }
+        
+        // Use connection's dataAccessor to commit the data to the db
         $id = $this->getDataAccessor()->commit(
             $mode,
             $this->__table,
             $this->__data['id'],
-            $this->__update,
-            $this->__updateExternal,
+            $columndata,
+            $externaldata,
             $this->__model
         );
         
+        // Reset flags on this object
         $this->__new = false;
-        
-        // Get clean version of data from database (in case of db triggers etc)
-        list($data) = $this->getDataAccessor()->getData($this->__table, ['id' => $id]);
-        $this->updateData($data);
+        $this->__locked = true;
         
         // Clear update fields
         $this->__update = [];
@@ -676,8 +709,12 @@ class Data
         
         // Clear cached foreign key data
         $this->__external = [];
+
+        // Get clean version of data from database (in case of db triggers etc)
+        list($data) = $this->getDataAccessor()->getData($this->__table, ['id' => $id]);
+        $this->updateData($data);
         
-        return $id;
+        return $this;
     }
   
     // Get the table that this object is attached to.

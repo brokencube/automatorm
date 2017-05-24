@@ -342,18 +342,23 @@ class Model implements \JsonSerializable
     
     final public function data()
     {
+        return clone $this->_data;
+    }
+
+    final public function dataOriginal()
+    {
         return $this->_data;
     }
     
-    public function commit()
+    public function commit(Data $db)
     {
-        $this->_data->commit();
+        $this->_data = $db->commit();
         $this->dataClearCache();
     }
     
     public static function commitNew(Data $db)
     {
-        return static::get($db->commit());
+        return static::get($db->commit()->id);
     }
 
     // When updating data object, clear "cached" versions of column data saved in __get()
