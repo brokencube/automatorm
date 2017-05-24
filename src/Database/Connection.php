@@ -97,8 +97,8 @@ class Connection implements LoggerAwareInterface, ConnectionInterface
             ];
             $this->type = $details['type'] ?: 'mysql';
             
-            if ($this->unix_socket && $this->host) {
-                throw new Ex\Database("Must use host OR unix_socket - both supplied", $details);
+            if ($this->unix_socket && $this->server) {
+                throw new Ex\Database("Must use server OR unix_socket - both supplied", $details);
             }
             
             $this->schemaGenerator = new SchemaGenerator($this);
