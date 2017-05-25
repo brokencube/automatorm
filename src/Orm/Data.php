@@ -639,6 +639,8 @@ class Data
     
     protected function setManyToOneData($var, $value)
     {
+        $this->__updateExternal[$var] = true;
+        
         if (is_null($value)) {
             return [null, null];
         } elseif ($value instanceof Model) {
