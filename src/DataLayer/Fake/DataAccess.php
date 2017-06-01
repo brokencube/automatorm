@@ -71,8 +71,6 @@ class DataAccess implements DataAccessInterface
             $this->tabledata[$table][$id] = $data;
         }
         
-        $originId = $id;
-        
         // Foreign tables
         foreach ($externalData as $propertyName => $value) {
             // Skip property if this isn't an M-M table (M-1 and 1-M tables are dealt with in other ways)
@@ -98,7 +96,7 @@ class DataAccess implements DataAccessInterface
             // Loops through the list of objects to link to this table
             foreach ($value as $object) {
                 $this->tabledata[$tablename][] = [
-                    $pivot['id'] => $originId,
+                    $pivot['id'] => $id,
                     $pivot['connections'][0]['column'] => $object->id
                 ];
             }
@@ -139,12 +137,20 @@ class DataAccess implements DataAccessInterface
             
             // Sort
             if (key_exists('sort', $options)) {
-                /*
-                foreach ((array) $options['sort'] as $sortby) {
-                    list($sort, $dir) = explode(' ', $sortby, 3);
-                    $query->sortBy($sort, $dir);
-                }
-                */
+                $sort = $options['sort'];
+                usort($returnData, function ($a, $b) use ($sort) {
+                    foreach ((array) $options['sort'] as $sortby) {
+                        list($sort, $dir) = explode(' ', $sortby, 3);
+                        if ($dir == 'desc') {
+                            $result = natsort($a[$sort], $b[$sort]);
+                        } else {
+                            $result = natsort($b[$sort], $a[$sort]);
+                        }
+                        if ($result !== 0) {
+                            return $result;
+                        }
+                    }
+                });
             }
         }
         
