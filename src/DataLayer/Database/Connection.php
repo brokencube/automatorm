@@ -23,7 +23,7 @@ class Connection implements ConnectionInterface
     /************************
      * CONNECTION FUNCTIONS *
      ************************/
-    public static function register(array $db, LoggerInterface $logger = null, array $options = null)
+    public static function register(array $db, LoggerInterface $logger = null, array $options = [])
     {
         return new static($db, $options, $logger);
     }
