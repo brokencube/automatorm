@@ -3,6 +3,8 @@ namespace Automatorm\DataLayer\Fake;
 
 use Automatorm\DataLayer\Fake\DataAccess;
 use Automatorm\DataLayer\Fake\SchemaGenerator;
+use Automatorm\Interfaces\DataAccess as DataAccessInterface;
+use Automatorm\Interfaces\SchemaGenerator as SchemaGeneratorInterface;
 use Automatorm\Interfaces\Connection as ConnectionInterface;
 
 class Connection implements ConnectionInterface
@@ -36,12 +38,12 @@ class Connection implements ConnectionInterface
         return $this->data;
     }
     
-    public function getDataAccessor()
+    public function getDataAccessor() : DataAccessInterface
     {
         return $this->dataAccess;
     }
 
-    public function getSchemaGenerator()
+    public function getSchemaGenerator() : SchemaGeneratorInterface
     {
         return $this->schemaGenerator;
     }

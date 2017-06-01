@@ -56,7 +56,7 @@ class DataAccess implements DataAccessInterface
         }
     }
     
-    public function commit($mode, $table, $id, $data, $externalData, $schema)
+    public function commit($mode, $table, $id, $data, $externalData, $schema) : int
     {
         if ($mode == 'delete') {
             unset($this->tabledata[$table][$id]);
@@ -106,7 +106,7 @@ class DataAccess implements DataAccessInterface
         return $id;
     }
 
-    public function getData($table, $where, array $options = [])
+    public function getData($table, $where, array $options = []) : array
     {
         $tablename = Schema::normaliseCase($table);
         $returnData = [];
@@ -147,7 +147,7 @@ class DataAccess implements DataAccessInterface
         return $returnData;
     }
     
-    public function getDataCount($table, $where, array $options = [])
+    public function getDataCount($table, $where, array $options = []) : int
     {
         $tablename = Schema::normaliseCase($table);
         $returnData = [];
@@ -171,7 +171,7 @@ class DataAccess implements DataAccessInterface
         return count($returnData);
     }
     
-    public function getM2MData($pivotTablename, $pivot, $ids, $joinwhere = null, $where = null)
+    public function getM2MData($pivotTablename, $pivot, $ids, $joinwhere = null, $where = null) : array
     {
         $data = [];
         /*

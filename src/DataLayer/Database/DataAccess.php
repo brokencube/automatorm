@@ -1,5 +1,5 @@
 <?php
-namespace Automatorm\Orm;
+namespace Automatorm\DataLayer\Database;
 
 use Automatorm\Database\Query;
 use Automatorm\Database\QueryBuilder;
@@ -16,7 +16,7 @@ class DataAccess implements DataAccessInterface
         $this->connection = $connection;
     }
     
-    public function commit($mode, $table, $id, $data, $externalData, $schema)
+    public function commit($mode, $table, $id, $data, $externalData, $schema) : int
     {
         // Create a new query
         $query = new Query($this->connection);
@@ -72,11 +72,6 @@ class DataAccess implements DataAccessInterface
         $query->execute();     // Execute Statements
         $query->commit();      // Commit Transaction
         
-        // Don't return anything if we just deleted this row.
-        if ($mode == 'delete') {
-            return null;
-        }
-
         // Get the id we just inserted
         if ($mode == 'insert') {
             return $query->insertId(0);
@@ -86,7 +81,7 @@ class DataAccess implements DataAccessInterface
         return $id;
     }
 
-    public function getData($table, $where, array $options = [])
+    public function getData($table, $where, array $options = []) : array
     {
         // Select * from $table where $where
         $query = QueryBuilder::select($table)->where($where);
@@ -110,7 +105,7 @@ class DataAccess implements DataAccessInterface
         return $data;
     }
     
-    public function getDataCount($table, $where, array $options = [])
+    public function getDataCount($table, $where, array $options = []) : int
     {
         // Select * from $table where $where
         $query = QueryBuilder::count($table)->where($where);
@@ -123,7 +118,7 @@ class DataAccess implements DataAccessInterface
         return $data;
     }
     
-    public function getM2MData($pivotTablename, $pivot, $ids, $joinwhere = null, $where = null)
+    public function getM2MData($pivotTablename, $pivot, $ids, $joinwhere = null, $where = null) : array
     {
         $query = QueryBuilder::select([$pivotTablename => 'pivot'], ['pivot.*'])
             ->where(['`pivot`.'.$pivot['id'] => $ids])

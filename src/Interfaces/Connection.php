@@ -24,12 +24,12 @@ interface Connection
      *
      * @return DataAccessInterface
      */
-    public function getDataAccessor();
+    public function getDataAccessor() : DataAccessInterface;
     
     /**
      * Retrieve an instance of an appropriate dataAccessor.
      *
      * @return SchemaGeneratorInterface
      */
-    public function getSchemaGenerator();
+    public function getSchemaGenerator() : SchemaGeneratorInterface;
 }

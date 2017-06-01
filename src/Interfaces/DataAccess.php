@@ -16,7 +16,7 @@ interface DataAccess
      * 
      * @return int Primary id affected by call
      */
-    public function commit($mode, $table, $id, $data, $externalData, $schema);
+    public function commit($mode, $table, $id, $data, $externalData, $schema) : int;
     
     /**
      * Select data from data source
@@ -26,7 +26,7 @@ interface DataAccess
      *
      * @return array Array of data in $row[$column => $value] format
      */
-    public function getData($table, $where, array $options = []);
+    public function getData($table, $where, array $options = []) : array;
     
     /**
      * Return number of matching data records from data source
@@ -36,7 +36,7 @@ interface DataAccess
      *
      * @return int Number of results that would be returned
      */
-    public function getDataCount($table, $where, array $options = []);
+    public function getDataCount($table, $where, array $options = []) : int;
     
     /**
      * Return data based on a M2M relationship
@@ -48,6 +48,6 @@ interface DataAccess
      *
      * @return array Array of data in $row[$column => $value] format
      */
-    public function getM2MData($pivotTablename, $pivot, $ids, $joinwhere = null, $where = null);
+    public function getM2MData($pivotTablename, $pivot, $ids, $joinwhere = null, $where = null) : array;
     
 }
