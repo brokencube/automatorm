@@ -1,9 +1,9 @@
 <?php
-namespace Automatorm\Database;
+namespace Automatorm\DataLayer\Database;
 
 use Automatorm\Exception as Ex;
-use Automatorm\Orm\DataAccess;
-use Automatorm\Orm\SchemaGenerator;
+use Automatorm\DataLayer\Database\DataAccess;
+use Automatorm\DataLayer\Database\SchemaGenerator;
 use Automatorm\Interfaces\Connection as ConnectionInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Automatorm\Orm;
+namespace Automatorm\DataLayer\Database;
 
 use Automatorm\Interfaces\SchemaGenerator as SchemaGeneratorInterface;
 use Automatorm\Interfaces\Connection as ConnectionInterface;

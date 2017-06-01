@@ -2,7 +2,7 @@
 
 namespace Automatorm\UnitTest\Orm;
 
-use Automatorm\Fake;
+use Automatorm\DataLayer\Fake;
 use Automatorm\Orm\Schema;
 
 require_once('FakeModels.php');

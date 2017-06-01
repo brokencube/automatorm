@@ -1,8 +1,8 @@
 <?php
-namespace Automatorm\Fake;
+namespace Automatorm\DataLayer\Fake;
 
-use Automatorm\Fake\DataAccess;
-use Automatorm\Fake\SchemaGenerator;
+use Automatorm\DataLayer\Fake\DataAccess;
+use Automatorm\DataLayer\Fake\SchemaGenerator;
 use Automatorm\Interfaces\Connection as ConnectionInterface;
 
 class Connection implements ConnectionInterface

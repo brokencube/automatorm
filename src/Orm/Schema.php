@@ -3,8 +3,7 @@
 namespace Automatorm\Orm;
 
 use Automatorm\Exception;
-use Automatorm\Database\Query;
-use Automatorm\Database\Connection;
+use Automatorm\Interfaces\Connection;
 use Psr\SimpleCache\CacheInterface as Psr16;
 use Psr\Cache\CacheItemPoolInterface as Psr6;
 
@@ -24,12 +23,8 @@ class Schema
         return static::$singleton[$namespace];
     }
 
-    public static function generate($connection, $namespace = 'models', $cache = null)
+    public static function generate(Connection $connection, $namespace = 'models', $cache = null)
     {
-        if (!$connection instanceof \Automatorm\Interfaces\Connection) {
-            $connection = Connection::get($connection);
-        }
-        
         // Register namespace with connection
         static::$namespaces[$namespace] = $connection;
         // Get schema from cache

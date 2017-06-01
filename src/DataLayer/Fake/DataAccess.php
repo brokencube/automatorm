@@ -1,5 +1,5 @@
 <?php
-namespace Automatorm\Fake;
+namespace Automatorm\DataLayer\Fake;
 
 use Automatorm\Interfaces\Connection as ConnectionInterface;
 use Automatorm\Interfaces\DataAccess as DataAccessInterface;
