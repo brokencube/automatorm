@@ -228,6 +228,16 @@ class Model implements \JsonSerializable
         return substr($class, 0, strrpos($class, '\\'));
     }
     
+    public static function getSchema()
+    {
+        return Schema::get(static::getNamespace());
+    }
+    
+    public static function getConnection()
+    {
+        return static::getSchema()->getConnection();
+    }
+    
     ///////////////////////////////////
     /*        OBJECT METHODS         */
     ///////////////////////////////////

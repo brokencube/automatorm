@@ -93,6 +93,11 @@ class Schema
         return $this->model[$normalised];
     }
 
+    public function getConnection()
+    {
+        return $this->connection;
+    }
+    
     public function __get($var)
     {
         return $this->$var;
