@@ -10,7 +10,7 @@ class Query implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
     
-    protected $connection;      // Connection object
+    protected $connection; // Connection object
     protected $error;
     protected $sql = []; // Array of SQL queries to run
     protected $lock = false;
@@ -30,25 +30,19 @@ class Query implements LoggerAwareInterface
         return $this->debug[$var];
     }
     
-    public static function run($sql, $connection = 'default')
+    public static function run($sql, ConnectionInterface $connection)
     {
         $query = new static($connection, $sql);
         return $query->execute();
     }
     
     // Create a new query container
-    public function __construct($connection = 'default', $sql = null)
+    public function __construct(ConnectionInterface $connection, $sql = null, array $data = [])
     {
-        if ($connection instanceof ConnectionInterface) {
-            $this->connection = $connection;
-        } elseif (is_string($connection)) {
-            $this->connection = Connection::get($connection);
-        } else {
-            throw new Exception\Database('Unknown connection', $connection);
-        }
+        $this->connection = $connection;
         
         if ($sql) {
-            $this->sql($sql);
+            $this->sql($sql, $data);
         }
         
         // Default Logger
@@ -56,7 +50,7 @@ class Query implements LoggerAwareInterface
     }
     
     // Add arbitary SQL to the query queue
-    public function sql($sql, $data = [])
+    public function sql($sql, array $data = [])
     {
         if ($sql instanceof QueryBuilder) {
             $this->sql[] = Sql::build($sql);

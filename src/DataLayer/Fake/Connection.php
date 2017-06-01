@@ -6,9 +6,17 @@ use Automatorm\DataLayer\Fake\SchemaGenerator;
 use Automatorm\Interfaces\DataAccess as DataAccessInterface;
 use Automatorm\Interfaces\SchemaGenerator as SchemaGeneratorInterface;
 use Automatorm\Interfaces\Connection as ConnectionInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
 
 class Connection implements ConnectionInterface
 {
+    use LoggerAwareTrait;
+    public function getLogger()
+    {
+        return $this->logger;
+    }
+    
     public $data;
     public $schemaGenerator;
     public $dataAccess;

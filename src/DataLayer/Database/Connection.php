@@ -7,13 +7,12 @@ use Automatorm\DataLayer\Database\SchemaGenerator;
 use Automatorm\Interfaces\DataAccess as DataAccessInterface;
 use Automatorm\Interfaces\SchemaGenerator as SchemaGeneratorInterface;
 use Automatorm\Interfaces\Connection as ConnectionInterface;
-use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use PDO;
 use PDOException;
 
-class Connection implements LoggerAwareInterface, ConnectionInterface
+class Connection implements ConnectionInterface
 {
     use LoggerAwareTrait;
     public function getLogger()
@@ -21,41 +20,19 @@ class Connection implements LoggerAwareInterface, ConnectionInterface
         return $this->logger;
     }
     
-    protected static $connections = [];
-    protected static $details = [];
-    
     /************************
      * CONNECTION FUNCTIONS *
      ************************/
-    public static function register(array $db, $name = 'default', LoggerInterface $logger = null, array $options = null)
+    public static function register(array $db, LoggerInterface $logger = null, array $options = null)
     {
-        if (key_exists($name, self::$details)) {
-            throw new Ex\Database("Database connection '{$name}' already registered", $name);
-        }
-        return self::$details[$name] = new static($db, $name, $options, $logger);
+        return new static($db, $options, $logger);
     }
 
-    public static function registerPDO(PDO $pdo, $name = 'default', LoggerInterface $logger = null)
+    public static function registerPDO(PDO $pdo, LoggerInterface $logger = null)
     {
-        if (key_exists($name, self::$details)) {
-            throw new Ex\Database("Database connection '{$name}' already registered", $name);
-        }
-        return self::$details[$name] = new static($pdo, $name, null, $logger);
+        return new static($pdo, [], $logger);
     }
 
-    public static function get($name = 'default')
-    {
-        if (!self::$details[$name]) {
-            throw new Ex\Database("Database connection '$name' not registered.", $name);
-        }
-        return self::$details[$name];
-    }
-
-    public static function autoconnect($name = 'default')
-    {
-        return static::get($name)->connect();
-    }
-    
     public function __get($var)
     {
         if (property_exists($this, $var)) {
@@ -64,47 +41,41 @@ class Connection implements LoggerAwareInterface, ConnectionInterface
         return null;
     }
    
-    protected $name;
     protected $type;
     protected $user;
     protected $pass;
     protected $server;
     protected $database;
     protected $options;
-    protected $connection;
     
+    protected $connection;
     protected $schemaGenerator;
     protected $dataAccess;
     
-    protected function __construct($details, $name = 'default', array $options = null, LoggerInterface $logger = null)
+    protected function __construct($details, array $options = [], LoggerInterface $logger = null)
     {
+        $this->schemaGenerator = new SchemaGenerator($this);
+        $this->dataAccess = new DataAccess($this);
         $this->logger = $logger;
+        $options = $options + [
+            PDO::ATTR_PERSISTENT => true,
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+        ];
         
         if ($details instanceof PDO) {
-            $this->name = $name;
             $this->connection = $details;
-            return;
-        }
-        
-        if (is_array($details)) {
-            $this->name = $name;
+        } elseif (is_array($details)) {
             $this->unix_socket = $details['unix_socket'];
             $this->server = $details['server'];
             $this->user = $details['user'];
             $this->pass = $details['pass'];
             $this->database = $details['database'];
-            $this->options = $options ?: [
-                PDO::ATTR_PERSISTENT => true,
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-            ];
+            $this->options = $options;
             $this->type = $details['type'] ?: 'mysql';
             
             if ($this->unix_socket && $this->server) {
                 throw new Ex\Database("Must use server OR unix_socket - both supplied", $details);
             }
-            
-            $this->schemaGenerator = new SchemaGenerator($this);
-            $this->dataAccess = new DataAccess($this);
         } else {
             throw new Ex\Database("Not enough details to construct Database object", $details);
         }
