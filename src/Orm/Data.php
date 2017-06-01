@@ -63,10 +63,10 @@ class Data
     /**
      * Create a open cloned copy of this object, ready to reinsert as a new row.
      *
-     * @param bool $clone_M2M_properties Clone M2M properties as well
+     * @param bool $cloneExternalProps Clone M2M properties as well
      * @return self
      */
-    public function duplicate($clone_M2M_properties = false)
+    public function duplicate($cloneExternalProps = false)
     {
         $clone = clone $this;
         $clone->__new = true;
@@ -74,7 +74,7 @@ class Data
         unset($clone->__data['id']);
         
         // Clone M-M joins
-        if ($clone_M2M_properties) {
+        if ($cloneExternalProps) {
             foreach (array_keys($this->__model['many-to-many']) as $key) {
                 $clone->__external[$key] = $this->{$key};
             }
@@ -211,7 +211,6 @@ class Data
         }
         
         if (key_exists($var, (array) $proto->__model['many-to-many'])) {
-            
             // Get pivot schema
             $pivot = $proto->__model['many-to-many'][$var];
             
@@ -223,36 +222,36 @@ class Data
             }
             
             // Get a list of ids linked to this object (i.e. the tablename_id stored in the pivot table)
-            $pivot_schema = $proto->__schema->getTable($pivot['pivot']);
-            $pivot_tablename = $pivot_schema['table_name'];
+            $pivotSchema = $proto->__schema->getTable($pivot['pivot']);
+            $pivotCon = $pivot['connections'][0];
             
             $raw = $proto->getDataAccessor()->getM2MData(
-                $pivot_tablename,
+                $pivotSchema['table_name'],
                 $pivot,
                 $ids,
                 $where
             );
             
             // Rearrange the list of ids into a flat array and an id grouped array
-            $flat_ids = [];
-            $grouped_ids = [];
-            foreach ($raw as $raw_id) {
-                $flat_ids[] = $raw_id[$pivot['connections'][0]['column']];
-                $grouped_ids[$raw_id[$pivot['id']]][] = $raw_id[$pivot['connections'][0]['column']];
+            $flatIds = [];
+            $groupedIds = [];
+            foreach ($raw as $rawId) {
+                $flatIds[] = $rawId[$pivotCon['column']];
+                $groupedIds[$rawId[$pivot['id']]][] = $rawId[$pivotCon['column']];
             }
             
             // Remove duplicates to make sql call smaller.
-            $flat_ids = array_unique($flat_ids);
+            $flatIds = array_unique($flatIds);
             
             // Use the model factory to retrieve the objects from the list of ids (using cache first)
-            $results = Model::factoryObjectCache($flat_ids, $pivot['connections'][0]['table'], $proto->__schema);
+            $results = Model::factoryObjectCache($flatIds, $pivotCon['table'], $proto->__schema);
             
             // If we don't have a filter ($where), then we can split up the results per object and store the
-            // results relevant to the result on that object. The calls to Model::factoryObjectCache below will never hit the database, because
-            // all of the possible objects were returned in the call above.
+            // results relevant to the result on that object. The calls to Model::factoryObjectCache below will never
+            // hit the database, because all of the possible objects were returned in the call above.
             if (!$where) {
                 foreach ($collection as $obj) {
-                    $data = Model::factoryObjectCache($grouped_ids[$obj->id], $pivot['connections'][0]['table'], $proto->__schema);
+                    $data = Model::factoryObjectCache($groupedIds[$obj->id], $pivotCon['table'], $proto->__schema);
                     $obj->_data->__external[$var] = $data ?: new Collection;
                 }
             }
@@ -303,7 +302,6 @@ class Data
         }
         
         if (key_exists($var, (array) $proto->__model['many-to-many'])) {
-            
             // Get pivot schema
             $pivot = $proto->__model['many-to-many'][$var];
             
@@ -326,16 +324,16 @@ class Data
             );
 
             // Rearrange the list of ids into a flat array and an id grouped array
-            $flat_ids = [];
-            foreach ($raw as $raw_id) {
-                $flat_ids[] = $raw_id[$pivot['connections'][0]['column']];
+            $flatIds = [];
+            foreach ($raw as $rawId) {
+                $flatIds[] = $rawId[$pivot['connections'][0]['column']];
             }
             
             // Remove duplicates to make sql call smaller.
-            $flat_ids = array_unique($flat_ids);
+            $flatIds = array_unique($flatIds);
             
             // Use the model factory to retrieve the objects from the list of ids (using cache first)
-            list($data) = static::factoryDataCount(['id' => $flat_ids] + $where, $pivot['connections'][0]['table'], $proto->__schema);
+            list($data) = static::factoryDataCount(['id' => $flatIds] + $where, $pivot['connections'][0]['table'], $proto->__schema);
             return $data['count'];
         }
     }
@@ -394,7 +392,6 @@ class Data
         }
         
         if (key_exists($var, (array) $this->__model['many-to-many'])) {
-            
             // Get pivot schema
             $pivot = $this->__model['many-to-many'][$var];
             
@@ -404,24 +401,24 @@ class Data
             }
             
             // Get a list of ids linked to this object (i.e. the tablename_id stored in the pivot table)
-            $pivot_schema = $this->__schema->getTable($pivot['pivot']);
-            $pivot_tablename = $pivot_schema['table_name'];
-
+            $pivotSchema = $this->__schema->getTable($pivot['pivot']);
+            $pivotCon = $pivot['connections'][0];
+            
             $clauses = [];
             if ($where) {
-                foreach ($where as $clause_column => $clause_value) {
+                foreach ($where as $clauseColumn => $clauseValue) {
                     // Rewrite $where clauses to insert `pivotjoin` table in column name
-                    preg_match('/^([!=<>%]*)(.+?)([!=<>%]*)$/', $clause_column, $parts);
+                    preg_match('/^([!=<>%]*)(.+?)([!=<>%]*)$/', $clauseColumn, $parts);
                     $prefix = $parts[1] ?: $parts[3];
-                    $clause_column = $parts[2];
+                    $clauseColumn = $parts[2];
                 
-                    $clauses['`pivotjoin`.`' . $clause_column . '`' . $prefix] = $clause_value;
+                    $clauses['`pivotjoin`.`' . $clauseColumn . '`' . $prefix] = $clauseValue;
                 }
             }
             
             // Build Query
             $raw = $this->getDataAccessor()->getM2MData(
-                $pivot_tablename,
+                $pivotSchema['table_name'],
                 $pivot,
                 $this->__data['id'],
                 null,
@@ -430,12 +427,12 @@ class Data
             
             // Rearrange the list of ids into a flat array
             $id = [];
-            foreach ($raw as $raw_id) {
-                $id[] = $raw_id[$pivot['connections'][0]['column']];
+            foreach ($raw as $rawId) {
+                $id[] = $rawId[$pivotCon['column']];
             }
             
             // Use the model factory to retrieve the objects from the list of ids (using cache first)
-            $results = Model::factoryObjectCache($id, $pivot['connections'][0]['table'], $this->__schema);
+            $results = Model::factoryObjectCache($id, $pivotCon['table'], $this->__schema);
             
             if (!$where) {
                 $this->__external[$var] = $results;
@@ -489,7 +486,6 @@ class Data
         }
         
         if (key_exists($var, (array) $this->__model['many-to-many'])) {
-            
             // Get pivot schema
             $pivot = $this->__model['many-to-many'][$var];
             
@@ -499,24 +495,24 @@ class Data
             }
             
             // Get a list of ids linked to this object (i.e. the tablename_id stored in the pivot table)
-            $pivot_schema = $this->__schema->getTable($pivot['pivot']);
-            $pivot_tablename = $pivot_schema['table_name'];
+            $pivotSchema = $this->__schema->getTable($pivot['pivot']);
+            $pivotCon = $pivot['connections'][0];
             
             $clauses = [];
             if ($where) {
-                foreach ($where as $clause_column => $clause_value) {
+                foreach ($where as $clauseColumn => $clauseValue) {
                     // Rewrite $where clauses to insert `pivotjoin` table in column name
-                    preg_match('/^([!=<>%]*)(.+?)([!=<>%]*)$/', $clause_column, $parts);
+                    preg_match('/^([!=<>%]*)(.+?)([!=<>%]*)$/', $clauseColumn, $parts);
                     $prefix = $parts[1] ?: $parts[3];
-                    $clause_column = $parts[2];
+                    $clauseColumn = $parts[2];
                 
-                    $clauses['`pivotjoin`.`' . $clause_column . '`' . $prefix] = $clause_value;
+                    $clauses['`pivotjoin`.`' . $clauseColumn . '`' . $prefix] = $clauseValue;
                 }
             }
             
             // Build Query
             $raw = $this->getDataAccessor()->getM2MData(
-                $pivot_tablename,
+                $pivotSchema['table_name'],
                 $pivot,
                 $this->__data['id'],
                 null,
@@ -525,8 +521,8 @@ class Data
             
             // Rearrange the list of ids into a flat array
             $id = array();
-            foreach ($raw as $raw_id) {
-                $id[] = $raw_id[$pivot['connections'][0]['column']];
+            foreach ($raw as $rawId) {
+                $id[] = $rawId[$pivotCon['column']];
             }
             $dedup = array_unique($id);
             
@@ -646,11 +642,11 @@ class Data
         } elseif ($value instanceof Model) {
             // Trying to pass in the wrong table for the relationship!
             // That is, the table name on the foreign key does not match the table name in the passed Model object
-            $value_table = Schema::normaliseCase($value->dataOriginal()->__table);
-            $expected_table = $this->__model['many-to-one'][$var];
+            $valueTable = Schema::normaliseCase($value->dataOriginal()->__table);
+            $expectedTable = $this->__model['many-to-one'][$var];
             
-            if ($value_table !== $expected_table) {
-                throw new Exception\Model('MODEL_DATA:INCORRECT_MODEL_FOR_RELATIONSHIP', [$var, $value_table, $expected_table]);
+            if ($valueTable !== $expectedTable) {
+                throw new Exception\Model('MODEL_DATA:INCORRECT_MODEL_FOR_RELATIONSHIP', [$var, $valueTable, $expectedTable]);
             }
             return [$value->id, $value];
         } else {
