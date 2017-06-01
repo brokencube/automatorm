@@ -118,9 +118,10 @@ class Data
             return $data;
         }
         
-        /* This property hasn't been defined, so it's not one of the table columns. We want to look at foreign keys and pivots */
-        
-        /* If we try and access a foreign key column without adding the _id on the end assume we want the object, not the id
+        /* This property hasn't been defined, so it's not one of the table columns.
+         * We want to look at foreign keys and pivots
+         * 
+         * If we try to access a foreign key column without the _id on the end assume we want the object, not the id
          * From example at the top: $proj->account_id returns 1      $proj->account returns Account object with id 1
          */
         
@@ -167,15 +168,15 @@ class Data
             // Remove duplicates from the group
             $ids = array_unique($collection->{$var . '_id'}->toArray());
             
-            /* Call Tablename::factoryObjectCache(foreign key ids) to makes sure all the objects we want are in the instance cache */
             $table = $proto->__model['many-to-one'][$var];
-
+            
             if (!$where) {
                 $results = Model::factoryObjectCache($ids, $table, $proto->__schema);
                 
                 // Store the object results on the relevant objects
                 foreach ($collection as $obj) {
-                    $obj->_data->__external[$var] = Model::factoryObjectCache($obj->{$var . '_id'}, $table, $proto->__schema);
+                    $obj->_data->__external[$var] =
+                        Model::factoryObjectCache($obj->{$var . '_id'}, $table, $proto->__schema);
                 }
                 
                 return $results;
@@ -313,11 +314,11 @@ class Data
             }
             
             // Get a list of ids linked to this object (i.e. the tablename_id stored in the pivot table)
-            $pivot_schema = $proto->__schema->getTable($pivot['pivot']);
-            $pivot_tablename = $pivot_schema['table_name'];
+            $pivotSchema = $proto->__schema->getTable($pivot['pivot']);
+            $pivotCon = $pivot['connections'][0];
             
             $raw = $proto->getDataAccessor()->getM2MData(
-                $pivot_tablename,
+                $pivotSchema['table_name'],
                 $pivot,
                 $ids,
                 $where
@@ -326,14 +327,14 @@ class Data
             // Rearrange the list of ids into a flat array and an id grouped array
             $flatIds = [];
             foreach ($raw as $rawId) {
-                $flatIds[] = $rawId[$pivot['connections'][0]['column']];
+                $flatIds[] = $rawId[$pivotCon['column']];
             }
             
             // Remove duplicates to make sql call smaller.
             $flatIds = array_unique($flatIds);
             
             // Use the model factory to retrieve the objects from the list of ids (using cache first)
-            list($data) = static::factoryDataCount(['id' => $flatIds] + $where, $pivot['connections'][0]['table'], $proto->__schema);
+            list($data) = static::factoryDataCount(['id' => $flatIds] + $where, $pivotCon['table'], $proto->__schema);
             return $data['count'];
         }
     }
