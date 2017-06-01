@@ -4,6 +4,7 @@ namespace Automatorm\DataLayer\Fake;
 use Automatorm\Interfaces\Connection as ConnectionInterface;
 use Automatorm\Interfaces\DataAccess as DataAccessInterface;
 use Automatorm\Orm\Schema;
+use Automatorm\OperatorParser;
 
 class DataAccess implements DataAccessInterface
 {
@@ -113,12 +114,15 @@ class DataAccess implements DataAccessInterface
 
         foreach ($this->tabledata[$tablename] as $id => $row) {
             foreach ($where as $column => $clause) {
+                list($affix, $column) = OperatorParser::extractAffix($column, true);
                 if (is_array($clause)) {
-                    if (in_array($row[$column], $clause) === false) {
-                        continue 2;
+                    foreach ($clause as $value) {
+                        if (OperatorParser::testOperator($affix, $row[$column], $value)) {
+                            continue 3;
+                        }
                     }
                 } else {
-                    if ($row[$column] != $clause) {
+                    if (OperatorParser::testOperator($affix, $row[$column], $clause)) {
                         continue 2;
                     }
                 }

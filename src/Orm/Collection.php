@@ -2,6 +2,7 @@
 namespace Automatorm\Orm;
 
 use Automatorm\Exception;
+use Automatorm\OperatorParser;
 
 class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable
 {
@@ -362,80 +363,6 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
         return new static(array_map($function, $this->container));
     }
     
-    public function extractAffix($propertyName, $invert = false)
-    {
-        $parts = [];
-        // Look for special non-alphanumeric affixes
-        preg_match('/^([!=<>%#]*)([^!=<>%#]+)([!=<>%#]*)$/', $propertyName, $parts);
-        $affix = $parts[1] ?: $parts[3];
-        // Strip any affix from the property name
-        $property = $parts[2];
-        
-        // Invert affix for not()
-        switch ($affix) {
-            case '=':
-            case '==':
-            default:
-                $affix = $invert ? '!' : '=';
-                break;
-            case '!=':
-            case '!':
-            case '<>':
-                $affix = $invert ? '=' : '!';
-                break;
-            case '<':
-                $affix = $invert ? '>=' : '<';
-                break;
-            case '<=':
-                $affix = $invert ? '>' : '<='; 
-                break;
-            case '>':
-                $affix = $invert ? '<=' : '>';
-                break; 
-            case '>=':
-                $affix = $invert ? '<' : '>=';
-                break;
-        }
-        
-        // These affixes only work in SQL land
-        switch ($affix) {
-            case '%':
-            case '!%':
-            case '%!':
-            case '#':
-                throw new Exception\BaseException('UNSUPPORTED_AFFIX_TYPE');
-        }
-        
-        return [$affix, $property];
-    }
-    
-    public static function testOperator($operator, $value1, $value2)
-    {
-        switch ($operator) {
-            case '=':
-            case '==':
-            default:
-                return $value1 == $value2;
-            
-            case '!=':
-            case '!':
-            case '<>':
-                return $value1 != $value2;
-            
-            case '>':
-                return $value1 > $value2;
-            
-            case '>=':
-                return $value1 >= $value2;
-
-            case '<':
-                return $value1 < $value2;
-
-            case '<=':
-                return $value1 <= $value2;
-        }
-    }
-
     // Only keep items that match filter
     public function filter($filter, $invertAffix = false)
     {
@@ -446,7 +373,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
             foreach ($copy as $itemKey => $item) {
                 // Loop over filters
                 foreach ($filter as $property => $valueList) {
-                    list($affix, $property) = $this->extractAffix($property, $invertAffix);
+                    list($affix, $property) = OperatorParser::extractAffix($property, $invertAffix);
                     
                     // Each filter can have several acceptable values -- force single item to array
                     if (!is_array($valueList)) {
@@ -455,7 +382,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                     
                     // Check each value - if we find a matching value than skip to the next filter.
                     foreach ($valueList as $value) {
-                        $compare = static::testOperator($affix, $item->$property, $value);
+                        $compare = OperatorParser::testOperator($affix, $item->$property, $value);
 
                         // Compare based on affix (else == )
                         switch ($affix) {
