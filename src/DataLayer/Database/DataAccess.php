@@ -1,6 +1,7 @@
 <?php
 namespace Automatorm\DataLayer\Database;
 
+use Automatorm\Orm\Schema;
 use Automatorm\Database\Query;
 use Automatorm\Database\QueryBuilder;
 use Automatorm\Database\SqlString;
