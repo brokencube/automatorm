@@ -372,31 +372,29 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
         $property = $parts[2];
         
         // Invert affix for not()
-        if ($invert) {
-            switch ($affix) {
-                case '=':
-                case '==':
-                default:
-                    $affix = '!';
-                    break;
-                case '!=':
-                case '!':
-                case '<>':
-                    $affix = '=';
-                    break;
-                case '<':
-                    $affix = '>=';
-                    break;
-                case '<=':
-                    $affix = '>';
-                    break;
-                case '>':
-                    $affix = '<=';
-                    break;
-                case '>=':
-                    $affix = '<';
-                    break;
-            }
+        switch ($affix) {
+            case '=':
+            case '==':
+            default:
+                $affix = $invert ? '!' : '=';
+                break;
+            case '!=':
+            case '!':
+            case '<>':
+                $affix = $invert ? '=' : '!';
+                break;
+            case '<':
+                $affix = $invert ? '>=' : '<';
+                break;
+            case '<=':
+                $affix = $invert ? '>' : '<='; 
+                break;
+            case '>':
+                $affix = $invert ? '<=' : '>';
+                break; 
+            case '>=':
+                $affix = $invert ? '<' : '>=';
+                break;
         }
         
         // These affixes only work in SQL land
@@ -409,6 +407,33 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
         }
         
         return [$affix, $property];
+    }
+    
+    public static function testOperator($operator, $value1, $value2)
+    {
+        switch ($operator) {
+            case '=':
+            case '==':
+            default:
+                return $value1 == $value2;
+            
+            case '!=':
+            case '!':
+            case '<>':
+                return $value1 != $value2;
+            
+            case '>':
+                return $value1 > $value2;
+            
+            case '>=':
+                return $value1 >= $value2;
+
+            case '<':
+                return $value1 < $value2;
+
+            case '<=':
+                return $value1 <= $value2;
+        }
     }
 
     // Only keep items that match filter
@@ -430,53 +455,21 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                     
                     // Check each value - if we find a matching value than skip to the next filter.
                     foreach ($valueList as $value) {
+                        $compare = static::testOperator($affix, $item->$property, $value);
+
                         // Compare based on affix (else == )
                         switch ($affix) {
                             case '=':
                             case '==':
-                            default:
-                                if ($item->$property == $value) {
+                            case '':
+                                if ($compare) {
                                     // Found match - move on to next filter
                                     continue 3; // Back to foreach $filter
                                 }
                                 break;
 
-                            case '!=':
-                            case '!':
-                            case '<>':
-                                if ($item->$property == $value) {
-                                    // Found a negative match, remove this item and move on to next property
-                                    unset($copy[$itemKey]);
-                                    continue 4; // Back to foreach $copy
-                                }
-                                break;
-
-                            case '>':
-                                if ($item->$property <= $value) {
-                                    // Found a negative match, remove this item and move on to next property
-                                    unset($copy[$itemKey]);
-                                    continue 4; // Back to foreach $copy
-                                }
-                                break;
-
-                            case '>=':
-                                if ($item->$property < $value) {
-                                    // Found a negative match, remove this item and move on to next property
-                                    unset($copy[$itemKey]);
-                                    continue 4; // Back to foreach $copy
-                                }
-                                break;
-
-                            case '<':
-                                if ($item->$property >= $value) {
-                                    // Found a negative match, remove this item and move on to next property
-                                    unset($copy[$itemKey]);
-                                    continue 4; // Back to foreach $copy
-                                }
-                                break;
-
-                            case '<=':
-                                if ($item->$property > $value) {
+                            default:
+                                if (!$compare) {
                                     // Found a negative match, remove this item and move on to next property
                                     unset($copy[$itemKey]);
                                     continue 4; // Back to foreach $copy
@@ -489,20 +482,14 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                         // Negative cases
                         case '=':
                         case '==':
-                        default:
+                        case '':
                             // Failed to break loop, so the current value matches none of the
                             // values for the current filter, therefore remove the item
                             unset($copy[$itemKey]);
                             continue 3; // Back to foreach $copy
                         
                         // Positive cases
-                        case '<':
-                        case '<=':
-                        case '>':
-                        case '>=':
-                        case '!=':
-                        case '!':
-                        case '<>':
+                        default:
                             // Failed to break oop, so the current value passes.
                             // No action, keep this key, continue to next filter
                             continue 2; // Back to foreach $filter

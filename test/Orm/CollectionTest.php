@@ -116,7 +116,6 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
     {
         $collection = new Collection($array);
         $this->assertInstanceOf(Collection::class, $collection->slice($a, $b));
-        $this->assertNotSame($collection, $collection->reverse());
         $this->assertEquals($result, $collection->slice($a, $b)->toArray());
     }
     
@@ -131,6 +130,33 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
             [ [0,1,2], 3, 3, [] ],
             [ [0,1,2], 2, 3, [2] ],
             [ [0,1,2], 0, -1, [0,1] ],
+        ];
+    }
+
+    /**
+     * @dataProvider providerTestFilter
+     */
+    public function testFilter($array, $filter, $result)
+    {
+        $collection = new Collection($array);
+        $this->assertInstanceOf(Collection::class, $collection->filter($filter));
+        $this->assertEquals($result, $collection->filter($filter)->toArray());
+    }
+    
+    public function providerTestFilter()
+    {
+        return [
+            [ [(object) ['id' => 1]], ['id' => 1], [(object) ['id' => 1]] ],
+            [ [(object) ['id' => 1]], ['id' => 2], [] ],
+            [ [(object) ['id' => 1]], ['!id' => 2], [(object) ['id' => 1]] ],
+            [ [(object) ['id' => 1]], ['!id' => 1], [] ],
+            [ [(object) ['id' => 2]], ['id>' => 1], [(object) ['id' => 2]] ],
+            [ [(object) ['id' => 2]], ['id>' => 2], [] ],
+            [ [(object) ['id' => 1]], ['id<' => 2], [(object) ['id' => 1]] ],
+            [ [(object) ['id' => 1], (object) ['id' => 2], (object) ['id' => 3], (object) ['id' => 4]], ['id>' => 2], [(object) ['id' => 3], (object) ['id' => 4]] ],
+            [ [(object) ['id' => 1], (object) ['id' => 2], (object) ['id' => 3], (object) ['id' => 4]], ['id>=' => 3], [(object) ['id' => 3], (object) ['id' => 4]] ],
+            [ [(object) ['id' => 1], (object) ['id' => 2], (object) ['id' => 3], (object) ['id' => 4]], ['id<' => 2], [(object) ['id' => 1]] ],
+            [ [(object) ['id' => 1], (object) ['id' => 2], (object) ['id' => 3], (object) ['id' => 4]], ['id<=' => 3], [(object) ['id' => 1], (object) ['id' => 2], (object) ['id' => 3]] ],
         ];
     }
 }
