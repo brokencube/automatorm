@@ -681,7 +681,7 @@ class Data
         return $value;
     }
     
-    public function assignData(array $data, array $validkeys)
+    public function assign(array $data, array $validkeys)
     {
         try {
             foreach ($validkeys as $key) {
