@@ -7,16 +7,13 @@ use Automatorm\Orm\Schema;
 
 class Model
 {
-    const CURRENT_VERSION = 1;
+    const CURRENT_VERSION = 2;
 
     public static function generate($path, Schema $schema)
     {
         $namespace = $schema->namespace;
         
         foreach ($schema->model as $model) {
-            if (in_array($model['table_name'], ['blog_category', 'currencies', 'currency_rates', 'currency_rates_current', 'desc'])) {
-                continue;
-            }
             $updates = "";
             
             if ($model['type'] === 'table') {
@@ -63,15 +60,15 @@ class {$classname} extends Model
     public static function create(\$data)
     {
         \$db = static::newData();
-$updates        \$id = \$db->commit();
-
-        return static::get(\$id);
+$updates
+        return static::commitNew(\$db);
     }
     
     public function update(\$data)
     {
         \$db = \$this->data();
-$updates        \$db->commit();
+$updates
+        return \$this->commit(\$db);
     }
     
     public function jsonSerialize()
