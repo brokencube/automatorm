@@ -93,6 +93,11 @@ class Model extends BaseException
             case 'MODEL_DATA:INCORRECT_MODEL_FOR_RELATIONSHIP':
                 list($column, $suppliedTable, $expectedTable) = $data;
                 return 'MODEL_DATA:INCORRECT_MODEL_FOR_RELATIONSHIP: Property "'.$column.'" expected a Model relating to table "'.$expectedTable.'" but a Model for "'.$suppliedTable.'" was given instead.';
+            
+            case 'ERROR_DURING_MASS_ASSIGNMENT':
+                $e = $this->getPrevious();
+                return 'ERROR_DURING_MASS_ASSIGNMENT: During ->assignData(), the following exception occurred: ' . $e->makeMessage($e->code, $e->data);
+            
             default:
                 return "Unknown error code ({$code})";
         }

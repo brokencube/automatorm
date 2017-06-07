@@ -681,6 +681,20 @@ class Data
         return $value;
     }
     
+    public function assignData(array $data, array $validkeys)
+    {
+        try {
+            foreach ($validkeys as $key) {
+                if (array_key_exists($key, $data)) {
+                    $this->__set($key, $data[$key]);
+                }
+            }
+            return $this;
+        } catch (Exception\Model $e) {
+            throw new Exception\Model(' ', [$data, $validkeys], $e);
+        }
+    }
+    
     public function commit()
     {
         // Determine the type of SQL instruction to run
@@ -802,7 +816,6 @@ class Data
     
     public function __wakeup()
     {
-        $this->__external = [];
         $this->__schema = Schema::get($this->__namespace);
         $this->__model = $this->__schema->getTable($this->__table);
     }

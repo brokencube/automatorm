@@ -364,6 +364,7 @@ class Model implements \JsonSerializable
     {
         $this->_data = $db->commit();
         $this->dataClearCache();
+        return $this;
     }
     
     public static function commitNew(Data $db)
