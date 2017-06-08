@@ -418,7 +418,11 @@ class QueryBuilder
 
         // Special case for in clauses using select
         if ($value instanceof QueryBuilder && !$onclause) {
-            return [$column, $affix == '!' ? "not in" : "in", $value, null];
+            if ($value->limit === 1) {
+                return [$column, $affix == '!' ? "<>" : "=", $value, null];
+            } else {
+                return [$column, $affix == '!' ? "not in" : "in", $value, null];
+            }
         }
         
         // Special case for # "count" clause
