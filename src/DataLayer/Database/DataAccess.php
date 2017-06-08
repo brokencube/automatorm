@@ -116,7 +116,7 @@ class DataAccess implements DataAccessInterface
         }
         
         list($data) = Query::run($query, $this->connection);
-        return $data;
+        return $data[0]['count'];
     }
     
     public function getM2MData($pivotTablename, $pivot, $ids, $joinwhere = null, $where = null) : array
