@@ -415,6 +415,11 @@ class QueryBuilder
             
             return [$column, $affix == '!' ? "not in" : "in", $value, null];
         }
+
+        // Special case for in clauses using select
+        if ($value instanceof QueryBuilder && !$onclause) {
+            return [$column, $affix == '!' ? "not in" : "in", $value, null];
+        }
         
         // Special case for # "count" clause
         if (strpos($affix, '#') !== false) {
@@ -586,6 +591,10 @@ class QueryBuilder
                 return $this->escapeColumn($column) . ' ' . $comp;
             } elseif ($value instanceof SqlString) {
                 return $this->escapeColumn($column) . " $comp " . $value;
+            } elseif ($value instanceof QueryBuilder) {
+                list($sql, $data) = $value->resolve();
+                $this->data = array_merge($this->data, $data);
+                return $this->escapeColumn($column) . " $comp (" . $sql . ")";
             } elseif (is_array($value)) {
                 $count = count($value);
                 foreach ($value as $val) {
