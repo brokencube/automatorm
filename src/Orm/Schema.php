@@ -77,6 +77,7 @@ class Schema
     protected $connection;
     protected $namespace;
     protected $version;
+    protected $_serviceContainer = [];
     
     protected function __construct($model, \Automatorm\Interfaces\Connection $connection, $namespace)
     {
@@ -101,6 +102,21 @@ class Schema
     public function __get($var)
     {
         return $this->$var;
+    }
+    
+    public function setService($name, $container)
+    {
+        $this->_serviceContainer[$name] = $container;
+        return $this;
+    }
+    
+    public function getService($name)
+    {
+        if (!array_key_exists($name, $this->_serviceContainer)) {
+            throw new Exception\Model('NO_SUCH_SERVICE', $name);
+        }
+        
+        return $this->_serviceContainer[$name];
     }
     
     ///////////////////////////////////////////////////////////////////////////

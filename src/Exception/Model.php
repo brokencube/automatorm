@@ -98,6 +98,9 @@ class Model extends BaseException
                 $e = $this->getPrevious();
                 return 'ERROR_DURING_MASS_ASSIGNMENT: During ->assignData(), the following exception occurred: ' . $e->makeMessage($e->code, $e->data);
             
+            case 'NO_SUCH_SERVICE':
+                return 'NO_SUCH_SERVICE: Tried to access service "{$data}", but it has not yet been definied';
+            
             default:
                 return "Unknown error code ({$code})";
         }
