@@ -49,35 +49,45 @@ trait ClosureTree
     {
         $table = $this->closureTable;
         
+        // Find closure entries that refer to the parent id from this id.
+        $findIds = QueryBuilder::select([$table => 'p'], [['rel', 'id']])
+            ->join([$table => 'rel'])
+                ->joinOn(['p.parent_id' => 'rel.parent_id'])
+            ->join([$table => 'c'])
+                ->joinOn(['c.child_id' => 'rel.child_id'])
+            ->where(['p.child' => $parent->id, 'c.parent_id' => $this->id])
+        ;
+        
+        // Run query to remove all of those ids
         $query = new Query($this->connection);
-        $query->sql(" 
-            DELETE FROM $table WHERE id IN(
-                SELECT a.id FROM (
-                    SELECT rel.id FROM $table p, $table rel, $table c
-                    WHERE p.parent_id = rel.parent_id and c.child_id = rel.child_id
-                    AND p.child_id = {$parent->id} AND c.parent_id = {$this->id}
-                ) as a
-            );
-        ");
+        $query->sql(
+            QueryBuilder::delete($table)->where(['id' => $findIds])
+        );
         $query->execute();
     }
 
     public function getFullTree()
     {
         $table = $this->closureTable;
+
+        // Find the root node from the supplied node_id
+        $innerQuery = QueryBuilder::select($table, ['parent_id' => 'id'])
+            ->where(['child_id' => $this->id])
+            ->orderBy('depth', 'desc')
+            ->limit(1);
+
+        // Find all the ancestors of the root node above - i.e. find all nodes in this graph 
+        $middleQuery = QueryBuilder::select($table, ['child_id'])
+            ->where(['parent_id' => $innerQuery]);
+
+        // Find all depth 1 connections within the graph found above
+        $outerQuery = QueryBuilder::select($table, ['parent_id', 'child_id'])
+            ->where(['parent_id' => $middleQuery])
+            ->where(['depth' => 1]);
         
-        // Query to find root node, and all direct child/parent relationships
         $query = new Query($this->connection);
-        $query->sql("
-            SELECT parent_id as id FROM $table WHERE child_id = {$this->id} ORDER BY depth DESC LIMIT 1;
-        ");
-        $query->sql("
-            SELECT parent_id, child_id FROM $table as t WHERE t.parent_id IN (
-                SELECT child_id FROM $table WHERE parent_id = (
-                    SELECT parent_id FROM $table WHERE child_id = {$this->id} ORDER BY depth DESC LIMIT 1
-                )
-            ) AND t.depth = 1;
-        ");
+        $query->sql($innerQuery); // Root node
+        $query->sql($outerQuery); // All length 1 connections
         list($root, $results) = $query->execute();
         
         // Root Folder Id
@@ -145,15 +155,5 @@ trait ClosureTree
         }
         
         return static::findAll(['id' => $children]);
-    }
-    
-    public function _property_parents()
-    {
-        return static::getParents();
-    }
-    
-    public function _property_children()
-    {
-        return static::getChildren();
     }
 }

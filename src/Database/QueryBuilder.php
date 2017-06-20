@@ -418,6 +418,8 @@ class QueryBuilder
 
         // Special case for in clauses using select
         if ($value instanceof QueryBuilder && !$onclause) {
+            // MySQL doesn't support in with limits - so special case limit 1 to use =
+            // Of course, MySQL is SOL if limit > 1
             if ($value->limit === 1) {
                 return [$column, $affix == '!' ? "<>" : "=", $value, null];
             } else {
