@@ -215,11 +215,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
         // If we are dealing with a collection of objects then user key/value to extract desired property
         $return = [];
         foreach ($this->container as $item) {
-            if (is_null($key)) {
-                $return[] = $item->$value;
-            } else {
-                $return[$item->$key] = $item->$value;
-            }
+            $return[$item->$key] = $item->$value;
         }
         return $return;
     }
