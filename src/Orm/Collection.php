@@ -3,6 +3,7 @@ namespace Automatorm\Orm;
 
 use Automatorm\Exception;
 use Automatorm\OperatorParser;
+use Automatorm\Interfaces\WrappedModel;
 
 class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable
 {
@@ -107,6 +108,10 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
         if ($this->container[0] instanceof Model and $this->container[0]->_data->externalKeyExists($parameter)) {
             return Data::groupJoin($this, $parameter);
         }
+
+        if ($this->container[0] instanceof WrappedModel and !property_exists($this->container[0], $parameter) and $this->container[0]->_data->externalKeyExists($parameter)) {
+            return Data::groupJoin($this->map(function ($a) { return $a->getModel(); }), $parameter);
+        }
         
         foreach ($this->container as $item) {
             $value = $item->$parameter;
@@ -174,56 +179,49 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
             throw new \InvalidArgumentException('Orm\Collection::__construct() expects an array - ' . gettype($array) . ' given');
         }
         
-        $this->container = $array;
+        $this->container = array_values($array);
     }
-    
     
     /**
      * Return a plain PHP array version of the internal container
      * Additional options for the normal case of a Collection of Model objects
      *
-     * @param $value For Collections of Models, return the specified property name instead of the Model object as the "Value"
-     * @param $key For Collections of Models, return the specified property name as the "Key"
-     * @return array Plain Array version of collection
+     * @return array internal array container
      */
-    public function toArray($value = null, $key = 'id')
+    public function toArray() : array
+    {
+        return $this->container;
+    }
+
+    /**
+     * Return a plain PHP array version of the internal container using the supplied key/value values of the model object
+     * @param $key For Collections of Models, return the specified property name as the "Key", or numeric array if null
+     * @param $value For Collections of Models, return the specified property name instead of the Model object as the "Value"
+     *
+     * @return array of key => value as specified based on the objects in the collection
+     */
+    public function toAssociativeArray($key, $value) : array
     {
         // Empty array?
         if (!count($this->container)) {
             return [];
         }
         
-        // If we are not dealing with a collection of Model objects, just return the internal container
-        if (!$this->container[0] instanceof Model) {
+        // If we are not dealing with a collection of objects, just return the internal container
+        if (!is_object($this->container[0])) {
             return $this->container;
         }
         
-        // If we are dealing with a collection of Model objects then user key/value to extract desired property
+        // If we are dealing with a collection of objects then user key/value to extract desired property
         $return = [];
-        if ($this->container[0] instanceof Model) {
-            if (!$value) {
-                foreach ($this->container as $item) {
-                    if ($key) {
-                        $return[$item->$key] = $item;
-                    } else {
-                        $return[] = $item;
-                    }
-                }
-                return $return;
+        foreach ($this->container as $item) {
+            if (is_null($key)) {
+                $return[] = $item->$value;
             } else {
-                foreach ($this->container as $item) {
-                    if ($key) {
-                        $return[$item->$key] = $item->$value;
-                    } else {
-                        $return[] = $item->$value;
-                    }
-                }
-                return $return;
+                $return[$item->$key] = $item->$value;
             }
         }
-        
-        // If we have normal objects or primatives, just return the internal container
-        return $this->container;
+        return $return;
     }
     
     //////// Collection modifiers ////////
@@ -387,8 +385,6 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                         // Compare based on affix (else == )
                         switch ($affix) {
                             case '=':
-                            case '==':
-                            case '':
                                 if ($compare) {
                                     // Found match - move on to next filter
                                     continue 3; // Back to foreach $filter
@@ -408,8 +404,6 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
                     switch ($affix) {
                         // Negative cases
                         case '=':
-                        case '==':
-                        case '':
                             // Failed to break loop, so the current value matches none of the
                             // values for the current filter, therefore remove the item
                             unset($copy[$itemKey]);
