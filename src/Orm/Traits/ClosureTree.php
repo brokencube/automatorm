@@ -140,7 +140,7 @@ trait ClosureTree
         // Find direct parent/child relationship
         $query = new Query($this->getConnection());
         $query->sql(
-            QueryBuilder::select($this->closureTable, ['parent_id'])->where(['child_id' => $this->id])->orderBy('depth')
+            QueryBuilder::select($this->closureTable, ['parent_id'])->where(['child_id' => $this->id, 'depth>' => 0])->orderBy('depth')
         );
         list($results) = $query->execute();
 

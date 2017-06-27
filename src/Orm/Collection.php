@@ -273,6 +273,9 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
      */
     public function sortById(array $listOfIds)
     {
+        // Don't bother trying to sort an empty container, just return a new empty container
+        if (!$this->container) return new static();
+        
         if (!$this->first() instanceof Model) {
             throw new Exception\BaseException('sortById can only be called on collections of Model objects');
         }
