@@ -128,7 +128,7 @@ trait ClosureTree
         // Find direct parent/child relationship
         $query = new Query($this->getConnection());
         $query->sql(
-            QueryBuilder::select($this->closureTable, ['parent_id'])->where(['child_id' => $this->id, 'depth' => 1]->limit(1))
+            QueryBuilder::select($this->closureTable, ['parent_id'])->where(['child_id' => $this->id, 'depth' => 1])->limit(1)
         );
         list($results) = $query->execute();
         
