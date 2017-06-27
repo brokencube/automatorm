@@ -123,21 +123,33 @@ trait ClosureTree
         $this->addParent($newparent);
     }
     
-    public function getParents()
+    public function getParent()
     {
-        // Find all direct parent/child relationships
+        // Find direct parent/child relationship
         $query = new Query($this->getConnection());
         $query->sql(
-            QueryBuilder::select($this->closureTable, ['parent_id'])->where(['child_id' => $this->id, 'depth' => 1])
+            QueryBuilder::select($this->closureTable, ['parent_id'])->where(['child_id' => $this->id, 'depth' => 1]->limit(1))
         );
         list($results) = $query->execute();
         
+        return static::find(['id' => $results[0]['parent_id']]);
+    }
+
+    public function getParents()
+    {
+        // Find direct parent/child relationship
+        $query = new Query($this->getConnection());
+        $query->sql(
+            QueryBuilder::select($this->closureTable, ['parent_id'])->where(['child_id' => $this->id])->orderBy('depth')
+        );
+        list($results) = $query->execute();
+
         $parents = [];
         foreach ($results as $row) {
             $parents[] = $row['parent_id'];
         }
         
-        return static::findAll(['id' => $parents]);
+        return static::findAll(['id' => $parents])->sortById($parents);
     }
     
     public function getChildren()
