@@ -135,12 +135,12 @@ trait ClosureTree
         return static::find(['id' => $results[0]['parent_id']]);
     }
 
-    public function getParents()
+    public function getAncestors()
     {
         // Find direct parent/child relationship
         $query = new Query($this->getConnection());
         $query->sql(
-            QueryBuilder::select($this->closureTable, ['parent_id'])->where(['child_id' => $this->id, 'depth>' => 0])->orderBy('depth')
+            QueryBuilder::select($this->closureTable, ['parent_id'])->where(['child_id' => $this->id, 'depth>=' => 1])->orderBy('depth')
         );
         list($results) = $query->execute();
 
@@ -158,6 +158,23 @@ trait ClosureTree
         $query = new Query($this->getConnection());
         $query->sql(
             QueryBuilder::select($this->closureTable, ['child_id'])->where(['parent_id' => $this->id, 'depth' => 1])
+        );
+        list($results) = $query->execute();
+        
+        $children = [];
+        foreach ($results as $row) {
+            $children[] = $row['child_id'];
+        }
+        
+        return static::findAll(['id' => $children]);
+    }
+
+    public function getDescendants()
+    {
+        // Find all direct child/parent relationships
+        $query = new Query($this->getConnection());
+        $query->sql(
+            QueryBuilder::select($this->closureTable, ['child_id'])->where(['parent_id' => $this->id, 'depth>=' => 1])
         );
         list($results) = $query->execute();
         
