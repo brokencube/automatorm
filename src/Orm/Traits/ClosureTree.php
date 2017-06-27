@@ -26,7 +26,7 @@ trait ClosureTree
     
     public function createInitialClosure()
     {
-        $query = new Query($this->connection);
+        $query = new Query($this->getConnection());
         $query->sql(QueryBuilder::insert($this->closureTable, ['parent_id' => $this->id, 'child_id' => $this->id, 'depth' => 0]));
         $query->execute();
     }
@@ -35,7 +35,7 @@ trait ClosureTree
     {
         $table = $this->closureTable;
         
-        $query = new Query($this->connection);
+        $query = new Query($this->getConnection());
         $query->sql(" 
             INSERT INTO $table (parent_id, child_id, depth)
             SELECT p.parent_id, c.child_id, p.depth+c.depth+1
@@ -59,7 +59,7 @@ trait ClosureTree
         ;
         
         // Run query to remove all of those ids
-        $query = new Query($this->connection);
+        $query = new Query($this->getConnection());
         $query->sql(
             QueryBuilder::delete($table)->where(['id' => $findIds])
         );
@@ -85,7 +85,7 @@ trait ClosureTree
             ->where(['parent_id' => $middleQuery])
             ->where(['depth' => 1]);
         
-        $query = new Query($this->connection);
+        $query = new Query($this->getConnection());
         $query->sql($innerQuery); // Root node
         $query->sql($outerQuery); // All length 1 connections
         list($root, $results) = $query->execute();
@@ -126,7 +126,7 @@ trait ClosureTree
     public function getParents()
     {
         // Find all direct parent/child relationships
-        $query = new Query($this->connection);
+        $query = new Query($this->getConnection());
         $query->sql(
             QueryBuilder::select($this->closureTable, ['parent_id'])->where(['child_id' => $this->id, 'depth' => 1])
         );
@@ -143,7 +143,7 @@ trait ClosureTree
     public function getChildren()
     {
         // Find all direct child/parent relationships
-        $query = new Query($this->connection);
+        $query = new Query($this->getConnection());
         $query->sql(
             QueryBuilder::select($this->closureTable, ['child_id'])->where(['parent_id' => $this->id, 'depth' => 1])
         );
