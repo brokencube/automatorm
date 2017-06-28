@@ -72,11 +72,15 @@ class Data
         $clone->__new = true;
         $clone->__delete = false;
         unset($clone->__data['id']);
+        foreach (array_keys($clone->__data) as $key) {
+            $clone->__update[$key] = true;
+        }
         
         // Clone M-M joins
         if ($cloneExternalProps) {
             foreach (array_keys($this->__model['many-to-many']) as $key) {
                 $clone->__external[$key] = $this->{$key};
+                $clone->__updateExternal[$key] = true;
             }
         }
         
