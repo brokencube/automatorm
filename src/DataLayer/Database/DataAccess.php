@@ -73,8 +73,8 @@ class DataAccess implements DataAccessInterface
         $query->execute();     // Execute Statements
         $query->commit();      // Commit Transaction
         
-        // Get the id we just inserted
-        if ($mode == 'insert') {
+        // Get the id we just inserted, unless we provided the id for insert (for 1-1 tables)
+        if ($mode == 'insert' && !$id) {
             return $query->insertId(0);
         }
         
