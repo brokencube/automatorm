@@ -743,8 +743,10 @@ class Data
         $this->__external = [];
 
         // Get clean version of data from database (in case of db triggers etc)
-        list($data) = $this->getDataAccessor()->getData($this->__table, ['id' => $id]);
-        $this->updateData($data);
+        if ($mode != 'delete') {
+            list($data) = $this->getDataAccessor()->getData($this->__table, ['id' => $id]);
+            $this->updateData($data);
+        }
         
         return $this;
     }
