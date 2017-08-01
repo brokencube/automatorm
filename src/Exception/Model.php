@@ -101,6 +101,9 @@ class Model extends BaseException
             case 'NO_SUCH_SERVICE':
                 return 'NO_SUCH_SERVICE: Tried to access service "{$data}", but it has not yet been definied';
             
+            case 'MODEL_DATA:UNKNOWN_FOREIGN_PROPERTY':
+                return 'MODEL_DATA:UNKNOWN_FOREIGN_PROPERTY: Tried to access a foreign key not defined in the schema ('.$data['property'].'). Maybe try dump()ing this object to check what keys are available?';
+            
             default:
                 return "Unknown error code ({$code})";
         }
