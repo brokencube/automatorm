@@ -799,6 +799,14 @@ class Data
         return null;
     }
     
+    public function clearCache()
+    {
+        if (!$this->__locked) {
+            throw new Exception\Model('CANNOT_CLEAR_UNLOCKED_DATA_OBJECTS', [$this]);
+        }
+        $this->__external = [];
+    }
+    
     // By default, hide most of the schema internals of Data objects when var_dumping them!
     public function __debugInfo()
     {

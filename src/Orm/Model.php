@@ -399,6 +399,8 @@ class Model implements \JsonSerializable
                 unset($this->{$column});
             }
         }
+        
+        $this->_data->clearCache();
     }
     
     // Grab a clean version of the Data object based on the current state in the database.
