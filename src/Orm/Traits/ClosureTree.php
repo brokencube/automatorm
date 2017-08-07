@@ -50,7 +50,7 @@ trait ClosureTree
         $table = $this->closureTable;
         
         // Find closure entries that refer to the parent id from this id.
-        $findIds = QueryBuilder::select([$table => 'p'], [['rel', 'id']])
+        $findIds = QueryBuilder::select([$table => 'p'], [['`rel.id`']])
             ->join([$table => 'rel'])
                 ->joinOn(['p.parent_id' => 'rel.parent_id'])
             ->join([$table => 'c'])
