@@ -55,7 +55,7 @@ trait ClosureTree
                 ->joinOn(['p.parent_id' => 'rel.parent_id'])
             ->join([$table => 'c'])
                 ->joinOn(['c.child_id' => 'rel.child_id'])
-            ->where(['p.child' => $parent->id, 'c.parent_id' => $this->id])
+            ->where(['p.child_id' => $parent->id, 'c.parent_id' => $this->id])
         ;
         
         // Run query to remove all of those ids
