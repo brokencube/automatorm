@@ -58,7 +58,7 @@ trait ClosureTree
             ->where(['p.child_id' => $parent->id, 'c.parent_id' => $this->id])
         ;
         
-        $wrap = QueryBuilder::select($findIds, 'id');
+        $wrap = QueryBuilder::select($findIds, ['id']);
         
         // Run query to remove all of those ids
         $query = new Query($this->getConnection());
