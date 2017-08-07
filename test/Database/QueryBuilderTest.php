@@ -123,6 +123,15 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(0, count($data));
     }
 
+    public function testColumnNameBackticks()
+    {
+        $qb = QueryBuilder::select(['test' => 't'], ['`t`.id']);
+        list($sql, $data) = $qb->resolve();
+        
+        $this->assertEquals('SELECT `t`.`id` FROM `test` as `t`', $sql);
+        $this->assertEquals(0, count($data));
+    }
+
     public function testLessComplexColumnName()
     {
         $qb = QueryBuilder::select(['test' => 't'], [['t', 'id']]);

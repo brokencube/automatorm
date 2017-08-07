@@ -825,10 +825,10 @@ class QueryBuilder
         // `column.column`           => "column.column"
         // table.`column.column`     => "table","column.column"
         else {
-            preg_match('/^(`.+?`|.+?)(?:\.`?(.+?)`?)?(?:\.`?(.+?)`?)?$/', $rawcolumn, $column);
-            $first = $column[1];
-            $second = count($column) >= 3 ? $column[2] : '';
-            $third = count($column) >= 4 ? $column[3] : '';
+            preg_match('/^(?:`(.+?)`|(.+?))(?:\.`?(.+?)`?)?(?:\.`?(.+?)`?)?$/', $rawcolumn, $column);
+            $first = $column[1] ?: $column[2];
+            $second = count($column) >= 4 ? $column[3] : '';
+            $third = count($column) >= 5 ? $column[4] : '';
         }
         
         // Quote parts
