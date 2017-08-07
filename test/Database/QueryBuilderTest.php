@@ -113,6 +113,42 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(1, $data[0]);
         $this->assertEquals(2, $data[1]);
     }
+
+    public function testColumnName()
+    {
+        $qb = QueryBuilder::select(['test' => 't'], [['id' => 'tid']]);
+        list($sql, $data) = $qb->resolve();
+        
+        $this->assertEquals('SELECT `id` as `tid` FROM `test` as `t`', $sql);
+        $this->assertEquals(0, count($data));
+    }
+
+    public function testLessComplexColumnName()
+    {
+        $qb = QueryBuilder::select(['test' => 't'], [['t', 'id']]);
+        list($sql, $data) = $qb->resolve();
+        
+        $this->assertEquals('SELECT `t`.`id` FROM `test` as `t`', $sql);
+        $this->assertEquals(0, count($data));
+    }
+
+    public function testComplexColumnName()
+    {
+        $qb = QueryBuilder::select(['test' => 't'], [['t', 'id' => 'tid']]);
+        list($sql, $data) = $qb->resolve();
+        
+        $this->assertEquals('SELECT `t`.`id` as `tid` FROM `test` as `t`', $sql);
+        $this->assertEquals(0, count($data));
+    }
+
+    public function testExtraComplexColumnName()
+    {
+        $qb = QueryBuilder::select(['test' => 't'], [['database', 't', 'id' => 'tid']]);
+        list($sql, $data) = $qb->resolve();
+        
+        $this->assertEquals('SELECT `database`.`t`.`id` as `tid` FROM `test` as `t`', $sql);
+        $this->assertEquals(0, count($data));
+    }
     
     public function testComplexTableName()
     {

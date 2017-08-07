@@ -775,23 +775,47 @@ class QueryBuilder
         throw new Exception\QueryBuilder('Cannot resolve table name', $table);
     }
 
-    public function escapeColumn($rawcolumn)
+    # [FIXME] Alternative engines
+    public function escapeColumn($rawcolumn) : string
     {
         // Cowardly refuse to process SqlStrings
         if ($rawcolumn instanceof SqlString) {
             return $rawcolumn;
         }
         
-        # [FIXME] Alternative engines
         $q = '`';
         $alias = '';
+        $values = [];
+        $first = '';
+        $second = '';
+        $third = '';
 
-        // Parse aliases
+        // Parts supplied as array
         if (is_array($rawcolumn)) {
-            list($alias) = array_values($rawcolumn);
-            list($rawcolumn) = array_keys($rawcolumn);
+            $values = array_values($rawcolumn);
+            list($columnname) = array_reverse(array_keys($rawcolumn));
+            $alias = array_pop($values);
+            
+            if (is_numeric($columnname)) {
+                $columnname = $alias;
+                $alias = '';
+            }
+            
+            if (count($values) == 0) {
+                $first = $columnname;
+            }
+            
+            if (count($values) == 1) {
+                $second = $columnname;
+                $first = array_pop($values);
+            }
+            
+            if (count($values) == 2) {
+                $third = $columnname;
+                $second = array_pop($values);
+                $first = array_pop($values);
+            }
         }
-
         // Regex out parts - Matching Examples:
         // column                    => "column"
         // `column`                  => "column"
@@ -800,10 +824,12 @@ class QueryBuilder
         // `schema`.`table`.`column` => "schema","table","column"
         // `column.column`           => "column.column"
         // table.`column.column`     => "table","column.column"
-        preg_match('/^(?:`(.+?)`|(.+?))(?:\.`?(.+?)`?)?(?:\.`?(.+?)`?)?$/', $rawcolumn, $column);
-        $first = $column[1] ?: $column[2];
-        $second = count($column) == 4 ? $column[3] : '';
-        $third = count($column) == 5 ? $column[4] : '';
+        else {
+            preg_match('/^(`.+?`|.+?)(?:\.`?(.+?)`?)?(?:\.`?(.+?)`?)?$/', $rawcolumn, $column);
+            $first = $column[1];
+            $second = count($column) >= 3 ? $column[2] : '';
+            $third = count($column) >= 4 ? $column[3] : '';
+        }
         
         // Quote parts
         if ($first && $first != '*') {
