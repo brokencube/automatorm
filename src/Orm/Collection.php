@@ -162,6 +162,11 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
         }
     }
     
+    public function call($name, $args = [])
+    {
+        return $this->__call($name, $args);
+    }
+    
     public function __set($name, $arg)
     {
         throw new Exception\Collection('Cannot directly set properties on a collection', ['name' => $name, 'value' => $arg]);
