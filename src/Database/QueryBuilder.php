@@ -666,8 +666,12 @@ class QueryBuilder
     public function resolveColumns()
     {
         $column = [];
-        foreach ($this->columns as $col) {
-            $column[] = $this->escapeColumn($col);
+        foreach ($this->columns as $key => $col) {
+            if (!is_numeric($key)) {
+                $column[] = $this->escapeColumn($key, $col);
+            } else {
+                $column[] = $this->escapeColumn($col);
+            }
         }
         return implode(', ', $column);
     }
@@ -776,7 +780,7 @@ class QueryBuilder
     }
 
     # [FIXME] Alternative engines
-    public function escapeColumn($rawcolumn) : string
+    public function escapeColumn($rawcolumn, $alias = '') : string
     {
         // Cowardly refuse to process SqlStrings
         if ($rawcolumn instanceof SqlString) {
@@ -784,7 +788,6 @@ class QueryBuilder
         }
         
         $q = '`';
-        $alias = '';
         $values = [];
         $first = '';
         $second = '';

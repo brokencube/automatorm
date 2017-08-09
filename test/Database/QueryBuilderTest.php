@@ -116,6 +116,15 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
 
     public function testColumnName()
     {
+        $qb = QueryBuilder::select(['test' => 't'], ['id' => 'tid']);
+        list($sql, $data) = $qb->resolve();
+        
+        $this->assertEquals('SELECT `id` as `tid` FROM `test` as `t`', $sql);
+        $this->assertEquals(0, count($data));
+    }
+
+    public function testDoubleWrappedColumnName()
+    {
         $qb = QueryBuilder::select(['test' => 't'], [['id' => 'tid']]);
         list($sql, $data) = $qb->resolve();
         
