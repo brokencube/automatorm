@@ -102,11 +102,11 @@ class Dump
             $output .= "    <span><strong>1-*</strong></span> =>\n";
             if ($schema['one-to-many']) {
                 foreach ($schema['one-to-many'] as $key => $contents) {
-                    $ids = $this->_->$key->id;
+                    $ids = $this->{$key}->id;
                     $value = $this->_data->join($key, ['id' => array_slice($ids, 0, \Automatorm\Orm\Dump::$id_limit)]);
-
+                    
                     $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen, count($ids));
-                
+                    
                     $seen[$key] = true;
                 }
             }
@@ -114,7 +114,7 @@ class Dump
             $output .= "    <span><strong>*-*</strong></span> =>\n";
             if ($schema['many-to-many']) {
                 foreach ($schema['many-to-many'] as $key => $contents) {
-                    $ids = $this->_->$key->id;
+                    $ids = $this->{$key}->id;
                     $value = $this->_data->join($key, ['id' => array_slice($ids, 0, \Automatorm\Orm\Dump::$id_limit)]);
             
                     $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen, count($ids));
