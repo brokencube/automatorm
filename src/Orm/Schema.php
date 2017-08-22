@@ -12,6 +12,7 @@ class Schema
     const CURRENT_VERSION = 9;
 
     // Singleton
+    public static $schemaname = [];
     public static $singleton = [];
     public static function get($namespace)
     {
@@ -65,7 +66,7 @@ class Schema
         $obj = new static($model, $connection, $namespace, $schema);
         
         // Register namespace with connection
-        static::$schema[$schema] = $obj;
+        static::$schemaname[$schema] = $obj;
         static::$singleton[$namespace] = $obj;
         
         // Return schema object
@@ -195,6 +196,6 @@ class Schema
 
     public static function getSchemaByName($schemaname)
     {
-        return static::$schema[$schemaname];
+        return static::$schemaname[$schemaname];
     }
 }

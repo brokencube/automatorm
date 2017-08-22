@@ -355,7 +355,7 @@ class Data
 
     public function join($var, array $where = [])
     {
-        if ($this->__external[$var]) {
+        if (array_key_exists($var, $this->__external)) {
             return $this->__external[$var]->filter($where);
         }
         

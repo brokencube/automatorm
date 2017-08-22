@@ -91,7 +91,8 @@ class DataAccess implements DataAccessInterface
         if (is_array($options)) {
             // Limit
             if (key_exists('limit', $options)) {
-                $query->limit($options['limit'], is_null($options['offset']) ? null : $options['offset']);
+                $offset = key_exists('offset', $options) ? $options['offset'] : null;
+                $query->limit($options['limit'], $offset);
             }
             
             // Sort
@@ -122,7 +123,7 @@ class DataAccess implements DataAccessInterface
     
     public function getM2MData($pivotSchema, $pivot, $ids, $joinwhere = null, $where = null) : array
     {
-        $query = QueryBuilder::select([[$pivotSchema['table_schema'], $pivotSchema['table_name'] => 'pivot']], ['pivot.*'])
+        $query = QueryBuilder::select([$pivotSchema['table_schema'], $pivotSchema['table_name'] => 'pivot'], ['pivot.*'])
             ->where(['`pivot`.'.$pivot['id'] => $ids])
             ->join([Schema::underscoreCase($pivot['connections'][0]['schema']), Schema::underscoreCase($pivot['connections'][0]['table']) => 'pivotjoin'])
             ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"]);
