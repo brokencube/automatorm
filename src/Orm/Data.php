@@ -162,8 +162,10 @@ class Data
             $ids = $collection->id->toArray();
             
             /* Call Tablename::factory(foreign key id) to get the object we want */
-            $table = $proto->__model['one-to-one'][$var];
-            $results = Model::factoryObjectCache($ids, $table, $proto->__schema);
+            $table = $proto->__model['one-to-one'][$var]['table'];
+            $schema = $proto->__model['one-to-one'][$var]['schema'];
+            
+            $results = Model::factoryObjectCache($ids, $table, Schema::getSchemaByName($schema));
             
             return $results;
         }
@@ -172,20 +174,21 @@ class Data
             // Remove duplicates from the group
             $ids = array_unique($collection->{$var . '_id'}->toArray());
             
-            $table = $proto->__model['many-to-one'][$var];
+            $table = $proto->__model['many-to-one'][$var]['table'];
+            $schema = $proto->__model['many-to-one'][$var]['schema'];
             
             if (!$where) {
-                $results = Model::factoryObjectCache($ids, $table, $proto->__schema);
+                $results = Model::factoryObjectCache($ids, $table, Schema::getSchemaByName($schema));
                 
                 // Store the object results on the relevant objects
                 foreach ($collection as $obj) {
                     $obj->_data->__external[$var] =
-                        Model::factoryObjectCache($obj->{$var . '_id'}, $table, $proto->__schema);
+                        Model::factoryObjectCache($obj->{$var . '_id'}, $table, Schema::getSchemaByName($schema));
                 }
                 
                 return $results;
             } else {
-                $results = Model::factory($where + ['id' => $ids], $table, $proto->__schema);
+                $results = Model::factory($where + ['id' => $ids], $table, Schema::getSchemaByName($schema));
                 
                 return $results;
             }
@@ -195,11 +198,12 @@ class Data
         if (key_exists($var, (array) $proto->__model['one-to-many'])) {
             $table = $proto->__model['one-to-many'][$var]['table'];
             $column = $proto->__model['one-to-many'][$var]['column_name'];
+            $schema = $proto->__model['one-to-many'][$var]['schema'];
             
             $ids = $collection->id->toArray();
             
             // Use the model factory to find the relevant items
-            $results = Model::factory($where + [$column => $ids], $table, $proto->__schema);
+            $results = Model::factory($where + [$column => $ids], $table, Schema::getSchemaByName($schema));
             
             // If we didn't use a filter, store the relevant results in each object
             if (!$where) {
@@ -231,7 +235,7 @@ class Data
             $pivotCon = $pivot['connections'][0];
             
             $raw = $proto->getDataAccessor()->getM2MData(
-                $pivotSchema['table_name'],
+                $pivotSchema,
                 $pivot,
                 $ids,
                 $where
@@ -249,14 +253,14 @@ class Data
             $flatIds = array_unique($flatIds);
             
             // Use the model factory to retrieve the objects from the list of ids (using cache first)
-            $results = Model::factoryObjectCache($flatIds, $pivotCon['table'], $proto->__schema);
+            $results = Model::factoryObjectCache($flatIds, $pivotCon['table'], $pivotCon['schema']);
             
             // If we don't have a filter ($where), then we can split up the results per object and store the
             // results relevant to the result on that object. The calls to Model::factoryObjectCache below will never
             // hit the database, because all of the possible objects were returned in the call above.
             if (!$where) {
                 foreach ($collection as $obj) {
-                    $data = Model::factoryObjectCache($groupedIds[$obj->id], $pivotCon['table'], $proto->__schema);
+                    $data = Model::factoryObjectCache($groupedIds[$obj->id], $pivotCon['table'], $pivotCon['schema']);
                     $obj->_data->__external[$var] = $data ?: new Collection;
                 }
             }
@@ -278,9 +282,10 @@ class Data
             $ids = $collection->id->toArray();
             
             /* Call Tablename::factory(foreign key id) to get the object we want */
-            $table = $proto->__model['many-to-one'][$var];
+            $table = $proto->__model['one-to-one'][$var]['table'];
+            $schema = $proto->__model['one-to-one'][$var]['schema'];
             
-            list($data) = static::factoryDataCount(['id' => $ids] + $where, $table, $proto->__schema);
+            list($data) = static::factoryDataCount(['id' => $ids] + $where, $table, Schema::getSchemaByName($schema));
             return $data['count'];
         }
         
@@ -289,20 +294,23 @@ class Data
             $ids = array_unique($collection->{$var . '_id'}->toArray());
             
             /* Call Tablename::factory(foreign key id) to get the object we want */
-            $table = $proto->__model['many-to-one'][$var];
-            list($data) = static::factoryDataCount(['id' => $ids] + $where, $table, $proto->__schema);
+            $table = $proto->__model['many-to-one'][$var]['table'];
+            $schema = $proto->__model['many-to-one'][$var]['schema'];
+            
+            list($data) = static::factoryDataCount(['id' => $ids] + $where, $table, Schema::getSchemaByName($schema));
             return $data['count'];
         }
         
         /* Look for lists of objects in other tables referencing this one */
         if (key_exists($var, (array) $proto->__model['one-to-many'])) {
             $table = $proto->__model['one-to-many'][$var]['table'];
+            $schema = $proto->__model['one-to-many'][$var]['schema'];
             $column = $proto->__model['one-to-many'][$var]['column_name'];
             
             $ids = $collection->id->toArray();
             
             // Use the model factory to find the relevant items
-            list($data) = static::factoryDataCount([$column => $ids] + $where, $table, $proto->__schema);
+            list($data) = static::factoryDataCount([$column => $ids] + $where, $table, Schema::getSchemaByName($schema));
             return $data['count'];
         }
         
@@ -322,7 +330,7 @@ class Data
             $pivotCon = $pivot['connections'][0];
             
             $raw = $proto->getDataAccessor()->getM2MData(
-                $pivotSchema['table_name'],
+                $pivotSchema,
                 $pivot,
                 $ids,
                 $where
@@ -338,7 +346,7 @@ class Data
             $flatIds = array_unique($flatIds);
             
             // Use the model factory to retrieve the objects from the list of ids (using cache first)
-            list($data) = static::factoryDataCount(['id' => $flatIds] + $where, $pivotCon['table'], $proto->__schema);
+            list($data) = static::factoryDataCount(['id' => $flatIds] + $where, $pivotCon['table'], Schema::getSchemaByName($pivotCon['schema']));
             return $data['count'];
         }
     }
