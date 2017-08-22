@@ -32,10 +32,10 @@ class Model
                         if (key_exists($fk, (array) $model['one-to-one'])) {
                             $updates .= "        // 1-1 map not supported yet: {$col}\n";
                         } elseif (key_exists($fk, (array) $model['one-to-many'])) {
-                            $fkclass = Schema::camelCase($model['one-to-many'][$fk]);
+                            $fkclass = Schema::camelCase($model['one-to-many'][$fk]['table']);
                             $updates .= "        \$db->{$fk} = {$fkclass}::getAll(\$data['{$col}']);\n";
                         } elseif (key_exists($fk, (array) $model['many-to-one'])) {
-                            $fkclass = Schema::camelCase($model['many-to-one'][$fk]);
+                            $fkclass = Schema::camelCase($model['many-to-one'][$fk]['table']);
                             $updates .= "        \$db->{$fk} = {$fkclass}::get(\$data['{$col}']);\n";
                         } elseif (key_exists($fk, (array) $model['many-to-many'])) {
                             $fkclass = Schema::camelCase($model['many-to-many']['connections'][0]['table']);

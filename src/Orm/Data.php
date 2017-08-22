@@ -662,7 +662,7 @@ class Data
             // Trying to pass in the wrong table for the relationship!
             // That is, the table name on the foreign key does not match the table name in the passed Model object
             $valueTable = Schema::normaliseCase($value->dataOriginal()->__table);
-            $expectedTable = $this->__model['many-to-one'][$var];
+            $expectedTable = $this->__model['many-to-one'][$var]['table'];
             
             if ($valueTable !== $expectedTable) {
                 throw new Exception\Model('MODEL_DATA:INCORRECT_MODEL_FOR_RELATIONSHIP', [$var, $valueTable, $expectedTable]);
