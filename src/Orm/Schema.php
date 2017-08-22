@@ -9,11 +9,10 @@ use Psr\Cache\CacheItemPoolInterface as Psr6;
 
 class Schema
 {
-    const CURRENT_VERSION = 8;
+    const CURRENT_VERSION = 9;
 
     // Singleton
     public static $singleton = [];
-    public static $namespaces = [];
     public static function get($namespace)
     {
         if (!static::$singleton[$namespace]) {
@@ -25,11 +24,9 @@ class Schema
 
     public static function generate(Connection $connection, $namespace = 'models', $cache = null)
     {
-        // Register namespace with connection
-        static::$namespaces[$namespace] = $connection;
         // Get schema from cache
         if (!$cache) {
-            $model = $connection->getSchemaGenerator()->generate();
+            list($model, $schema) = $connection->getSchemaGenerator()->generate();
         } else {
             $key = 'schema_' . md5($namespace . static::CURRENT_VERSION);
             
@@ -38,37 +35,41 @@ class Schema
             }
             
             if ($cache instanceof Psr16) {
-                $model = $cache->get($key);
+                list($model, $schema) = $cache->get($key);
             }
                 
             if ($cache instanceof Psr6) {
                 $item = $cache->getItem($key);
                 if ($item->isHit()) {
-                    $model = $item->get();
+                    list($model, $schema) = $item->get();
                 }
             }
             
             // If no cache, generate the schema
-            if (!$model) {
-                $model = $connection->getSchemaGenerator()->generate();
+            if (!$model || !$schema) {
+                list($model, $schema) = $connection->getSchemaGenerator()->generate();
                 
                 if ($cache instanceof Psr16) {
-                    $cache->set($key, $model, 3600);
+                    $cache->set($key, [$model, $schema], 3600);
                 }
                     
                 if ($cache instanceof Psr6) {
                     $item = $cache->getItem($key);
-                    $item->set($model);
+                    $item->set([$model, $schema]);
                     $item->expiresAt(new \DateTime('now + 3600 seconds'));
                     $cache->save($item);
                 }
             }
         }
         
-        $obj = new static($model, $connection, $namespace);
+        $obj = new static($model, $connection, $namespace, $schema);
+        
+        // Register namespace with connection
+        static::$schema[$schema] = $obj;
+        static::$singleton[$namespace] = $obj;
         
         // Return schema object
-        return static::$singleton[$namespace] = $obj;
+        return $obj;
     }
     
     ///////////////////////////////////////////////////////////////////////////
@@ -78,10 +79,12 @@ class Schema
     protected $namespace;
     protected $version;
     protected $_serviceContainer = [];
+    protected $schema;
     
-    protected function __construct($model, \Automatorm\Interfaces\Connection $connection, $namespace)
+    protected function __construct($model, \Automatorm\Interfaces\Connection $connection, $namespace, $schema)
     {
         $this->model = $model;
+        $this->schema = $schema;
         $this->namespace = $namespace;
         $this->version = static::CURRENT_VERSION;
         $this->connection = $connection;
@@ -188,5 +191,10 @@ class Schema
         }
         
         return static::$contextCache[$classOrTable] = [$class, $table];
+    }
+
+    public static function getSchemaByName($schemaname)
+    {
+        return static::$schema[$schemaname];
     }
 }
