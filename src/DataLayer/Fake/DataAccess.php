@@ -21,7 +21,7 @@ class DataAccess implements DataAccessInterface
     
     protected function generateData()
     {
-        $schema = $this->connection->getSchemaGenerator()->generate();
+        list($schema, $database) = $this->connection->getSchemaGenerator()->generate();
         
         $currentTable = null;
         $currentTableName = null;

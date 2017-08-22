@@ -30,7 +30,7 @@ account_project|account_id:pk:int, project_id:pk:int
     project_id->project|id    
 TEST;
 
-        $this->connection = new Fake\Connection($testdata);
+        $this->connection = new Fake\Connection($testdata, 'default');
         $this->schema = Schema::generate($this->connection, "Automatorm\\UnitTest\\Fake");
     }
     

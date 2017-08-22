@@ -162,8 +162,8 @@ class SchemaGenerator implements SchemaGeneratorInterface
                     $tableinfo[] = [
                         'column' => $column . '_id',
                         'column_raw' => $column,
-                        'table' => $tablename,
-                        'schema' => $database
+                        'table' => $tablename['table'],
+                        'schema' => $tablename['schema']
                     ];
                 }
                 
