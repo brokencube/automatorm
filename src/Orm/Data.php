@@ -367,16 +367,18 @@ class Data
         /* FOREIGN KEYS */
         if (key_exists($var, (array) $this->__model['one-to-one'])) {
             /* Call Tablename::factory(foreign key id) to get the object we want */
-            $table = $this->__model['one-to-one'][$var];
-            $this->__external[$var] = Model::factoryObjectCache($id, $table, $this->__schema);
+            $table = $this->__model['one-to-one'][$var]['table'];
+            $schema = $this->__model['one-to-one'][$var]['schema'];
+            $this->__external[$var] = Model::factoryObjectCache($id, $table, Schema::getSchemaByName($schema));
             
             return $this->__external[$var];
         }
         
         if (key_exists($var, (array) $this->__model['many-to-one'])) {
             /* Call Tablename::factory(foreign key id) to get the object we want */
-            $table = $this->__model['many-to-one'][$var];
-            $this->__external[$var] = Model::factoryObjectCache($this->__data[$var . '_id'], $table, $this->__schema);
+            $table = $this->__model['many-to-one'][$var]['table'];
+            $schema = $this->__model['many-to-one'][$var]['schema'];
+            $this->__external[$var] = Model::factoryObjectCache($this->__data[$var . '_id'], $table, Schema::getSchemaByName($schema));
             
             return $this->__external[$var];
         }
@@ -384,10 +386,11 @@ class Data
         /* Look for lists of objects in other tables referencing this one */
         if (key_exists($var, (array) $this->__model['one-to-many'])) {
             $table = $this->__model['one-to-many'][$var]['table'];
+            $schema = $this->__model['one-to-many'][$var]['schema'];
             $column = $this->__model['one-to-many'][$var]['column_name'];
             
             // Use the model factory to find the relevant items
-            $results = Model::factory($where + [$column => $id], $table, $this->__schema);
+            $results = Model::factory($where + [$column => $id], $table, Schema::getSchemaByName($schema));
             
             if (empty($where)) {
                 $this->__external[$var] = $results;
@@ -423,7 +426,7 @@ class Data
             
             // Build Query
             $raw = $this->getDataAccessor()->getM2MData(
-                $pivotSchema['table_name'],
+                $pivotSchema,
                 $pivot,
                 $this->__data['id'],
                 null,
@@ -437,7 +440,7 @@ class Data
             }
             
             // Use the model factory to retrieve the objects from the list of ids (using cache first)
-            $results = Model::factoryObjectCache($id, $pivotCon['table'], $this->__schema);
+            $results = Model::factoryObjectCache($id, $pivotCon['table'], Schema::getSchemaByName($pivotCon['schema']));
             
             if (!$where) {
                 $this->__external[$var] = $results;
@@ -467,26 +470,29 @@ class Data
         // 1-1, just grab the object - not worth optimising
         if (key_exists($var, (array) $this->__model['one-to-one'])) {
             /* Call Tablename::factory(foreign key id) to get the object we want */
-            $table = $this->__model['one-to-one'][$var];
-            $this->__external[$var] = Model::factoryObjectCache($id, $table, $this->__schema);
+            $table = $this->__model['one-to-one'][$var]['table'];
+            $schema = $this->__model['one-to-one'][$var]['schema'];
+            $this->__external[$var] = Model::factoryObjectCache($id, $table, Schema::getSchemaByName($schema));
             return $this->__external[$var] ? 1 : 0;
         }
         
         // M-1, just grab the object - not worth optimising
         if (key_exists($var, (array) $this->__model['many-to-one'])) {
             /* Call Tablename::factory(foreign key id) to get the object we want */
-            $table = $this->__model['many-to-one'][$var];
-            $this->__external[$var] = Model::factoryObjectCache($this->__data[$var . '_id'], $table, $this->__schema);
+            $table = $this->__model['many-to-one'][$var]['table'];
+            $schema = $this->__model['many-to-one'][$var]['schema'];
+            $this->__external[$var] = Model::factoryObjectCache($this->__data[$var . '_id'], $table, Schema::getSchemaByName($schema));
             return $this->__external[$var] ? 1 : 0;
         }
         
         /* Look for lists of objects in other tables referencing this one */
         if (key_exists($var, (array) $this->__model['one-to-many'])) {
             $table = $this->__model['one-to-many'][$var]['table'];
+            $schema = $this->__model['one-to-many'][$var]['schema'];
             $column = $this->__model['one-to-many'][$var]['column_name'];
             
             // Use the model factory to find the relevant items
-            list($data) = static::factoryDataCount($where + [$column => $id], $table, $this->__schema);
+            list($data) = static::factoryDataCount($where + [$column => $id], $table, Schema::getSchemaByName($schema));
             return $data['count'];
         }
         
@@ -517,7 +523,7 @@ class Data
             
             // Build Query
             $raw = $this->getDataAccessor()->getM2MData(
-                $pivotSchema['table_name'],
+                $pivotSchema,
                 $pivot,
                 $this->__data['id'],
                 null,

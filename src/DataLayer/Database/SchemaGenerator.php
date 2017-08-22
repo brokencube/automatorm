@@ -35,10 +35,15 @@ class SchemaGenerator implements SchemaGeneratorInterface
             ORDER BY b.table_name, b.constraint_name;"
         );
         $query->sql("
-            SELECT table_name, column_name, data_type FROM information_schema.columns where table_schema = database();
+            SELECT table_schema, table_name, column_name, data_type FROM information_schema.columns where table_schema = database();
+        ");
+        $query->sql("
+            SELECT database() as `database`;
         ");
         
-        list($keys, $schema) = $query->execute();
+        list($keys, $schema, $database) = $query->execute();
+        
+        $database = $database[0]['database'];
         
         // Assemble list of table columns by table
         foreach ($schema as $row) {
@@ -155,6 +160,6 @@ class SchemaGenerator implements SchemaGeneratorInterface
             }
         }
         
-        return $model;
+        return [$model, $database];
     }
 }

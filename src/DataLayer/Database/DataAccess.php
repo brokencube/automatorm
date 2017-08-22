@@ -53,10 +53,11 @@ class DataAccess implements DataAccessInterface
                 }
                 
                 // Get the table name of the pivot table for this property
+                $schemaname = $pivot['schema'];
                 $tablename = Schema::underscoreCase($pivot['pivot']);
                 
                 // Clear out any existing data for this object - this is safe because we are in an atomic transaction.
-                $query->sql("Delete from $tablename where {$pivot['id']} = @id");
+                $query->sql("Delete from `$schemaname`.`$tablename` where {$pivot['id']} = @id");
                 
                 // Loops through the list of objects to link to this table
                 foreach ($value as $object) {
@@ -119,11 +120,11 @@ class DataAccess implements DataAccessInterface
         return $data[0]['count'];
     }
     
-    public function getM2MData($pivotTablename, $pivot, $ids, $joinwhere = null, $where = null) : array
+    public function getM2MData($pivotSchema, $pivot, $ids, $joinwhere = null, $where = null) : array
     {
-        $query = QueryBuilder::select([$pivotTablename => 'pivot'], ['pivot.*'])
+        $query = QueryBuilder::select([[$pivotSchema['table_schema'], $pivotSchema['table_name'] => 'pivot']], ['pivot.*'])
             ->where(['`pivot`.'.$pivot['id'] => $ids])
-            ->join([Schema::underscoreCase($pivot['connections'][0]['table']) => 'pivotjoin'])
+            ->join([Schema::underscoreCase($pivot['connections'][0]['schema']), Schema::underscoreCase($pivot['connections'][0]['table']) => 'pivotjoin'])
             ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"]);
             
         if ($joinwhere) {

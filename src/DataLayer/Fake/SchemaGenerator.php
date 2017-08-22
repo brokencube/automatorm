@@ -90,6 +90,7 @@ class SchemaGenerator implements SchemaGeneratorInterface
     public function generate()
     {
         $data = $this->connection->connect();
+        $database = $this->connection->schemaName;
         
         foreach ($this->generateTableList($data) as $tableName => $rows) {
             $normalised = Schema::normaliseCase($tableName);
@@ -110,14 +111,23 @@ class SchemaGenerator implements SchemaGeneratorInterface
                 $refTableName = Schema::normaliseCase($key['table']);
                 
                 if ($columnName == $key['column_name']) {
-                    $model[$refTableName]['one-to-one'][Schema::underscoreCase($tableName)] = $tableName;
-                    $model[$tableName]['one-to-one'][Schema::underscoreCase($refTableName)] = $refTableName;
+                    $model[$refTableName]['one-to-one'][Schema::underscoreCase($tableName)] = [
+                        'table' => $tableName,
+                        'schema' => $database
+                    ];
+                    $model[$tableName]['one-to-one'][Schema::underscoreCase($refTableName)] = [
+                        'table' => $refTableName,
+                        'schema' => $database
+                    ];
                     $model[$tableName]['type'] = 'foreign';
                 } elseif ($key['column_name'] == 'id') {
                     // if this foreign key points at one 'id' column then this is a usable foreign 'key'
                     if (substr($columnName, -3) == '_id') {
                         $columnRoot = substr($columnName, 0, -3);
-                        $model[$tableName]['many-to-one'][$columnRoot] = $refTableName;
+                        $model[$tableName]['many-to-one'][$columnRoot] = [
+                            'table' => $refTableName,
+                            'schema' => $database
+                        ];
                         
                         // Add the key constraint in reverse, trying to make a sensible name.
                         // If the column name was derived from the table name, just use the table name.
@@ -130,7 +140,11 @@ class SchemaGenerator implements SchemaGeneratorInterface
                             $propertyName = Schema::underscoreCase($tableName) . '_' . $columnRoot;
                         }
                         
-                        $model[$refTableName]['one-to-many'][$propertyName] = array('table' => $tableName, 'column_name' => $columnName);
+                        $model[$refTableName]['one-to-many'][$propertyName] = [
+                            'schema' => $database,
+                            'table' => $tableName,
+                            'column_name' => $columnName
+                        ];
                     }
                 }
             }
@@ -145,7 +159,12 @@ class SchemaGenerator implements SchemaGeneratorInterface
                 // Grab all foreign keys and rearrange them into arrays.
                 $tableinfo = [];
                 foreach ($pivot['many-to-one'] as $column => $tablename) {
-                    $tableinfo[] = ['column' => $column . '_id', 'column_raw' => $column, 'table' => $tablename];
+                    $tableinfo[] = [
+                        'column' => $column . '_id',
+                        'column_raw' => $column,
+                        'table' => $tablename,
+                        'schema' => $database
+                    ];
                 }
                 
                 // For each foreign key, store details in the table it point to on how to get to the OTHER table in the "Many to Many" relationship
@@ -169,11 +188,12 @@ class SchemaGenerator implements SchemaGeneratorInterface
                         }
                     }
                     
-                    $model[ $table['table'] ][ 'many-to-many' ][ $propertyName ] = array(
+                    $model[ $table['table'] ][ 'many-to-many' ][ $propertyName ] = [
+                        'schema' => $database,
                         'pivot' => $pivottablename,
                         'connections' => $othertables,
                         'id' => $table['column'],
-                    );
+                    ];
                 }
                 
                 $model[$pivottablename]['type'] = 'pivot';
@@ -189,7 +209,7 @@ class SchemaGenerator implements SchemaGeneratorInterface
             }
         }
         
-        return $model;
+        return [$model, $database];
     }
 }
 

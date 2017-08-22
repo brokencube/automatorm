@@ -19,10 +19,12 @@ class Connection implements ConnectionInterface
     
     public $data;
     public $schemaGenerator;
+    public $schemaName;
     public $dataAccess;
-    public function __construct($data)
+    public function __construct($data, $schemaname)
     {
         $this->data = $data;
+        $this->schemaName = $schemaname;
         $this->schemaGenerator = new SchemaGenerator($this);
         $this->dataAccess = new DataAccess($this);
     }
