@@ -47,6 +47,7 @@ class Connection implements ConnectionInterface
     protected $server;
     protected $database;
     protected $options;
+    protected $unix_socket;
     
     protected $connection;
     protected $schemaGenerator;
@@ -65,13 +66,13 @@ class Connection implements ConnectionInterface
         if ($details instanceof PDO) {
             $this->connection = $details;
         } elseif (is_array($details)) {
-            $this->unix_socket = $details['unix_socket'];
-            $this->server = $details['server'];
+            $this->unix_socket = array_key_exists('unix_socket', $details) ? $details['unix_socket'] : null;
+            $this->server = array_key_exists('server', $details) ? $details['server'] : null;
             $this->user = $details['user'];
             $this->pass = $details['pass'];
             $this->database = $details['database'];
             $this->options = $options;
-            $this->type = $details['type'] ?: 'mysql';
+            $this->type = array_key_exists('type', $details) ? $details['type'] : 'mysql';
             
             if ($this->unix_socket && $this->server) {
                 throw new Ex\Database("Must use server OR unix_socket - both supplied", $details);
