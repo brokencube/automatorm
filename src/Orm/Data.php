@@ -153,20 +153,22 @@ class Data
             return $collection;
         }
         
+        $model = $collection[0]->_data->__model;
+        
         /* FOREIGN KEYS */
-        if (key_exists($var, $proto->__model['one-to-one'])) {
+        if (key_exists($var, $model['one-to-one'])) {
             return static::groupJoin121($collection, $var, $where, $onlyCount);
         }
         
-        if (key_exists($var, $proto->__model['many-to-one'])) {
+        if (key_exists($var, $model['many-to-one'])) {
             return static::groupJoinM21($collection, $var, $where, $onlyCount);
         }
         
-        if (key_exists($var, $proto->__model['one-to-many'])) {
+        if (key_exists($var, $model['one-to-many'])) {
             return static::groupJoin12M($collection, $var, $where, $onlyCount);
         }
         
-        if (key_exists($var, $proto->__model['many-to-many'])) {
+        if (key_exists($var, $model['many-to-many'])) {
             return static::groupJoinM2M($collection, $var, $where, $onlyCount);
         }
         
@@ -327,17 +329,17 @@ class Data
         }
         
         // If this Model_Data isn't linked to the db yet, then linked values cannot exist
-        if (!$id = $this->__data['id']) {
+        if (!$this->__data['id']) {
             return new Collection();
         }
         
         /* FOREIGN KEYS */
         if (key_exists($var, $this->__model['one-to-one'])) {
-            return $this->join121($var, $where);
+            return $this->join121($var);
         }
         
         if (key_exists($var, $this->__model['many-to-one'])) {
-            return $this->joinM21($var, $where);
+            return $this->joinM21($var);
         }
         
         if (key_exists($var, $this->__model['one-to-many'])) {
@@ -362,17 +364,17 @@ class Data
         }
         
         // If this Model_Data isn't linked to the db yet, then linked values cannot exist
-        if (!$id = $this->__data['id']) {
+        if (!$this->__data['id']) {
             return 0;
         }
         
         /* FOREIGN KEYS */
         if (key_exists($var, (array) $this->__model['one-to-one'])) {
-            return $this->join121($var, $where, true);
+            return $this->join121($var, true);
         }
         
         if (key_exists($var, (array) $this->__model['many-to-one'])) {
-            return $this->joinM21($var, $where, true);
+            return $this->joinM21($var, true);
         }
         
         if (key_exists($var, (array) $this->__model['one-to-many'])) {
@@ -386,18 +388,18 @@ class Data
         throw new Exception\Model("MODEL_DATA:UNKNOWN_FOREIGN_PROPERTY", ['property' => $var, 'data' => $this]);
     }
     
-    protected function join121($var, array $where, $countOnly = false)
+    protected function join121($var, $countOnly = false)
     {
         $table = $this->__model['one-to-one'][$var]['table'];
         $schema = Schema::getSchemaByName($this->__model['one-to-one'][$var]['schema']);
-        $this->__external[$var] = Model::factoryObjectCache($id, $table, $schema);
+        $this->__external[$var] = Model::factoryObjectCache($this->__data['id'], $table, $schema);
         if ($countOnly) {
             return $this->__external[$var] ? 1 : 0;
         }
         return $this->__external[$var];
     }
 
-    protected function joinM21($var, array $where, $countOnly = false)
+    protected function joinM21($var, $countOnly = false)
     {
         $table = $this->__model['many-to-one'][$var]['table'];
         $schema = Schema::getSchemaByName($this->__model['many-to-one'][$var]['schema']);
@@ -415,12 +417,12 @@ class Data
         $schema = Schema::getSchemaByName($this->__model['one-to-many'][$var]['schema']);
         
         if ($countOnly) {
-            list($data) = static::factoryDataCount($where + [$column => $id], $table, $schema);
+            list($data) = static::factoryDataCount($where + [$column => $this->__data['id']], $table, $schema);
             return $data['count'];
         }
         
         // Use the model factory to find the relevant items
-        $results = Model::factory($where + [$column => $id], $table, $schema);
+        $results = Model::factory($where + [$column => $this->__data['id']], $table, $schema);
         
         if (empty($where)) {
             $this->__external[$var] = $results;
@@ -559,31 +561,36 @@ class Data
     {
         $this->__update[$var] = true;
         
+        if (is_null($value)) {
+            return null;
+        }
+        
         if ($this->__model['columns'][$var] == 'datetime'
             or $this->__model['columns'][$var] == 'timestamp'
             or $this->__model['columns'][$var] == 'date'
         ) {
-            // Special checks for datetimes
-            // Special case for "null"
-            if (is_null($value)) {
-                return null;
-            } elseif ($value instanceof \DateTimeInterface) {
-                return $value;
-            } elseif (($datetime = strtotime($value)) !== false) { // Fall back to standard strings
-                return new \DateTimeImmutable('@' . $datetime, new \DateTimeZone('UTC'));
-            } elseif (is_int($value)) { // Fall back to unix timestamp
-                return new \DateTimeImmutable('@' . $value, new \DateTimeZone('UTC'));
-            } else {
-                // Oops!
-                throw new Exception\Model('MODEL_DATA:DATETIME_VALUE_EXPECTED_FOR_COLUMN', array($var, $value));
-            }
-        } elseif (is_scalar($value) or is_null($value) or $value instanceof SqlString) {
+            return $this->setDateTimeColumnData($var, $value);
+        } elseif (is_scalar($value) or $value instanceof SqlString) {
             // Standard values
             return $value;
         }
         
         // Objects, arrays etc that cannot be stored in a db column. Explosion!
         throw new Exception\Model('MODEL_DATA:SCALAR_VALUE_EXPECTED_FOR_COLUMN', array($var, $value));
+    }
+    
+    protected function setDateTimeColumnData($var, $value)
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return $value;
+        } elseif (is_int($value)) { // Fall back to unix timestamp
+            return new \DateTimeImmutable('@' . $value, new \DateTimeZone('UTC'));
+        } elseif (false !== ($datetime = strtotime($value))) { // Fall back to standard strings
+            return new \DateTimeImmutable('@' . $datetime, new \DateTimeZone('UTC'));
+        } else {
+            // Oops!
+            throw new Exception\Model('MODEL_DATA:DATETIME_VALUE_EXPECTED_FOR_COLUMN', array($var, $value));
+        }
     }
     
     protected function setManyToOneData($var, $value)
