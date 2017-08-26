@@ -205,7 +205,7 @@ class Data
         
         if ($countOnly) {
             list($data) = static::factoryDataCount(['id' => $ids] + $where, $table, $schema);
-            return $data['count'];            
+            return $data['count'];
         }
         
         if (!$where) {
@@ -293,7 +293,7 @@ class Data
         
         if ($countOnly) {
             list($data) = static::factoryDataCount(['id' => $flatIds] + $where, $pivotCon['table'], $pivotConSchema);
-            return $data['count'];    
+            return $data['count'];
         }
         
         // Use the model factory to retrieve the objects from the list of ids (using cache first)
@@ -606,12 +606,15 @@ class Data
             $expectedTable = $this->model['many-to-one'][$var]['table'];
             
             if ($valueTable !== $expectedTable) {
-                throw new Exception\Model('MODEL_DATA:INCORRECT_MODEL_FOR_RELATIONSHIP', [$var, $valueTable, $expectedTable]);
+                throw new Exception\Model(
+                    'MODEL_DATA:INCORRECT_MODEL_FOR_RELATIONSHIP',
+                    [$var, $valueTable, $expectedTable]
+                );
             }
             return [$value->id, $value];
-        } else {
-            throw new Exception\Model('MODEL_DATA:MODEL_EXPECTED_FOR_KEY', [$var, $value]);
-        }        
+        }
+        
+        throw new Exception\Model('MODEL_DATA:MODEL_EXPECTED_FOR_KEY', [$var, $value]);
     }
     
     protected function setManyToManyData($var, $value)
@@ -799,5 +802,5 @@ class Data
     final public static function factoryDataCount($where, $table, Schema $schema, array $options = [])
     {
         return $schema->connection->getDataAccessor()->getDataCount($table, $where, $options);
-    }    
+    }
 }
