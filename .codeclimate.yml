@@ -19,6 +19,8 @@ engines:
         enabled: false
       CleanCode/StaticAccess:
         enabled: false
+      Naming/ShortVariable:
+        enabled: false
   phpcodesniffer:
     enabled: true
   phan:
