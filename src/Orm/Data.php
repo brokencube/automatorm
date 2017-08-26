@@ -170,7 +170,8 @@ class Data
             return static::groupJoinM2M($collection, $var, $where, $onlyCount);
         }
         
-        throw new Exception\Model('MODEL:CALLED_GROUP_JOIN_ON_UNKNOWN_FOREIGN_PROPERTY', [$var, $collection]);
+        #throw new Exception\Model('MODEL:CALLED_GROUP_JOIN_ON_UNKNOWN_FOREIGN_PROPERTY', [$var, $collection]);
+        return new Collection();
     }
 
     protected static function groupJoin121(Collection $collection, $var, $where, $countOnly = false)
