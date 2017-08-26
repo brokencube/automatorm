@@ -332,88 +332,20 @@ class Data
         }
         
         /* FOREIGN KEYS */
-        if (key_exists($var, (array) $this->__model['one-to-one'])) {
-            /* Call Tablename::factory(foreign key id) to get the object we want */
-            $table = $this->__model['one-to-one'][$var]['table'];
-            $schema = $this->__model['one-to-one'][$var]['schema'];
-            $this->__external[$var] = Model::factoryObjectCache($id, $table, Schema::getSchemaByName($schema));
-            
-            return $this->__external[$var];
+        if (key_exists($var, $this->__model['one-to-one'])) {
+            return $this->join121($var, $where);
         }
         
-        if (key_exists($var, (array) $this->__model['many-to-one'])) {
-            /* Call Tablename::factory(foreign key id) to get the object we want */
-            $table = $this->__model['many-to-one'][$var]['table'];
-            $schema = $this->__model['many-to-one'][$var]['schema'];
-            $this->__external[$var] = Model::factoryObjectCache($this->__data[$var . '_id'], $table, Schema::getSchemaByName($schema));
-            
-            return $this->__external[$var];
+        if (key_exists($var, $this->__model['many-to-one'])) {
+            return $this->joinM21($var, $where);
         }
         
-        /* Look for lists of objects in other tables referencing this one */
-        if (key_exists($var, (array) $this->__model['one-to-many'])) {
-            $table = $this->__model['one-to-many'][$var]['table'];
-            $schema = $this->__model['one-to-many'][$var]['schema'];
-            $column = $this->__model['one-to-many'][$var]['column_name'];
-            
-            // Use the model factory to find the relevant items
-            $results = Model::factory($where + [$column => $id], $table, Schema::getSchemaByName($schema));
-            
-            if (empty($where)) {
-                $this->__external[$var] = $results;
-            }
-            
-            return $results;
+        if (key_exists($var, $this->__model['one-to-many'])) {
+            return $this->join12M($var, $where);
         }
         
-        if (key_exists($var, (array) $this->__model['many-to-many'])) {
-            // Get pivot schema
-            $pivot = $this->__model['many-to-many'][$var];
-            
-            // We can only support simple connection access for 2 key pivots.
-            if (count($pivot['connections']) != 1) {
-                throw new Exception\Model('MODEL_DATA:CANNOT_CALL_MULTIPIVOT_AS_PROPERTY', array($var));
-            }
-            
-            // Get a list of ids linked to this object (i.e. the tablename_id stored in the pivot table)
-            $pivotSchema = $this->__schema->getTable($pivot['pivot']);
-            $pivotCon = $pivot['connections'][0];
-            
-            $clauses = [];
-            if ($where) {
-                foreach ($where as $clauseColumn => $clauseValue) {
-                    // Rewrite $where clauses to insert `pivotjoin` table in column name
-                    preg_match('/^([!=<>%]*)(.+?)([!=<>%]*)$/', $clauseColumn, $parts);
-                    $prefix = $parts[1] ?: $parts[3];
-                    $clauseColumn = $parts[2];
-                
-                    $clauses['`pivotjoin`.`' . $clauseColumn . '`' . $prefix] = $clauseValue;
-                }
-            }
-            
-            // Build Query
-            $raw = $this->getDataAccessor()->getM2MData(
-                $pivotSchema,
-                $pivot,
-                $this->__data['id'],
-                null,
-                $clauses
-            );
-            
-            // Rearrange the list of ids into a flat array
-            $id = [];
-            foreach ($raw as $rawId) {
-                $id[] = $rawId[$pivotCon['column']];
-            }
-            
-            // Use the model factory to retrieve the objects from the list of ids (using cache first)
-            $results = Model::factoryObjectCache($id, $pivotCon['table'], Schema::getSchemaByName($pivotCon['schema']));
-            
-            if (!$where) {
-                $this->__external[$var] = $results;
-            }
-            
-            return $results;
+        if (key_exists($var, $this->__model['many-to-many'])) {
+            return $this->joinM2M($var, $where);
         }
         
         throw new Exception\Model("MODEL_DATA:UNKNOWN_FOREIGN_PROPERTY", ['property' => $var, 'data' => $this]);
@@ -424,6 +356,7 @@ class Data
         if (!is_null($this->__external[$var]) && !$this->__external[$var] instanceof Collection) {
             return 1;
         }
+        
         if ($this->__external[$var]) {
             return $this->__external[$var]->filter($where)->count();
         }
@@ -434,80 +367,122 @@ class Data
         }
         
         /* FOREIGN KEYS */
-        // 1-1, just grab the object - not worth optimising
         if (key_exists($var, (array) $this->__model['one-to-one'])) {
-            /* Call Tablename::factory(foreign key id) to get the object we want */
-            $table = $this->__model['one-to-one'][$var]['table'];
-            $schema = $this->__model['one-to-one'][$var]['schema'];
-            $this->__external[$var] = Model::factoryObjectCache($id, $table, Schema::getSchemaByName($schema));
-            return $this->__external[$var] ? 1 : 0;
+            return $this->join121($var, $where, true);
         }
         
-        // M-1, just grab the object - not worth optimising
         if (key_exists($var, (array) $this->__model['many-to-one'])) {
-            /* Call Tablename::factory(foreign key id) to get the object we want */
-            $table = $this->__model['many-to-one'][$var]['table'];
-            $schema = $this->__model['many-to-one'][$var]['schema'];
-            $this->__external[$var] = Model::factoryObjectCache($this->__data[$var . '_id'], $table, Schema::getSchemaByName($schema));
-            return $this->__external[$var] ? 1 : 0;
+            return $this->joinM21($var, $where, true);
         }
         
-        /* Look for lists of objects in other tables referencing this one */
         if (key_exists($var, (array) $this->__model['one-to-many'])) {
-            $table = $this->__model['one-to-many'][$var]['table'];
-            $schema = $this->__model['one-to-many'][$var]['schema'];
-            $column = $this->__model['one-to-many'][$var]['column_name'];
-            
-            // Use the model factory to find the relevant items
-            list($data) = static::factoryDataCount($where + [$column => $id], $table, Schema::getSchemaByName($schema));
-            return $data['count'];
+            return $this->join12M($var, $where, true);
         }
         
         if (key_exists($var, (array) $this->__model['many-to-many'])) {
-            // Get pivot schema
-            $pivot = $this->__model['many-to-many'][$var];
-            
-            // We can only support simple connection access for 2 key pivots.
-            if (count($pivot['connections']) != 1) {
-                throw new Exception\Model('MODEL_DATA:CANNOT_CALL_MULTIPIVOT_AS_PROPERTY', array($var));
-            }
-            
-            // Get a list of ids linked to this object (i.e. the tablename_id stored in the pivot table)
-            $pivotSchema = $this->__schema->getTable($pivot['pivot']);
-            $pivotCon = $pivot['connections'][0];
-            
-            $clauses = [];
-            if ($where) {
-                foreach ($where as $clauseColumn => $clauseValue) {
-                    // Rewrite $where clauses to insert `pivotjoin` table in column name
-                    preg_match('/^([!=<>%]*)(.+?)([!=<>%]*)$/', $clauseColumn, $parts);
-                    $prefix = $parts[1] ?: $parts[3];
-                    $clauseColumn = $parts[2];
-                
-                    $clauses['`pivotjoin`.`' . $clauseColumn . '`' . $prefix] = $clauseValue;
-                }
-            }
-            
-            // Build Query
-            $raw = $this->getDataAccessor()->getM2MData(
-                $pivotSchema,
-                $pivot,
-                $this->__data['id'],
-                null,
-                $clauses
-            );
-            
-            // Rearrange the list of ids into a flat array
-            $id = array();
-            foreach ($raw as $rawId) {
-                $id[] = $rawId[$pivotCon['column']];
-            }
-            $dedup = array_unique($id);
-            
-            return count($dedup);
+            return $this->joinM2M($var, $where, true);
         }
         
         throw new Exception\Model("MODEL_DATA:UNKNOWN_FOREIGN_PROPERTY", ['property' => $var, 'data' => $this]);
+    }
+    
+    protected function join121($var, array $where, $countOnly = false)
+    {
+        $table = $this->__model['one-to-one'][$var]['table'];
+        $schema = Schema::getSchemaByName($this->__model['one-to-one'][$var]['schema']);
+        $this->__external[$var] = Model::factoryObjectCache($id, $table, $schema);
+        if ($countOnly) {
+            return $this->__external[$var] ? 1 : 0;
+        }
+        return $this->__external[$var];
+    }
+
+    protected function joinM21($var, array $where, $countOnly = false)
+    {
+        $table = $this->__model['many-to-one'][$var]['table'];
+        $schema = Schema::getSchemaByName($this->__model['many-to-one'][$var]['schema']);
+        $this->__external[$var] = Model::factoryObjectCache($this->__data[$var . '_id'], $table, $schema);
+        if ($countOnly) {
+            return $this->__external[$var] ? 1 : 0;
+        }
+        return $this->__external[$var];
+    }
+    
+    protected function join12M($var, array $where, $countOnly = false)
+    {
+        $table = $this->__model['one-to-many'][$var]['table'];
+        $column = $this->__model['one-to-many'][$var]['column_name'];
+        $schema = Schema::getSchemaByName($this->__model['one-to-many'][$var]['schema']);
+        
+        if ($countOnly) {
+            list($data) = static::factoryDataCount($where + [$column => $id], $table, $schema);
+            return $data['count'];
+        }
+        
+        // Use the model factory to find the relevant items
+        $results = Model::factory($where + [$column => $id], $table, $schema);
+        
+        if (empty($where)) {
+            $this->__external[$var] = $results;
+        }
+        
+        return $results;
+    }
+
+    protected function joinM2M($var, array $where, $countOnly = false)
+    {
+        // Get pivot schema
+        $pivot = $this->__model['many-to-many'][$var];
+        
+        // We can only support simple connection access for 2 key pivots.
+        if (count($pivot['connections']) != 1) {
+            throw new Exception\Model('MODEL_DATA:CANNOT_CALL_MULTIPIVOT_AS_PROPERTY', array($var));
+        }
+        
+        // Get a list of ids linked to this object (i.e. the tablename_id stored in the pivot table)
+        $pivotSchema = $this->__schema->getTable($pivot['pivot']);
+        $pivotCon = $pivot['connections'][0];
+        $pivotConSchema = Schema::getSchemaByName($pivotCon['schema']);
+        
+        $clauses = [];
+        if ($where) {
+            foreach ($where as $clauseColumn => $clauseValue) {
+                // Rewrite $where clauses to insert `pivotjoin` table in column name
+                preg_match('/^([!=<>%]*)(.+?)([!=<>%]*)$/', $clauseColumn, $parts);
+                $prefix = $parts[1] ?: $parts[3];
+                $clauseColumn = $parts[2];
+            
+                $clauses['`pivotjoin`.`' . $clauseColumn . '`' . $prefix] = $clauseValue;
+            }
+        }
+        
+        // Build Query
+        $raw = $this->getDataAccessor()->getM2MData(
+            $pivotSchema,
+            $pivot,
+            $this->__data['id'],
+            null,
+            $clauses
+        );
+        
+        // Rearrange the list of ids into a flat array
+        $id = [];
+        foreach ($raw as $rawId) {
+            $id[] = $rawId[$pivotCon['column']];
+        }
+        
+        if ($countOnly) {
+            return count(array_unique($id));
+        }
+        
+        // Use the model factory to retrieve the objects from the list of ids (using cache first)
+        $results = Model::factoryObjectCache($id, $pivotCon['table'], $pivotConSchema);
+        
+        if (!$where) {
+            $this->__external[$var] = $results;
+        }
+        
+        return $results;
     }
     
     public function __isset($var)
