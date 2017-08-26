@@ -104,6 +104,10 @@ class Model extends BaseException
             case 'MODEL_DATA:UNKNOWN_FOREIGN_PROPERTY':
                 return 'MODEL_DATA:UNKNOWN_FOREIGN_PROPERTY: Tried to access a foreign key not defined in the schema ('.$data['property'].'). Maybe try dump()ing this object to check what keys are available?';
             
+            case 'MODEL:CALLED_GROUP_JOIN_ON_UNKNOWN_FOREIGN_PROPERTY':
+                list($var) = $data;
+                return 'MODEL:CALLED_GROUP_JOIN_ON_UNKNOWN_FOREIGN_PROPERTY: Tried to call join on property (' . $var . ') on Collection but was not a recognised foreign key';
+            
             default:
                 return "Unknown error code ({$code})";
         }
