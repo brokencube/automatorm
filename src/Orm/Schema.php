@@ -22,44 +22,56 @@ class Schema
         
         return static::$singleton[$namespace];
     }
+    
+    public static function getSchemaDataFromCache($cache, $key)
+    {
+        if ($cache instanceof Psr16) {
+            return $cache->get($key);
+        }
+            
+        if ($cache instanceof Psr6) {
+            $item = $cache->getItem($key);
+            if ($item->isHit()) {
+                return $item->get();
+            }
+        }
+        
+        return [null, null];
+    }
+    
+    public static function setSchemaDataToCache($cache, $key, $model, $schema)
+    {
+        if ($cache instanceof Psr16) {
+            $cache->set($key, [$model, $schema], 3600);
+        }
+            
+        if ($cache instanceof Psr6) {
+            $item = $cache->getItem($key);
+            $item->set([$model, $schema]);
+            $item->expiresAt(new \DateTime('now + 3600 seconds'));
+            $cache->save($item);
+        }
+    }
 
-    public static function generate(Connection $connection, $namespace = 'models', $cache = null)
+    public static function generate(Connection $connection, $namespace = 'models', $cache = null) : Schema
     {
         // Get schema from cache
-        if (!$cache) {
+        if (is_null($cache)) {
             list($model, $schema) = $connection->getSchemaGenerator()->generate();
         } else {
-            $key = 'schema_' . md5($namespace . static::CURRENT_VERSION);
-            
             if (!$cache instanceof Psr16 && !$cache instanceof Psr6) {
                 throw new \InvalidArgumentException('Supplied $cache does not implement PSR6/16 interface');
             }
             
-            if ($cache instanceof Psr16) {
-                list($model, $schema) = $cache->get($key);
-            }
-                
-            if ($cache instanceof Psr6) {
-                $item = $cache->getItem($key);
-                if ($item->isHit()) {
-                    list($model, $schema) = $item->get();
-                }
-            }
+            $key = 'schema_' . md5($namespace . static::CURRENT_VERSION);
+            
+            list($model, $schema) = static::getSchemaDataFromCache($cache, $key);
             
             // If no cache, generate the schema
             if (!$model || !$schema) {
                 list($model, $schema) = $connection->getSchemaGenerator()->generate();
                 
-                if ($cache instanceof Psr16) {
-                    $cache->set($key, [$model, $schema], 3600);
-                }
-                    
-                if ($cache instanceof Psr6) {
-                    $item = $cache->getItem($key);
-                    $item->set([$model, $schema]);
-                    $item->expiresAt(new \DateTime('now + 3600 seconds'));
-                    $cache->save($item);
-                }
+                static::setSchemaDataToCache($cache, $key, $model, $schema);
             }
         }
         
