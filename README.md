@@ -1,4 +1,4 @@
-<img src='https://www.brokencube.co.uk/resource/AutomatormLogo.png'>
+<img src='https://www.brokencube.co.uk/resource/AutomatormLogo.png?2'>
 
 # AutomatORM 
 [![Latest Stable Version](https://poser.pugx.org/brokencube/automatorm/v/stable)](https://packagist.org/packages/brokencube/automatorm) 
