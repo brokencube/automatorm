@@ -6,48 +6,48 @@ use Automatorm\Database\SqlString;
 
 class Data
 {
-    protected $__data = [];           // Data from columns on this table
-    protected $__external = [];       // Links to foreign key objects
+    protected $data = [];           // Data from columns on this table
+    protected $external = [];       // Links to foreign key objects
     
-    protected $__update = [];         // Keys to be updated
-    protected $__updateExternal = []; // Foreign keys to be updated
+    protected $update = [];         // Keys to be updated
+    protected $updateExternal = []; // Foreign keys to be updated
     
-    protected $__schema;              // Schema object for this database
-    protected $__namespace;           // Namespace of the Model for this data - used to find Schema again
-    protected $__table;               // Class this data is associated with
-    protected $__model;               // Fragment of Schema object for this table
+    protected $schema;              // Schema object for this database
+    protected $namespace;           // Namespace of the Model for this data - used to find Schema again
+    protected $table;               // Class this data is associated with
+    protected $model;               // Fragment of Schema object for this table
     
-    protected $__locked = true;       // Can we use __set() - for updates/inserts
-    protected $__new = false;         // Is this to be a new row? (used with Model::new_db())
-    protected $__delete = false;      // Row is marked for deletion
+    protected $locked = true;       // Can we use set() - for updates/inserts
+    protected $new = false;         // Is this to be a new row? (used with Model::new_db())
+    protected $delete = false;      // Row is marked for deletion
     
     public function __construct(array $data, $table, Schema $schema, $new = false)
     {
-        $this->__table = $table;
-        $this->__schema = $schema;
-        $this->__namespace = $schema->namespace;
-        $this->__model = $schema->getTable($table);
-        $this->__new = $new;
-        $this->__locked = !$new;
+        $this->table = $table;
+        $this->schema = $schema;
+        $this->namespace = $schema->namespace;
+        $this->model = $schema->getTable($table);
+        $this->new = $new;
+        $this->locked = !$new;
         
         $this->updateData($data);
     }
     
     public function updateData($data)
     {
-        $this->__data = [];
+        $this->data = [];
         
         // Pull in data from $data
         foreach ($data as $key => $value) {
             // Make a special object for dates
             if (!is_null($value) and (
-                $this->__model['columns'][$key] == 'datetime'
-                or $this->__model['columns'][$key] == 'timestamp'
-                or $this->__model['columns'][$key] == 'date'
+                $this->model['columns'][$key] == 'datetime'
+                or $this->model['columns'][$key] == 'timestamp'
+                or $this->model['columns'][$key] == 'date'
             )) {
-                $this->__data[$key] = new \DateTimeImmutable($value, new \DateTimeZone('UTC'));
+                $this->data[$key] = new \DateTimeImmutable($value, new \DateTimeZone('UTC'));
             } else {
-                $this->__data[$key] = $value;
+                $this->data[$key] = $value;
             }
         }
     }
@@ -56,8 +56,8 @@ class Data
     // This returns an 'unlocked' version of this object that can be used to modify the database row.
     public function __clone()
     {
-        $this->__locked = false;
-        $this->__external = array();
+        $this->locked = false;
+        $this->external = array();
     }
     
     /**
@@ -69,18 +69,18 @@ class Data
     public function duplicate($cloneExternalProps = false)
     {
         $clone = clone $this;
-        $clone->__new = true;
-        $clone->__delete = false;
-        unset($clone->__data['id']);
-        foreach (array_keys($clone->__data) as $key) {
-            $clone->__update[$key] = true;
+        $clone->new = true;
+        $clone->delete = false;
+        unset($clone->data['id']);
+        foreach (array_keys($clone->data) as $key) {
+            $clone->update[$key] = true;
         }
         
         // Clone M-M joins
         if ($cloneExternalProps) {
-            foreach (array_keys($this->__model['many-to-many']) as $key) {
-                $clone->__external[$key] = $this->{$key};
-                $clone->__updateExternal[$key] = true;
+            foreach (array_keys($this->model['many-to-many']) as $key) {
+                $clone->external[$key] = $this->{$key};
+                $clone->updateExternal[$key] = true;
             }
         }
         
@@ -94,10 +94,10 @@ class Data
      */
     public function delete()
     {
-        if ($this->__new) {
+        if ($this->new) {
             throw new Exception\Model('MODEL_DATA:CANNOT_DELETE_UNCOMMITED_DATA');
         }
-        $this->__delete = true;
+        $this->delete = true;
         return $this;
     }
     
@@ -105,18 +105,18 @@ class Data
     public function &__get($var)
     {
         /* This property is a native database column, return it */
-        if (isset($this->__data[$var])) {
-            return $this->__data[$var];
+        if (isset($this->data[$var])) {
+            return $this->data[$var];
         }
         
         /* This property has already been defined, return it */
-        if (isset($this->__external[$var])) {
-            $data = $this->__external[$var];
+        if (isset($this->external[$var])) {
+            $data = $this->external[$var];
             
             // If this data object isn't locked, it's likely being used for a insert/update.
             // If ->var contains a Collection, this must be a M2M relationship - mark it for update
-            if (!$this->__locked && $data instanceof Collection) {
-                $this->__updateExternal[$var] = true;
+            if (!$this->locked && $data instanceof Collection) {
+                $this->updateExternal[$var] = true;
             }
             
             return $data;
@@ -134,8 +134,8 @@ class Data
             
             // If this Data object isn't locked, it's likely being used for a insert/update.
             // If ->var contains a Collection, this must be a M2M relationship - mark it for update
-            if (!$this->__locked && $data instanceof Collection) {
-                $this->__updateExternal[$var] = true;
+            if (!$this->locked && $data instanceof Collection) {
+                $this->updateExternal[$var] = true;
             }
             
             return $data;
@@ -153,7 +153,7 @@ class Data
             return $collection;
         }
         
-        $model = $collection[0]->_data->__model;
+        $model = $collection[0]->_data->model;
         
         /* FOREIGN KEYS */
         if (key_exists($var, $model['one-to-one'])) {
@@ -182,8 +182,8 @@ class Data
         $ids = $collection->id->toArray();
         
         /* Call Tablename::factory(foreign key id) to get the object we want */
-        $table = $proto->__model['one-to-one'][$var]['table'];
-        $schema = Schema::getSchemaByName($proto->__model['one-to-one'][$var]['schema']);
+        $table = $proto->model['one-to-one'][$var]['table'];
+        $schema = Schema::getSchemaByName($proto->model['one-to-one'][$var]['schema']);
         
         if ($countOnly) {
             list($data) = static::factoryDataCount(['id' => $ids] + $where, $table, $schema);
@@ -200,8 +200,8 @@ class Data
         // Remove duplicates from the group
         $ids = array_unique($collection->{$var . '_id'}->toArray());
         
-        $table = $proto->__model['many-to-one'][$var]['table'];
-        $schema = Schema::getSchemaByName($proto->__model['many-to-one'][$var]['schema']);
+        $table = $proto->model['many-to-one'][$var]['table'];
+        $schema = Schema::getSchemaByName($proto->model['many-to-one'][$var]['schema']);
         
         if ($countOnly) {
             list($data) = static::factoryDataCount(['id' => $ids] + $where, $table, $schema);
@@ -213,7 +213,7 @@ class Data
 
             // Store the object results on the relevant objects
             foreach ($collection as $obj) {
-                $obj->_data->__external[$var] =
+                $obj->_data->external[$var] =
                     Model::factoryObjectCache($obj->{$var . '_id'}, $table, $schema);
             }
             return $results;
@@ -226,9 +226,9 @@ class Data
     {
         $proto = $collection[0]->_data;
 
-        $table = $proto->__model['one-to-many'][$var]['table'];
-        $column = $proto->__model['one-to-many'][$var]['column_name'];
-        $schema = Schema::getSchemaByName($proto->__model['one-to-many'][$var]['schema']);
+        $table = $proto->model['one-to-many'][$var]['table'];
+        $column = $proto->model['one-to-many'][$var]['column_name'];
+        $schema = Schema::getSchemaByName($proto->model['one-to-many'][$var]['schema']);
         
         $ids = $collection->id->toArray();
         
@@ -247,7 +247,7 @@ class Data
             }
             
             foreach ($collection as $obj) {
-                $obj->_data->__external[$var] = new Collection((array) $external[$obj->id]);
+                $obj->_data->external[$var] = new Collection((array) $external[$obj->id]);
             }
         }
         
@@ -260,7 +260,7 @@ class Data
         $proto = $collection[0]->_data;
 
         // Get pivot schema
-        $pivot = $proto->__model['many-to-many'][$var];
+        $pivot = $proto->model['many-to-many'][$var];
         $ids = $collection->id->toArray();
         
         // We can only support simple connection access for 2 key pivots.
@@ -269,7 +269,7 @@ class Data
         }
         
         // Get a list of ids linked to this object (i.e. the tablename_id stored in the pivot table)
-        $pivotSchema = $proto->__schema->getTable($pivot['pivot']);
+        $pivotSchema = $proto->schema->getTable($pivot['pivot']);
         $pivotCon = $pivot['connections'][0];
         $pivotConSchema = Schema::getSchemaByName($pivotCon['schema']);
         
@@ -305,7 +305,7 @@ class Data
         if (!$where) {
             foreach ($collection as $obj) {
                 $data = Model::factoryObjectCache($groupedIds[$obj->id], $pivotCon['table'], $pivotConSchema);
-                $obj->_data->__external[$var] = $data ?: new Collection;
+                $obj->_data->external[$var] = $data ?: new Collection;
             }
         }
         
@@ -315,38 +315,38 @@ class Data
     public function hasForeignKey($var)
     {
         return (bool) (
-            key_exists($var, (array) $this->__model['one-to-one'])
-            or key_exists($var, (array) $this->__model['one-to-many'])
-            or key_exists($var, (array) $this->__model['many-to-one'])
-            or key_exists($var, (array) $this->__model['many-to-many'])
+            key_exists($var, (array) $this->model['one-to-one'])
+            or key_exists($var, (array) $this->model['one-to-many'])
+            or key_exists($var, (array) $this->model['many-to-one'])
+            or key_exists($var, (array) $this->model['many-to-many'])
         );
     }
 
     public function join($var, array $where = [])
     {
-        if (array_key_exists($var, $this->__external)) {
-            return $this->__external[$var]->filter($where);
+        if (array_key_exists($var, $this->external)) {
+            return $this->external[$var]->filter($where);
         }
         
         // If this Model_Data isn't linked to the db yet, then linked values cannot exist
-        if (!$this->__data['id']) {
+        if (!$this->data['id']) {
             return new Collection();
         }
         
         /* FOREIGN KEYS */
-        if (key_exists($var, $this->__model['one-to-one'])) {
+        if (key_exists($var, $this->model['one-to-one'])) {
             return $this->join121($var);
         }
         
-        if (key_exists($var, $this->__model['many-to-one'])) {
+        if (key_exists($var, $this->model['many-to-one'])) {
             return $this->joinM21($var);
         }
         
-        if (key_exists($var, $this->__model['one-to-many'])) {
+        if (key_exists($var, $this->model['one-to-many'])) {
             return $this->join12M($var, $where);
         }
         
-        if (key_exists($var, $this->__model['many-to-many'])) {
+        if (key_exists($var, $this->model['many-to-many'])) {
             return $this->joinM2M($var, $where);
         }
         
@@ -355,33 +355,33 @@ class Data
     
     public function joinCount($var, $where = [])
     {
-        if (!is_null($this->__external[$var]) && !$this->__external[$var] instanceof Collection) {
+        if (!is_null($this->external[$var]) && !$this->external[$var] instanceof Collection) {
             return 1;
         }
         
-        if ($this->__external[$var]) {
-            return $this->__external[$var]->filter($where)->count();
+        if ($this->external[$var]) {
+            return $this->external[$var]->filter($where)->count();
         }
         
         // If this Model_Data isn't linked to the db yet, then linked values cannot exist
-        if (!$this->__data['id']) {
+        if (!$this->data['id']) {
             return 0;
         }
         
         /* FOREIGN KEYS */
-        if (key_exists($var, (array) $this->__model['one-to-one'])) {
+        if (key_exists($var, (array) $this->model['one-to-one'])) {
             return $this->join121($var, true);
         }
         
-        if (key_exists($var, (array) $this->__model['many-to-one'])) {
+        if (key_exists($var, (array) $this->model['many-to-one'])) {
             return $this->joinM21($var, true);
         }
         
-        if (key_exists($var, (array) $this->__model['one-to-many'])) {
+        if (key_exists($var, (array) $this->model['one-to-many'])) {
             return $this->join12M($var, $where, true);
         }
         
-        if (key_exists($var, (array) $this->__model['many-to-many'])) {
+        if (key_exists($var, (array) $this->model['many-to-many'])) {
             return $this->joinM2M($var, $where, true);
         }
         
@@ -390,42 +390,42 @@ class Data
     
     protected function join121($var, $countOnly = false)
     {
-        $table = $this->__model['one-to-one'][$var]['table'];
-        $schema = Schema::getSchemaByName($this->__model['one-to-one'][$var]['schema']);
-        $this->__external[$var] = Model::factoryObjectCache($this->__data['id'], $table, $schema);
+        $table = $this->model['one-to-one'][$var]['table'];
+        $schema = Schema::getSchemaByName($this->model['one-to-one'][$var]['schema']);
+        $this->external[$var] = Model::factoryObjectCache($this->data['id'], $table, $schema);
         if ($countOnly) {
-            return $this->__external[$var] ? 1 : 0;
+            return $this->external[$var] ? 1 : 0;
         }
-        return $this->__external[$var];
+        return $this->external[$var];
     }
 
     protected function joinM21($var, $countOnly = false)
     {
-        $table = $this->__model['many-to-one'][$var]['table'];
-        $schema = Schema::getSchemaByName($this->__model['many-to-one'][$var]['schema']);
-        $this->__external[$var] = Model::factoryObjectCache($this->__data[$var . '_id'], $table, $schema);
+        $table = $this->model['many-to-one'][$var]['table'];
+        $schema = Schema::getSchemaByName($this->model['many-to-one'][$var]['schema']);
+        $this->external[$var] = Model::factoryObjectCache($this->data[$var . '_id'], $table, $schema);
         if ($countOnly) {
-            return $this->__external[$var] ? 1 : 0;
+            return $this->external[$var] ? 1 : 0;
         }
-        return $this->__external[$var];
+        return $this->external[$var];
     }
     
     protected function join12M($var, array $where, $countOnly = false)
     {
-        $table = $this->__model['one-to-many'][$var]['table'];
-        $column = $this->__model['one-to-many'][$var]['column_name'];
-        $schema = Schema::getSchemaByName($this->__model['one-to-many'][$var]['schema']);
+        $table = $this->model['one-to-many'][$var]['table'];
+        $column = $this->model['one-to-many'][$var]['column_name'];
+        $schema = Schema::getSchemaByName($this->model['one-to-many'][$var]['schema']);
         
         if ($countOnly) {
-            list($data) = static::factoryDataCount($where + [$column => $this->__data['id']], $table, $schema);
+            list($data) = static::factoryDataCount($where + [$column => $this->data['id']], $table, $schema);
             return $data['count'];
         }
         
         // Use the model factory to find the relevant items
-        $results = Model::factory($where + [$column => $this->__data['id']], $table, $schema);
+        $results = Model::factory($where + [$column => $this->data['id']], $table, $schema);
         
         if (empty($where)) {
-            $this->__external[$var] = $results;
+            $this->external[$var] = $results;
         }
         
         return $results;
@@ -434,7 +434,7 @@ class Data
     protected function joinM2M($var, array $where, $countOnly = false)
     {
         // Get pivot schema
-        $pivot = $this->__model['many-to-many'][$var];
+        $pivot = $this->model['many-to-many'][$var];
         
         // We can only support simple connection access for 2 key pivots.
         if (count($pivot['connections']) != 1) {
@@ -442,7 +442,7 @@ class Data
         }
         
         // Get a list of ids linked to this object (i.e. the tablename_id stored in the pivot table)
-        $pivotSchema = $this->__schema->getTable($pivot['pivot']);
+        $pivotSchema = $this->schema->getTable($pivot['pivot']);
         $pivotCon = $pivot['connections'][0];
         $pivotConSchema = Schema::getSchemaByName($pivotCon['schema']);
         
@@ -462,7 +462,7 @@ class Data
         $raw = $this->getDataAccessor()->getM2MData(
             $pivotSchema,
             $pivot,
-            $this->__data['id'],
+            $this->data['id'],
             null,
             $clauses
         );
@@ -481,7 +481,7 @@ class Data
         $results = Model::factoryObjectCache($id, $pivotCon['table'], $pivotConSchema);
         
         if (!$where) {
-            $this->__external[$var] = $results;
+            $this->external[$var] = $results;
         }
         
         return $results;
@@ -490,24 +490,24 @@ class Data
     public function __isset($var)
     {
         // Is it already set in local array?
-        if (array_key_exists($var, $this->__data)) {
+        if (array_key_exists($var, $this->data)) {
             return true;
         }
-        if (array_key_exists($var, $this->__external)) {
+        if (array_key_exists($var, $this->external)) {
             return true;
         }
         
         // Check through all the possible foreign keys for a matching name
-        if (array_key_exists($var, (array) $this->__model['one-to-one'])) {
+        if (array_key_exists($var, (array) $this->model['one-to-one'])) {
             return true;
         }
-        if (array_key_exists($var, (array) $this->__model['many-to-one'])) {
+        if (array_key_exists($var, (array) $this->model['many-to-one'])) {
             return true;
         }
-        if (array_key_exists($var, (array) $this->__model['one-to-many'])) {
+        if (array_key_exists($var, (array) $this->model['one-to-many'])) {
             return true;
         }
-        if (array_key_exists($var, (array) $this->__model['many-to-many'])) {
+        if (array_key_exists($var, (array) $this->model['many-to-many'])) {
             return true;
         }
         
@@ -517,57 +517,57 @@ class Data
     public function __set($var, $value)
     {
         // Cannot change data if it is locked (i.e. it is attached to a Model object)
-        if ($this->__locked) {
+        if ($this->locked) {
             throw new Exception\Model('MODEL_DATA:SET_WHEN_LOCKED', array($var, $value));
         }
         
         // Cannot update primary key on existing objects
         // (and cannot set id for new objects that don't have a foreign primary key)
-        if ($var == 'id' && $this->__new == false && $this->__model['type'] != 'foreign') {
+        if ($var == 'id' && $this->new == false && $this->model['type'] != 'foreign') {
             throw new Exception\Model('MODEL_DATA:CANNOT_CHANGE_ID', array($var, $value));
         }
         
         // Updating normal columns
-        if (key_exists($var, $this->__model['columns'])) {
-            return $this->__data[$var] = $this->setColumnData($var, $value);
+        if (key_exists($var, $this->model['columns'])) {
+            return $this->data[$var] = $this->setColumnData($var, $value);
         }
         
         // table_id -> Table - Foreign keys to other tables
-        if (key_exists($var, (array) $this->__model['many-to-one'])) {
+        if (key_exists($var, (array) $this->model['many-to-one'])) {
             list(
-                $this->__data[$var . '_id'],
-                $this->__external[$var]
+                $this->data[$var . '_id'],
+                $this->external[$var]
             ) = $this->setManyToOneData($var, $value);
-            $this->__update[$var . '_id'] = true;
+            $this->update[$var . '_id'] = true;
             return;
         }
         
         // Pivot tables - needs an array of appropriate objects for this column
-        if (key_exists($var, (array) $this->__model['many-to-many'])) {
-            return $this->__external[$var] = $this->setManyToManyData($var, $value);
+        if (key_exists($var, (array) $this->model['many-to-many'])) {
+            return $this->external[$var] = $this->setManyToManyData($var, $value);
         }
         
         // Table::this_id -> this - Foreign keys on other tables pointing to this one - we cannot 'set' these here.
         // These values must be changes on their root tables (i.e. the table with the twin many-to-one relationship)
-        if (key_exists($var, (array) $this->__model['one-to-many'])) {
+        if (key_exists($var, (array) $this->model['one-to-many'])) {
             throw new Exception\Model('MODEL_DATA:CANNOT_SET_EXTERNAL_KEYS_TO_THIS_TABLE', array($var, $value));
         }
         
         // Undefined column
-        throw new Exception\Model('MODEL_DATA:UNEXPECTED_COLUMN_NAME', array($this->__model, $var, $value));
+        throw new Exception\Model('MODEL_DATA:UNEXPECTED_COLUMN_NAME', array($this->model, $var, $value));
     }
     
     protected function setColumnData($var, $value)
     {
-        $this->__update[$var] = true;
+        $this->update[$var] = true;
         
         if (is_null($value)) {
             return null;
         }
         
-        if ($this->__model['columns'][$var] == 'datetime'
-            or $this->__model['columns'][$var] == 'timestamp'
-            or $this->__model['columns'][$var] == 'date'
+        if ($this->model['columns'][$var] == 'datetime'
+            or $this->model['columns'][$var] == 'timestamp'
+            or $this->model['columns'][$var] == 'date'
         ) {
             return $this->setDateTimeColumnData($var, $value);
         } elseif (is_scalar($value) or $value instanceof SqlString) {
@@ -595,15 +595,15 @@ class Data
     
     protected function setManyToOneData($var, $value)
     {
-        $this->__updateExternal[$var] = true;
+        $this->updateExternal[$var] = true;
         
         if (is_null($value)) {
             return [null, null];
         } elseif ($value instanceof Model) {
             // Trying to pass in the wrong table for the relationship!
             // That is, the table name on the foreign key does not match the table name in the passed Model object
-            $valueTable = Schema::normaliseCase($value->dataOriginal()->__table);
-            $expectedTable = $this->__model['many-to-one'][$var]['table'];
+            $valueTable = Schema::normaliseCase($value->dataOriginal()->table);
+            $expectedTable = $this->model['many-to-one'][$var]['table'];
             
             if ($valueTable !== $expectedTable) {
                 throw new Exception\Model('MODEL_DATA:INCORRECT_MODEL_FOR_RELATIONSHIP', [$var, $valueTable, $expectedTable]);
@@ -616,7 +616,7 @@ class Data
     
     protected function setManyToManyData($var, $value)
     {
-        $this->__updateExternal[$var] = true;
+        $this->updateExternal[$var] = true;
         
         if (is_null($value)) {
             return new Collection();
@@ -645,7 +645,7 @@ class Data
         try {
             foreach ($validkeys as $key) {
                 if (array_key_exists($key, $data)) {
-                    $this->__set($key, $data[$key]);
+                    $this->set($key, $data[$key]);
                 }
             }
             return $this;
@@ -657,9 +657,9 @@ class Data
     public function commit()
     {
         // Determine the type of SQL instruction to run
-        if ($this->__delete) {
+        if ($this->delete) {
             $mode = 'delete';
-        } elseif ($this->__new) {
+        } elseif ($this->new) {
             $mode = 'insert';
         } else {
             $mode = 'update';
@@ -667,39 +667,39 @@ class Data
         
         // Collect the updated columns/foreign keys
         $columndata = [];
-        foreach (array_keys($this->__update) as $key) {
-            $columndata[$key] = $this->__data[$key];
+        foreach (array_keys($this->update) as $key) {
+            $columndata[$key] = $this->data[$key];
         }
 
         $externaldata = [];
-        foreach (array_keys($this->__updateExternal) as $key) {
-            $externaldata[$key] = $this->__external[$key];
+        foreach (array_keys($this->updateExternal) as $key) {
+            $externaldata[$key] = $this->external[$key];
         }
         
         // Use connection's dataAccessor to commit the data to the db
         $id = $this->getDataAccessor()->commit(
             $mode,
-            $this->__table,
-            $this->__data['id'],
+            $this->table,
+            $this->data['id'],
             $columndata,
             $externaldata,
-            $this->__model
+            $this->model
         );
         
         // Reset flags on this object
-        $this->__new = false;
-        $this->__locked = true;
+        $this->new = false;
+        $this->locked = true;
         
         // Clear update fields
-        $this->__update = [];
-        $this->__updateExternal = [];
+        $this->update = [];
+        $this->updateExternal = [];
         
         // Clear cached foreign key data
-        $this->__external = [];
+        $this->external = [];
 
         // Get clean version of data from database (in case of db triggers etc)
         if ($mode != 'delete') {
-            list($data) = $this->getDataAccessor()->getData($this->__table, ['id' => $id]);
+            list($data) = $this->getDataAccessor()->getData($this->table, ['id' => $id]);
             $this->updateData($data);
         }
         
@@ -709,46 +709,46 @@ class Data
     // Get the table that this object is attached to.
     public function getTable()
     {
-        return $this->__table;
+        return $this->table;
     }
     
     public function getConnection()
     {
-        return $this->__schema->connection;
+        return $this->schema->connection;
     }
     
     public function getModel()
     {
-        return $this->__model;
+        return $this->model;
     }
 
     public function getSchema()
     {
-        return $this->__schema;
+        return $this->schema;
     }
     
     public function getNamespace()
     {
-        return $this->__schema->namespace;
+        return $this->schema->namespace;
     }
     
     public function getDataAccessor()
     {
-        return $this->__schema->connection->getDataAccessor();
+        return $this->schema->connection->getDataAccessor();
     }
     
     public function externalKeyExists($var)
     {
-        if (key_exists($var, (array) $this->__model['one-to-one'])) {
+        if (key_exists($var, (array) $this->model['one-to-one'])) {
             return 'one-to-one';
         }
-        if (key_exists($var, (array) $this->__model['one-to-many'])) {
+        if (key_exists($var, (array) $this->model['one-to-many'])) {
             return 'one-to-many';
         }
-        if (key_exists($var, (array) $this->__model['many-to-one'])) {
+        if (key_exists($var, (array) $this->model['many-to-one'])) {
             return 'many-to-one';
         }
-        if (key_exists($var, (array) $this->__model['many-to-many'])) {
+        if (key_exists($var, (array) $this->model['many-to-many'])) {
             return 'many-to-many';
         }
         return null;
@@ -756,37 +756,37 @@ class Data
     
     public function clearCache()
     {
-        if (!$this->__locked) {
+        if (!$this->locked) {
             throw new Exception\Model('CANNOT_CLEAR_UNLOCKED_DATA_OBJECTS', [$this]);
         }
-        $this->__external = [];
+        $this->external = [];
     }
     
     // By default, hide most of the schema internals of Data objects when var_dumping them!
     public function __debugInfo()
     {
         $return = get_object_vars($this);
-        unset($return['__schema']);
-        unset($return['__model']);
+        unset($return['schema']);
+        unset($return['model']);
         return $return;
     }
     
     public function __sleep()
     {
         return [
-            '__data',
-            '__namespace',
-            '__table',
-            '__locked',
-            '__new',
-            '__delete'
+            'data',
+            'namespace',
+            'table',
+            'locked',
+            'new',
+            'delete'
         ];
     }
     
     public function __wakeup()
     {
-        $this->__schema = Schema::get($this->__namespace);
-        $this->__model = $this->__schema->getTable($this->__table);
+        $this->schema = Schema::get($this->namespace);
+        $this->model = $this->schema->getTable($this->table);
     }
     
     // Get data from database from which we can construct Model objects
