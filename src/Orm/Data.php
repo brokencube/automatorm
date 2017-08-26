@@ -17,7 +17,7 @@ class Data
     protected $table;               // Class this data is associated with
     protected $model;               // Fragment of Schema object for this table
     
-    protected $locked = true;       // Can we use set() - for updates/inserts
+    protected $locked = true;       // Can we use __set() - for updates/inserts
     protected $new = false;         // Is this to be a new row? (used with Model::new_db())
     protected $delete = false;      // Row is marked for deletion
     
@@ -645,7 +645,7 @@ class Data
         try {
             foreach ($validkeys as $key) {
                 if (array_key_exists($key, $data)) {
-                    $this->set($key, $data[$key]);
+                    $this->__set($key, $data[$key]);
                 }
             }
             return $this;
