@@ -138,7 +138,7 @@ class Collection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializab
             and $this->container[0]->_data->externalKeyExists($name)
         ) {
             if (is_numeric($args[1]) && ($args[1] & Model::COUNT_ONLY)) {
-                return Data::groupJoinCount($this, $name, $args[0]);
+                return Data::groupJoin($this, $name, $args[0], true);
             }
             return Data::groupJoin($this, $name, $args[0]);
         }

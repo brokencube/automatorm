@@ -1,6 +1,4 @@
-<img src='http://www.automatorm.com/img/logo.png?2'>
-
-# AutomatORM 
+# <img src='https://www.brokencube.co.uk/resource/AutomatormLogo.png?2' alt='AutomatORM'>
 [![Latest Stable Version](https://poser.pugx.org/brokencube/automatorm/v/stable)](https://packagist.org/packages/brokencube/automatorm) 
 [![Build Status](https://travis-ci.org/brokencube/automatorm.svg?branch=master)](https://travis-ci.org/brokencube/automatorm) 
 [![Code Climate](https://codeclimate.com/github/brokencube/automatorm/badges/gpa.svg)](https://codeclimate.com/github/brokencube/automatorm) 
