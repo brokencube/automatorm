@@ -246,4 +246,15 @@ TEST;
         $this->assertEquals(1, $project->first()->id);
         $this->assertEquals(2, $project->last()->id);
     }
+
+    // M2M
+    public function testM2M()
+    {
+        $project = \Automatorm\UnitTest\Fake\Project::get(1);
+        $accounts = $project->account_project;
+        
+        $this->assertInstanceOf(\Automatorm\Orm\Collection::class, $accounts);
+        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Account::class, $accounts[0]);
+        $this->assertEquals($accounts->first()->id, "1");
+    }
 }

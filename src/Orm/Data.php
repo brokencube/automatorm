@@ -420,25 +420,12 @@ class Data
             $pivotSchema = $this->__schema->getTable($pivot['pivot']);
             $pivotCon = $pivot['connections'][0];
             
-            $clauses = [];
-            if ($where) {
-                foreach ($where as $clauseColumn => $clauseValue) {
-                    // Rewrite $where clauses to insert `pivotjoin` table in column name
-                    preg_match('/^([!=<>%]*)(.+?)([!=<>%]*)$/', $clauseColumn, $parts);
-                    $prefix = $parts[1] ?: $parts[3];
-                    $clauseColumn = $parts[2];
-                
-                    $clauses['`pivotjoin`.`' . $clauseColumn . '`' . $prefix] = $clauseValue;
-                }
-            }
-            
             // Build Query
             $raw = $this->getDataAccessor()->getM2MData(
                 $pivotSchema,
                 $pivot,
                 $this->__data['id'],
-                null,
-                $clauses
+                $where
             );
             
             // Rearrange the list of ids into a flat array
@@ -517,25 +504,12 @@ class Data
             $pivotSchema = $this->__schema->getTable($pivot['pivot']);
             $pivotCon = $pivot['connections'][0];
             
-            $clauses = [];
-            if ($where) {
-                foreach ($where as $clauseColumn => $clauseValue) {
-                    // Rewrite $where clauses to insert `pivotjoin` table in column name
-                    preg_match('/^([!=<>%]*)(.+?)([!=<>%]*)$/', $clauseColumn, $parts);
-                    $prefix = $parts[1] ?: $parts[3];
-                    $clauseColumn = $parts[2];
-                
-                    $clauses['`pivotjoin`.`' . $clauseColumn . '`' . $prefix] = $clauseValue;
-                }
-            }
-            
             // Build Query
             $raw = $this->getDataAccessor()->getM2MData(
                 $pivotSchema,
                 $pivot,
                 $this->__data['id'],
-                null,
-                $clauses
+                $where
             );
             
             // Rearrange the list of ids into a flat array

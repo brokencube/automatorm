@@ -43,11 +43,10 @@ interface DataAccess
      * @param $pivotTablename Name of pivot table
      * @param $pivot
      * @param $ids Ids to match from starting side of the relationship
-     * @param $joinwhere Join On clauses in standard ['column' => $value] format
      * @param $where Where clauses in standard ['column' => $value] format
      *
      * @return array Array of data in $row[$column => $value] format
      */
-    public function getM2MData($pivotTablename, $pivot, $ids, $joinwhere = null, $where = null) : array;
+    public function getM2MData($pivotTablename, $pivot, $ids, $where = []) : array;
     
 }

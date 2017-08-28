@@ -108,25 +108,7 @@ class DataAccess implements DataAccessInterface
     public function getData($table, $where, array $options = []) : array
     {
         $tablename = Schema::normaliseCase($table);
-        $returnData = [];
-
-        foreach ($this->tabledata[$tablename] as $id => $row) {
-            foreach ($where as $column => $clause) {
-                list($affix, $column) = OperatorParser::extractAffix($column, true);
-                if (is_array($clause)) {
-                    foreach ($clause as $value) {
-                        if (OperatorParser::testOperator($affix, $row[$column], $value)) {
-                            continue 3;
-                        }
-                    }
-                } else {
-                    if (OperatorParser::testOperator($affix, $row[$column], $clause)) {
-                        continue 2;
-                    }
-                }
-            }
-            $returnData[] = $row;
-        }
+        $returnData = $this->getTableData($tablename, $where);
         
         if (is_array($options)) {
             // Limit
@@ -157,48 +139,57 @@ class DataAccess implements DataAccessInterface
         return $returnData;
     }
     
-    public function getDataCount($table, $where, array $options = []) : int
+    protected function getTableData($table, $where)
     {
-        $tablename = Schema::normaliseCase($table);
         $returnData = [];
         
-        foreach ($this->tabledata[$tablename] as $id => $row) {
+        foreach ($this->tabledata[$table] as $id => $row) {
             foreach ($where as $column => $clause) {
+                list($affix, $column) = OperatorParser::extractAffix($column, true);
                 if (is_array($clause)) {
-                    if (in_array($row[$column], $clause) === false) {
-                        continue 2;
+                    foreach ($clause as $value) {
+                        if (OperatorParser::testOperator($affix, $row[$column], $value)) {
+                            continue 3;
+                        }
                     }
                 } else {
-                    if ($row[$column] != $clause) {
+                    if (OperatorParser::testOperator($affix, $row[$column], $clause)) {
                         continue 2;
                     }
                 }
-                
-                $returnData[] = $row;
             }
+            $returnData[] = $row;
         }
-        
-        return count($returnData);
+        return $returnData;
     }
     
-    public function getM2MData($pivotTablename, $pivot, $ids, $joinwhere = null, $where = null) : array
+    public function getDataCount($table, $where, array $options = []) : int
     {
-        $data = [];
-        /*
-        $query = QueryBuilder::select([$pivotTablename => 'pivot'], ['pivot.*'])
-            ->where(['`pivot`.'.$pivot['id'] => $ids])
-            ->join([Schema::underscoreCase($pivot['connections'][0]['table']) => 'pivotjoin'])
-            ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"]);
-            
-        if ($joinwhere) {
-            $query->joinWhere($joinwhere);
-        }
-        if ($where) {
-            $query->where($where);
+        $tablename = Schema::normaliseCase($table);
+        return count($this->getTableData($tablename, $where));
+    }
+    
+    public function getM2MData($pivotSchema, $pivot, $ids, $where = []) : array
+    {
+        $pivotName = Schema::normaliseCase($pivotSchema['table_name']);
+        $returnData = $this->getTableData($pivotName, []);
+        
+        $ids = [];
+        foreach ($returnData as $row) {
+            $ids[] = $row[$pivot['connections'][0]['column']];
         }
         
-        list($data) = Query::run($query, $this->connection);
-        */
-        return $data;
+        // [FIXME] Do intersection with existing $search['id'];
+        $search = $where + ['id' => $ids];
+        $tableName = Schema::underscoreCase($pivot['connections'][0]['table']);
+        
+        $data = $this->getTableData($tableName, $search);
+        
+        foreach ($data as $row) {
+            $return[] = [
+                $pivot['connections'][0]['column'] => $row['id']
+            ];
+        }
+        return $return;
     }
 }

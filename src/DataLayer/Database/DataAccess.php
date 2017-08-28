@@ -121,18 +121,26 @@ class DataAccess implements DataAccessInterface
         return $data[0]['count'];
     }
     
-    public function getM2MData($pivotSchema, $pivot, $ids, $joinwhere = null, $where = null) : array
+    public function getM2MData($pivotSchema, $pivot, $ids, $where = []) : array
     {
+        if ($where) {
+            foreach ($where as $clauseColumn => $clauseValue) {
+                // Rewrite $where clauses to insert `pivotjoin` table in column name
+                preg_match('/^([!=<>%]*)(.+?)([!=<>%]*)$/', $clauseColumn, $parts);
+                $prefix = $parts[1] ?: $parts[3];
+                $clauseColumn = $parts[2];
+            
+                $clauses['`pivotjoin`.`' . $clauseColumn . '`' . $prefix] = $clauseValue;
+            }
+        }
+    
         $query = QueryBuilder::select([$pivotSchema['table_schema'], $pivotSchema['table_name'] => 'pivot'], ['pivot.*'])
             ->where(['`pivot`.'.$pivot['id'] => $ids])
             ->join([Schema::underscoreCase($pivot['connections'][0]['schema']), Schema::underscoreCase($pivot['connections'][0]['table']) => 'pivotjoin'])
             ->joinOn(['pivotjoin.id' => "`pivot`.`{$pivot['connections'][0]['column']}`"]);
-            
-        if ($joinwhere) {
-            $query->joinWhere($joinwhere);
-        }
-        if ($where) {
-            $query->where($where);
+        
+        if ($clauses) {
+            $query->where($clauses);
         }
         
         list($data) = Query::run($query, $this->connection);
