@@ -48,7 +48,7 @@ class Dump
         
         $closure = function () use ($data_access) {
             $data = $data_access->bindTo($this->_data, $this->_data);
-            $schema = $data('__model');
+            $schema = $data('model');
             $seen = [];
             
             $output = "<span><strong>".get_class()."</strong></span>\n";
@@ -73,7 +73,7 @@ class Dump
             }
 
             $output .= "  <span><strong>data_properties</strong></span> =>\n";
-            foreach ($data('__data') as $key => $value) {
+            foreach ($data('data') as $key => $value) {
                 $output .= "    " . \Automatorm\Orm\Dump::format($key, $value, $seen);
                 $seen[$key] = true;
             }
