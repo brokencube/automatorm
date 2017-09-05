@@ -8,9 +8,9 @@ use Automatorm\OperatorParser;
 
 class DataAccess implements DataAccessInterface
 {
-    protected $connection;
-    protected $data;
-    protected $tabledata = [];
+    public $connection;
+    public $data;
+    public $tabledata = [];
     
     public function __construct(ConnectionInterface $connection)
     {
@@ -63,13 +63,29 @@ class DataAccess implements DataAccessInterface
             unset($this->tabledata[$table][$id]);
             return $id;
         }
-        
+
         if ($mode == 'insert') {
             $id = max(array_keys($this->tabledata[$table])) + 1;
-            $this->tabledata[$table][$id] = $data;
-        } elseif ($mode == 'update') {
-            $this->tabledata[$table][$id] = $data;
+            $data['id'] = $id;
         }
+        
+        if ($mode == 'insert' || $mode == 'update') {
+            foreach ($schema['columns'] as $column => $type) {
+                if ($type == 'datetime' and array_key_exists($column, $data) and $data[$column] instanceof \DateTimeInterface) {
+                    $this->tabledata[$table][$id][$column] = $data[$column]->format('c');
+                } else {
+                    $this->tabledata[$table][$id][$column] =
+                        array_key_exists($column, $data) ?
+                        $data[$column] :
+                        (
+                            array_key_exists($column, $this->tabledata[$table][$id]) ?
+                            $this->tabledata[$table][$id][$column] :
+                            null
+                        )
+                    ;
+                }
+            }
+        }        
         
         // Foreign tables
         foreach ($externalData as $propertyName => $value) {

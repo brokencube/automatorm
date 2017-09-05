@@ -670,7 +670,7 @@ class Data
         $id = $this->getDataAccessor()->commit(
             $mode,
             $this->table,
-            $this->data['id'],
+            array_key_exists('id', $this->data) ? $this->data['id'] : null,
             $columndata,
             $externaldata,
             $this->model
@@ -686,7 +686,7 @@ class Data
         
         // Clear cached foreign key data
         $this->external = [];
-
+        
         // Get clean version of data from database (in case of db triggers etc)
         if ($mode != 'delete') {
             list($data) = $this->getDataAccessor()->getData($this->table, ['id' => $id]);

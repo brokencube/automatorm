@@ -5,6 +5,10 @@ namespace Automatorm\UnitTest\Orm;
 use Automatorm\DataLayer\Fake;
 use Automatorm\Orm\Schema;
 
+use Automatorm\UnitTest\Fake\Project;
+use Automatorm\UnitTest\Fake\Account;
+
+
 require_once('FakeModels.php');
 
 class ModelTest extends \PHPUnit_Framework_TestCase
@@ -15,9 +19,9 @@ class ModelTest extends \PHPUnit_Framework_TestCase
     public function setUp()
     {
         $testdata = <<<TEST
-project|id:pk:int, description:text, date_created:date, account_id:int
-    1,"my project","2016-01-01",2
-    2,"my project 2","2016-01-02",2
+project|id:pk:int, title:text, description:text, date_created:date, account_id:int
+    1,"my project","blah","2016-01-01",2
+    2,"my project 2","blah2","2016-01-02",2
     account_id->account|id
 
 account|id:pk:int, first_name:text, last_name:text
@@ -37,224 +41,255 @@ TEST;
     // ::get
     public function testGetReturnsObject()
     {
-        $project = \Automatorm\UnitTest\Fake\Project::get(1);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project);
+        $project = Project::get(1);
+        $this->assertInstanceOf(Project::class, $project);
     }
 
     public function testFailedGetReturnsNull()
     {
-        $project = \Automatorm\UnitTest\Fake\Project::get(3);
+        $project = Project::get(3);
         $this->assertNull($project);
     }
 
     public function testGetReturnsProperty()
     {
-        $project = \Automatorm\UnitTest\Fake\Project::get(1);
-        $this->assertEquals($project->description, "my project");
+        $project = Project::get(1);
+        $this->assertEquals($project->title, "my project");
     }
 
     // ::find
     public function testFindReturnsObject()
     {
-        $project = \Automatorm\UnitTest\Fake\Project::find(['id' => 1]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project);
+        $project = Project::find(['id' => 1]);
+        $this->assertInstanceOf(Project::class, $project);
     }
 
     public function testFailedFindReturnsNull()
     {
-        $project = \Automatorm\UnitTest\Fake\Project::find(['id' => 3]);
+        $project = Project::find(['id' => 3]);
         $this->assertNull($project);
     }
 
     public function testFindReturnsProperty()
     {
-        $project = \Automatorm\UnitTest\Fake\Project::find(['id' => 1]);
-        $this->assertEquals($project->description, "my project");
+        $project = Project::find(['id' => 1]);
+        $this->assertEquals($project->title, "my project");
     }
     
     // ::findAll Single
     public function testFindAllReturnsCollection()
     {
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id' => 1]);
+        $project = Project::findAll(['id' => 1]);
         $this->assertInstanceOf(\Automatorm\Orm\Collection::class, $project);
     }
 
     public function testFailedFindAllReturnsCollection()
     {
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id' => 3]);
+        $project = Project::findAll(['id' => 3]);
         $this->assertInstanceOf(\Automatorm\Orm\Collection::class, $project);
         $this->assertEquals(0, $project->count());
     }
 
     public function testFindAllReturnsCollectionOfProject()
     {
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id' => 1]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['id' => 1]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(1, $project->count());
     }
 
     public function testFindAllMoreThan()
     {
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['>id' => 0]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['>id' => 0]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(2, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id>' => 0]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['id>' => 0]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(2, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id>' => 1]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['id>' => 1]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(1, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id>' => 2]);
+        $project = Project::findAll(['id>' => 2]);
         $this->assertNull($project->first());
         $this->assertEquals(0, $project->count());
     }
 
     public function testFindAllMoreThanEquals()
     {
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['>=id' => 1]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['>=id' => 1]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(2, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id>=' => 1]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['id>=' => 1]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(2, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id>=' => 2]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['id>=' => 2]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(1, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id>=' => 3]);
+        $project = Project::findAll(['id>=' => 3]);
         $this->assertNull($project->first());
         $this->assertEquals(0, $project->count());
     }
 
     public function testFindAllLessThan()
     {
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['<id' => 3]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['<id' => 3]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(2, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id<' => 3]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['id<' => 3]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(2, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id<' => 2]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['id<' => 2]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(1, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id<' => 1]);
+        $project = Project::findAll(['id<' => 1]);
         $this->assertNull($project->first());
         $this->assertEquals(0, $project->count());
     }
 
     public function testFindAllLessThanEquals()
     {
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['<=id' => 2]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['<=id' => 2]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(2, $project->count());
     
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id<=' => 2]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['id<=' => 2]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(2, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id<=' => 1]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['id<=' => 1]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(1, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id<=' => 0]);
+        $project = Project::findAll(['id<=' => 0]);
         $this->assertNull($project->first());
         $this->assertEquals(0, $project->count());
     }
 
     public function testFindAllEquals()
     {
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id' => 2]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['id' => 2]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(1, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id=' => 2]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['id=' => 2]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(1, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id==' => 2]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['id==' => 2]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(1, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['=id' => 2]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['=id' => 2]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(1, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['==id' => 2]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['==id' => 2]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(1, $project->count());
     }
 
     public function testFindAllNot()
     {
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['!id' => 2]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['!id' => 2]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(1, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id!' => 2]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['id!' => 2]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(1, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id<>' => 2]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['id<>' => 2]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(1, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['<>id' => 2]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['<>id' => 2]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(1, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['!=id' => 2]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['!=id' => 2]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(1, $project->count());
 
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id!=' => 2]);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first());
+        $project = Project::findAll(['id!=' => 2]);
+        $this->assertInstanceOf(Project::class, $project->first());
         $this->assertEquals(1, $project->count());
     }
 
     public function testFailedFindAllReturnsEmptyCollection()
     {
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id' => 3]);
+        $project = Project::findAll(['id' => 3]);
         $this->assertNull($project->first());
         $this->assertEquals(0, $project->count());
     }
 
     public function testFindAllReturnsCollectionOfProperties()
     {
-        $project = \Automatorm\UnitTest\Fake\Project::findAll(['id' => 1]);
-        $this->assertInstanceOf(\Automatorm\Orm\Collection::class, $project->description);
-        $this->assertEquals(1, $project->description->count());
-        $this->assertEquals($project->first()->description, "my project");
-        $this->assertEquals($project->description->first(), "my project");
+        $project = Project::findAll(['id' => 1]);
+        $this->assertInstanceOf(\Automatorm\Orm\Collection::class, $project->title);
+        $this->assertEquals(1, $project->title->count());
+        $this->assertEquals($project->first()->title, "my project");
+        $this->assertEquals($project->title->first(), "my project");
     }
     
     // ::findAll Many
     public function testUnboundFindAllReturnsCollectionOfAll()
     {
-        $project = \Automatorm\UnitTest\Fake\Project::findAll();
+        $project = Project::findAll();
         $this->assertInstanceOf(\Automatorm\Orm\Collection::class, $project);
         $this->assertEquals(2, $project->count());
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->first(), 'First object is not instance of Automatorm\UnitTest\Fake\Project');
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Project::class, $project->last(), 'Last object is not instance of Automatorm\UnitTest\Fake\Project');
+        $this->assertInstanceOf(Project::class, $project->first(), 'First object is not instance of Automatorm\UnitTest\Fake\Project');
+        $this->assertInstanceOf(Project::class, $project->last(), 'Last object is not instance of Automatorm\UnitTest\Fake\Project');
         $this->assertEquals(1, $project->first()->id);
         $this->assertEquals(2, $project->last()->id);
+    }
+    
+    // ::insert
+    public function testSimpleCreate()
+    {
+        $db = Project::newData();
+        $db->title = 'Insert';
+        $db->date_created = new \DateTime('2017-09-05T20:13:14+01:00');
+        $project = Project::commitNew($db);
+
+        $this->assertInstanceOf(Project::class, $project);
+        $this->assertEquals(3, $project->id);
+        $this->assertEquals("Insert", $project->title);
+        $this->assertEquals("2017-09-05T20:13:14+01:00", $project->date_created->format('c'));
+    }
+    
+    public function testSimpleUpdate()
+    {
+        $project = Project::get(1);
+        $db = $project->data();
+        $db->title = 'Updated';
+        $project->commit($db);
+
+        $this->assertInstanceOf(Project::class, $project);
+        $this->assertEquals('Updated', $project->title);
+        $this->assertEquals('blah', $project->description);
+        
+        $project = Project::get(1);
+        $this->assertInstanceOf(Project::class, $project);
+        $this->assertEquals('Updated', $project->title);
+        $this->assertEquals('blah', $project->description);
     }
 
     // M2M
     public function testM2M()
     {
-        $project = \Automatorm\UnitTest\Fake\Project::get(1);
+        $project = Project::get(1);
         $accounts = $project->account_project;
         
         $this->assertInstanceOf(\Automatorm\Orm\Collection::class, $accounts);
-        $this->assertInstanceOf(\Automatorm\UnitTest\Fake\Account::class, $accounts[0]);
+        $this->assertInstanceOf(Account::class, $accounts[0]);
         $this->assertEquals($accounts->first()->id, "1");
     }
 }
