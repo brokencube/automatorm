@@ -251,7 +251,7 @@ TEST;
         $this->assertEquals(2, $project->last()->id);
     }
     
-    // ::insert
+    // insert
     public function testSimpleCreate()
     {
         $db = Project::newData();
@@ -271,15 +271,23 @@ TEST;
         $db = $project->data();
         $db->title = 'Updated';
         $project->commit($db);
-
+        
+        // Check original reference is updated
         $this->assertInstanceOf(Project::class, $project);
         $this->assertEquals('Updated', $project->title);
         $this->assertEquals('blah', $project->description);
         
-        $project = Project::get(1);
+        // Check still works after getting from another source
+        $project = Project::find(['id' => 1]);
         $this->assertInstanceOf(Project::class, $project);
         $this->assertEquals('Updated', $project->title);
         $this->assertEquals('blah', $project->description);
+
+        // Check other items unaffected
+        $project2 = Project::get(2);
+        $this->assertInstanceOf(Project::class, $project2);
+        $this->assertEquals('my project 2', $project2->title);
+        $this->assertEquals('blah2', $project2->description);
     }
 
     // M2M
