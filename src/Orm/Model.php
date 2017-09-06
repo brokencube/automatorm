@@ -78,15 +78,39 @@ class Model implements \JsonSerializable
     {
         return static::factory($where, null, null, $options);
     }
-    
+
+    /**
+     * Find a collection of objects via an arbitary $where clause
+     *
+     * @param mixed[] $where Where clause to search for
+     * @param mixed[] $options Options to pass: limit => int, offeset => int, sort => "column direction"
+     * @return \Automatorm\Orm\Collection
+     */
+    public static function countAll($where = []) : int
+    {
+        return static::factoryCount($where);
+    }
+
     /* FACTORY METHODS */
+    final public static function factoryCount($where, $classOrTablename = null, $schema = null) : int
+    {
+        // Figure out the base class and table we need based on current context
+        $schema = $schema ?: Schema::get(static::getNamespace());
+        list($class, $table) = $schema->guessContext($classOrTablename ?: get_called_class());
+        return Data::factoryDataCount($where, $table, $schema, []);
+    }
+
     // Build an appropriate Model object based on id and class/table name
-    final public static function factory($where, $classOrTablename = null, $schema = null, array $options = [], $singleResult = false)
+    final public static function factory($where, $classOrTablename = null, $schema = null, array $options = [], $singleResult = false, $countonly = false)
     {
         // Figure out the base class and table we need based on current context
         $schema = $schema ?: Schema::get(static::getNamespace());
         list($class, $table) = $schema->guessContext($classOrTablename ?: get_called_class());
         $namespace = $schema->namespace;
+        
+        if ($countonly) {
+            return Data::factoryDataCount($where, $table, $schema, $options);
+        }
         
         // Get data from database
         $data = Data::factoryData($where, $table, $schema, $options);

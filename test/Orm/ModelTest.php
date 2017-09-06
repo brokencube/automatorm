@@ -76,6 +76,19 @@ TEST;
         $this->assertEquals($project->title, "my project");
     }
     
+    // ::countAll
+    public function testCount()
+    {
+        $count = Project::countAll();
+        $this->assertEquals($count, 2);
+    }
+
+    public function testCountWithWhere()
+    {
+        $count = Project::countAll(['id' => 1]);
+        $this->assertEquals($count, 1);
+    }
+    
     // ::findAll Single
     public function testFindAllReturnsCollection()
     {
