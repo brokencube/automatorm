@@ -101,16 +101,12 @@ class Model implements \JsonSerializable
     }
 
     // Build an appropriate Model object based on id and class/table name
-    final public static function factory($where, $classOrTablename = null, $schema = null, array $options = [], $singleResult = false, $countonly = false)
+    final public static function factory($where, $classOrTablename = null, $schema = null, array $options = [], $singleResult = false)
     {
         // Figure out the base class and table we need based on current context
         $schema = $schema ?: Schema::get(static::getNamespace());
         list($class, $table) = $schema->guessContext($classOrTablename ?: get_called_class());
         $namespace = $schema->namespace;
-        
-        if ($countonly) {
-            return Data::factoryDataCount($where, $table, $schema, $options);
-        }
         
         // Get data from database
         $data = Data::factoryData($where, $table, $schema, $options);
