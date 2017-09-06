@@ -325,7 +325,10 @@ class Data
     public function join($var, array $where = [])
     {
         if (array_key_exists($var, $this->external)) {
-            return $this->external[$var]->filter($where);
+            if ($this->external[$var] instanceof Collection) {
+                return $this->external[$var]->filter($where);
+            }
+            return $this->external[$var];
         }
         
         // If this Model_Data isn't linked to the db yet, then linked values cannot exist
