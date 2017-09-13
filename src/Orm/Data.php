@@ -186,8 +186,7 @@ class Data
         $schema = Schema::getSchemaByName($proto->model['one-to-one'][$var]['schema']);
         
         if ($countOnly) {
-            list($data) = static::factoryDataCount(['id' => $ids] + $where, $table, $schema);
-            return $data['count'];
+            return static::factoryDataCount(['id' => $ids] + $where, $table, $schema);
         }
         
         return Model::factoryObjectCache($ids, $table, $schema);
@@ -204,8 +203,7 @@ class Data
         $schema = Schema::getSchemaByName($proto->model['many-to-one'][$var]['schema']);
         
         if ($countOnly) {
-            list($data) = static::factoryDataCount(['id' => $ids] + $where, $table, $schema);
-            return $data['count'];
+            return static::factoryDataCount(['id' => $ids] + $where, $table, $schema);
         }
         
         if (!$where) {
@@ -233,8 +231,7 @@ class Data
         $ids = $collection->id->toArray();
         
         if ($countOnly) {
-            list($data) = static::factoryDataCount([$column => $ids] + $where, $table, $schema);
-            return $data['count'];
+            return static::factoryDataCount([$column => $ids] + $where, $table, $schema);
         }
         
         // Use the model factory to find the relevant items
@@ -292,8 +289,7 @@ class Data
         $flatIds = array_unique($flatIds);
         
         if ($countOnly) {
-            list($data) = static::factoryDataCount(['id' => $flatIds] + $where, $pivotCon['table'], $pivotConSchema);
-            return $data['count'];
+            return static::factoryDataCount(['id' => $flatIds] + $where, $pivotCon['table'], $pivotConSchema);
         }
         
         // Use the model factory to retrieve the objects from the list of ids (using cache first)
@@ -420,8 +416,7 @@ class Data
         $schema = Schema::getSchemaByName($this->model['one-to-many'][$var]['schema']);
         
         if ($countOnly) {
-            list($data) = static::factoryDataCount($where + [$column => $this->data['id']], $table, $schema);
-            return $data['count'];
+            return static::factoryDataCount($where + [$column => $this->data['id']], $table, $schema);
         }
         
         // Use the model factory to find the relevant items
