@@ -90,6 +90,7 @@ class Data
                 throw new Exception\Model('NO_PARENT_OBJECT', [$this->namespace, static::class, $this->table]);
             }
             $clone->data['id'] = $newParent->id;
+            $clone->update['id'] = true;
         }
         
         return $clone;
