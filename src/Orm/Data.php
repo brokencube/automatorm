@@ -66,7 +66,7 @@ class Data
      * @param bool $cloneExternalProps Clone M2M properties as well
      * @return self
      */
-    public function duplicate($cloneExternalProps = false)
+    public function duplicate($cloneExternalProps = false, Model $newParent = null)
     {
         $clone = clone $this;
         $clone->new = true;
@@ -82,6 +82,14 @@ class Data
                 $clone->external[$key] = $this->{$key};
                 $clone->updateExternal[$key] = true;
             }
+        }
+        
+        // "Foreign" tables use a "parent" table for their primary key. We need that parent object for it's id.
+        if ($this->model['type'] == 'foreign') {
+            if (!$newParent) {
+                throw new Exception\Model('NO_PARENT_OBJECT', [$this->namespace, static::class, $this->table]);
+            }
+            $clone->data['id'] = $newParent->id;
         }
         
         return $clone;

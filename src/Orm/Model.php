@@ -217,7 +217,7 @@ class Model implements \JsonSerializable
         // "Foreign" tables use a "parent" table for their primary key. We need that parent object for it's id.
         if ($tableSchema['type'] == 'foreign') {
             if (!$parentObject) {
-                throw new Exception\Model('NO_PARENT_OBJECT', [$namespace, $class, $table, static::$tablename]);
+                throw new Exception\Model('NO_PARENT_OBJECT', [$namespace, $class, $table]);
             }
             $data->id = $parentObject->id;
         }
