@@ -425,7 +425,7 @@ class Data
         $schema = Schema::getSchemaByName($this->model['one-to-many'][$var]['schema']);
         
         if ($countOnly) {
-            return static::factoryDataCount($where + [$column => $this->data['id']], $table, $schema);
+            return static::factoryDataCount($where + [$column => $this->data['id']], Schema::underscoreCase($table), $schema);
         }
         
         // Use the model factory to find the relevant items

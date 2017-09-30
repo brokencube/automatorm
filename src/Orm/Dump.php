@@ -5,7 +5,7 @@ namespace Automatorm\Orm;
 class Dump
 {
     public static $url_prefix = null;
-    public static $id_limit = 15;
+    public static $id_limit = 30;
     
     public static function dump($var)
     {
@@ -66,8 +66,12 @@ class Dump
             foreach (get_class_methods($this) as $method) {
                 if (substr($method, 0, 10) == '_property_') {
                     $key = substr($method, 10);
-                    $value = $this->$method();
-                    $output .= "    " . \Automatorm\Orm\Dump::format($key, $value, $seen);
+                    try {
+                        $value = $this->$method();
+                        $output .= "    " . \Automatorm\Orm\Dump::format($key, $value, $seen);
+                    } catch (\Throwable $e) {
+                        $output .= "    " . \Automatorm\Orm\Dump::format($key, null, $seen, 0, $e);
+                    }
                     $seen[$key] = true;
                 }
             }
@@ -102,10 +106,21 @@ class Dump
             $output .= "    <span><strong>1-*</strong></span> =>\n";
             if ($schema['one-to-many']) {
                 foreach ($schema['one-to-many'] as $key => $contents) {
-                    $ids = $this->{$key}->id->toArray();
-                    $value = $this->_data->join($key, ['id' => array_slice($ids, 0, \Automatorm\Orm\Dump::$id_limit)]);
+                    $count = $this->_data->joinCount($key, []);
+                    if ($count < \Automatorm\Orm\Dump::$id_limit) {
+                        $value = $this->{$key};
+                    } else {
+                        $value = new Collection(
+                            Model::factory(
+                                [$contents['column_name'] => $this->id],
+                                $contents['table'],
+                                Schema::getSchemaByName($contents['schema']),
+                                ['limit' => 1]
+                            )
+                        );
+                    }
                     
-                    $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen, count($ids));
+                    $output .= "      " . \Automatorm\Orm\Dump::format($key, $value, $seen, $count);
                     
                     $seen[$key] = true;
                 }
@@ -130,7 +145,7 @@ class Dump
         return $c();
     }
     
-    public static function format($key, $value, $seen = [], $collectionCount = 0)
+    public static function format($key, $value, $seen = [], $collectionCount = 0, $exceptionThrown = false)
     {
         switch (true) {
             case $value instanceof Model:
@@ -184,7 +199,7 @@ class Dump
                     }
                     
                     if ($collectionCount > \Automatorm\Orm\Dump::$id_limit) {
-                        $display3 = " [".implode(',', $ids).",...]";
+                        $display3 = "";
                         $display4 = " ({$collectionCount} results total)";
                     } else {
                         $display3 = " [".implode(',', $ids)."]";
@@ -203,7 +218,7 @@ class Dump
                 
                 $type = 'Collection';
                 break;
-            
+
             case $value instanceof DateTimeInterface:
                 $type = 'DateTime';
                 $display3 = $value->format('Y-m-d H:i:s');
@@ -242,6 +257,10 @@ class Dump
                 break;
         }
         
+        if ($exceptionThrown) {
+            $display5 = "Exception Thrown";
+        }
+        
         if (array_key_exists($key, $seen)) {
             return
                 "<del style='color: #999999;'><strong>$key</strong> => <small>$type</small> ".
@@ -256,6 +275,7 @@ class Dump
             "<span style='color: #000077;'>$display2</span>".
             "<span style='color: #cc0000;'>$display3</span>".
             "<span style='color: #007700;'>$display4</span>".
+            "<strong style='color: #ff0000;'>$display5</strong>".
             "\n";
         }
     }
