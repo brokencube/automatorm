@@ -19,7 +19,7 @@ class QueryBuilder
     protected $table;
     protected $tableSubquery;
     protected $columns = ['*'];
-    protected $count;
+    protected $count = '*';
     protected $set = [];
     protected $joins = [];
     protected $where = [];
