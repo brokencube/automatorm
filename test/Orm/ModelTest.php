@@ -20,13 +20,13 @@ class ModelTest extends \PHPUnit_Framework_TestCase
     {
         $testdata = <<<TEST
 project|id:pk:int, title:text, description:text, date_created:date, account_id:int
-    1,"my project","blah","2016-01-01",2
-    2,"my project 2","blah2","2016-01-02",2
+    1,'my project','blah','2016-01-01',2
+    2,'my project 2','blah2','2016-01-02',2
     account_id->account|id
 
 account|id:pk:int, first_name:text, last_name:text
-    1,"nik","barham"
-    2,"craig","king"
+    1,'nik','barham'
+    2,'craig','king'
 
 account_project|account_id:pk:int, project_id:pk:int
     1,1
