@@ -40,15 +40,14 @@ class DataAccess implements DataAccessInterface
                 $currentTable = $schema[$currentTableName];
             } elseif (preg_match('/^\s*([a-z_]+)\s*->/', $clean, $matches)) {
                 // Skip foreign key declaration
-            } elseif ($rowdata = str_getcsv(trim($line))) {
+            } elseif ($rowdata = str_getcsv(trim($line), ',', '\'')) {
                 // If we have a parsable csv string, a tablename, and a matching number of columns
-                
                 if ($currentTableName) {
                     if (count($rowdata) == count($currentTable['columns'])) {
                         $combined = array_combine(array_keys($currentTable['columns']), $rowdata);
                         /* Special case '*null' as null */
                         foreach ($combined as $key => $value) {
-                            if (strtolower($value) == '*null') {
+                            if (strtolower($value) === '*null') {
                                 $combined[$key] = null;
                             }
                             if (substr(strtolower($value), 0, 6) == '**null') {
