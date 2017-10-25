@@ -170,14 +170,19 @@ class DataAccess implements DataAccessInterface
         foreach ($this->tabledata[$table] as $id => $row) {
             foreach ($where as $column => $clause) {
                 list($affix, $column) = OperatorParser::extractAffix($column, true);
+                $data = is_string($row[$column]) ? strtolower($row[$column]) : $row[$column];
                 if (is_array($clause)) {
                     foreach ($clause as $value) {
-                        if (OperatorParser::testOperator($affix, $row[$column], $value)) {
+                        $textvalue = is_string($value) ? strtolower($value) : $value;
+                        
+                        if (OperatorParser::testOperator($affix, $data, $textvalue)) {
                             continue 3;
                         }
                     }
                 } else {
-                    if (OperatorParser::testOperator($affix, $row[$column], $clause)) {
+                    $textvalue = is_string($clause) ? strtolower($clause) : $clause;
+                    
+                    if (OperatorParser::testOperator($affix, $data, $textvalue)) {
                         continue 2;
                     }
                 }
