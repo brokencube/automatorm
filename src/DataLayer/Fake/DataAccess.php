@@ -46,6 +46,15 @@ class DataAccess implements DataAccessInterface
                 if ($currentTableName) {
                     if (count($rowdata) == count($currentTable['columns'])) {
                         $combined = array_combine(array_keys($currentTable['columns']), $rowdata);
+                        /* Special case '*null' as null */
+                        foreach ($combined as $key => $value) {
+                            if (strtolower($value) == '*null') {
+                                $combined[$key] = null;
+                            }
+                            if (substr(strtolower($value), 0, 6) == '**null') {
+                                $combined[$key] = substr($value, 1);
+                            }
+                        }
                         if (isset($combined['id'])) {
                             $this->tabledata[$currentTableName][$combined['id']] = $combined;
                         } else {
