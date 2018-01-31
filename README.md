@@ -12,3 +12,29 @@ $ composer require brokencube\automatorm
 
 ### Requirements
 PHP 7.0 + PDO (Currently only MySQL supported - expect to support other engines in the future)
+
+### Basic Example
+```php
+<?php
+use Automatorm\Orm\{Model,Schema};
+use Automatorm\DataLayer\Database\Connection;
+
+// Class that is linked to the table "blog" - namespace is linked to a particular schema + connection
+namespace models {
+  class Blog extends Model {}
+}
+
+// Get db connection
+$connection = Connection::register($pdo); 
+
+// Get db schema for the ORM and assign to 'models' namespace as above
+Schema::generate($connection, 'models');  
+
+// Find a table row based on a simple where clause
+$blog = Blog::find(['title' => 'My Blog']); // Select * from blog where title = 'My Blog';
+
+echo $blog->id;     // Prints "1"
+echo $blog->title;  // Prints "My First Entry"
+```
+
+A more detailed layout of how to use the ORM can be found in the [Wiki](https://github.com/brokencube/automatorm/wiki)
