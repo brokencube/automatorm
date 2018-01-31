@@ -129,4 +129,26 @@ class Connection implements ConnectionInterface
     {
         return $this->schemaGenerator;
     }
+    
+    public function __sleep()
+    {
+        return [
+            'type',
+            'user',
+            'pass',
+            'server',
+            'database',
+            'options',
+            'unix_socket'
+        ];
+    }
+    
+    public function __wakeup()
+    {
+        if (!$this->server) {
+            throw new \Exception('Cannot unserialise a Connection that does not contain a server address');
+        }
+        $this->schemaGenerator = new SchemaGenerator($this);
+        $this->dataAccess = new DataAccess($this);        
+    }
 }
