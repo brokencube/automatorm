@@ -10,87 +10,32 @@ class DataAccess implements DataAccessInterface
 {
     public $connection;
     public $data;
-    public $tabledata = [];
     
     public function __construct(ConnectionInterface $connection)
     {
         $this->connection = $connection;
         $this->data = $connection->connect();
-        $this->generateData();
-    }
-    
-    protected function generateData()
-    {
-        list($schema, $database) = $this->connection->getSchemaGenerator()->generate();
-        
-        $currentTable = null;
-        $currentTableName = null;
-        
-        foreach(preg_split('~[\r\n]+~', $this->data) as $line) {
-            if (empty($line) or ctype_space($line)) {
-                continue;
-            }
-            
-            $matches = [];
-            $clean = trim(strtolower($line));
-            if (preg_match('/^\s*([a-z_]+)\s*\|/', $clean, $matches)) {
-                // Table Declaration
-                $tableName = trim($matches[1]);
-                $currentTableName = Schema::normaliseCase($tableName);
-                $currentTable = $schema[$currentTableName];
-            } elseif (preg_match('/^\s*([a-z_]+)\s*->/', $clean, $matches)) {
-                // Skip foreign key declaration
-            } elseif ($rowdata = str_getcsv(trim($line), ',', '\'')) {
-                // If we have a parsable csv string, a tablename, and a matching number of columns
-                if ($currentTableName) {
-                    if (count($rowdata) == count($currentTable['columns'])) {
-                        $combined = array_combine(array_keys($currentTable['columns']), $rowdata);
-                        /* Special case '*null' as null */
-                        foreach ($combined as $key => $value) {
-                            if (strtolower($value) === '*null') {
-                                $combined[$key] = null;
-                            }
-                            if (substr(strtolower($value), 0, 6) == '**null') {
-                                $combined[$key] = substr($value, 1);
-                            }
-                        }
-                        if (isset($combined['id'])) {
-                            $this->tabledata[$currentTableName][$combined['id']] = $combined;
-                        } else {
-                            $this->tabledata[$currentTableName][] = $combined;
-                        }
-                    }
-                }
-            }
-        }
     }
     
     public function commit($mode, $table, $id, $data, $externalData, $schema) : int
     {
         if ($mode == 'delete') {
-            unset($this->tabledata[$table][$id]);
+            $this->data->delete($table, $id);
             return $id;
         }
 
         if ($mode == 'insert') {
-            $id = max(array_keys($this->tabledata[$table])) + 1;
-            $data['id'] = $id;
+            $data['id'] = $id = $this->data->autoincrementId($table);
         }
         
         if ($mode == 'insert' || $mode == 'update') {
             foreach ($schema['columns'] as $column => $type) {
                 if ($type == 'datetime' and array_key_exists($column, $data) and $data[$column] instanceof \DateTimeInterface) {
-                    $this->tabledata[$table][$id][$column] = $data[$column]->format('c');
+                    $this->data->addData($table, $id, $column, $data[$column]->format('c'));
                 } else {
-                    $this->tabledata[$table][$id][$column] =
-                        array_key_exists($column, $data) ?
-                        $data[$column] :
-                        (
-                            array_key_exists($column, $this->tabledata[$table][$id]) ?
-                            $this->tabledata[$table][$id][$column] :
-                            null
-                        )
-                    ;
+                    if (array_key_exists($column, $data)) {
+                        $this->data->addData($table, $id, $column, $data[$column]);
+                    }
                 }
             }
         }        
@@ -111,18 +56,18 @@ class DataAccess implements DataAccessInterface
             $tablename = Schema::normaliseCase($pivot['pivot']);
             
             // Clear out any existing data for this object - this is safe because we are in an atomic transaction.
-            foreach ($this->tabledata[$tablename] as $key => $row) {
+            foreach ($this->data->getTable($tablename) as $key => $row) {
                 if ($row[$pivot['id']] == $id) {
-                    unset($this->tabledata[$tablename][$key]);
+                    $this->data->delete($tablename, $key);
                 }
             }
             
             // Loops through the list of objects to link to this table
             foreach ($value as $object) {
-                $this->tabledata[$tablename][] = [
+                $this->data->addRow($tablename, null, [
                     $pivot['id'] => $id,
                     $pivot['connections'][0]['column'] => $object->id
-                ];
+                ]);
             }
         }
         
@@ -167,7 +112,7 @@ class DataAccess implements DataAccessInterface
     {
         $returnData = [];
         
-        foreach ($this->tabledata[$table] as $id => $row) {
+        foreach ($this->data->getTable($table) as $id => $row) {
             foreach ($where as $column => $clause) {
                 list($affix, $column) = OperatorParser::extractAffix($column, true);
                 $data = is_string($row[$column]) ? strtolower($row[$column]) : $row[$column];

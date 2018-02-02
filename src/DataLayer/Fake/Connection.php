@@ -21,9 +21,11 @@ class Connection implements ConnectionInterface
     public $schemaGenerator;
     public $schemaName;
     public $dataAccess;
-    public function __construct($data, $schemaname)
+    public $store;
+    public function __construct(DataStore $datastore, $schemaname)
     {
-        $this->data = $data;
+        $this->store = $datastore;
+        $this->data = $datastore->getData($schemaname);
         $this->schemaName = $schemaname;
         $this->schemaGenerator = new SchemaGenerator($this);
         $this->dataAccess = new DataAccess($this);
@@ -45,6 +47,7 @@ class Connection implements ConnectionInterface
      */
     public function connect()
     {
+        $this->data->generateData($this);
         return $this->data;
     }
     
@@ -56,5 +59,10 @@ class Connection implements ConnectionInterface
     public function getSchemaGenerator() : SchemaGeneratorInterface
     {
         return $this->schemaGenerator;
+    }
+    
+    public function getDataStore() : DataStore
+    {
+        return $this->store;
     }
 }

@@ -16,8 +16,9 @@ class SchemaGenerator implements SchemaGeneratorInterface
         $this->connection = $connection;
     }
     
-    protected function generateTableList($data)
+    protected function generateTableList(Data $datastore)
     {
+        $data = $datastore->data;
         foreach(preg_split('~[\r\n]+~', $data) as $line) {
             if (empty($line) or ctype_space($line)) {
                 continue;
@@ -57,8 +58,9 @@ class SchemaGenerator implements SchemaGeneratorInterface
         }
     }
     
-    protected function generateForeignKeys($data)
+    protected function generateForeignKeys(Data $datastore)
     {
+        $data = $datastore->data;
         $tableName = null;
         $keys = [];
         
@@ -75,9 +77,12 @@ class SchemaGenerator implements SchemaGeneratorInterface
                 $tableName = trim($matches[1]);
                 continue;
             }
-            
-            if (preg_match('/^\s*([a-z_]+)\s*->\s*([a-z_]+)\s*\|\s*([a-z_]+)\s*$/', $clean, $matches)) {
-                $keys[$matches[1]] = ['table' => $matches[2], 'column_name' => $matches[3]];
+            if (preg_match('/^\s*([a-z_]+)\s*->\s*([a-z_]+)(?:\.([a-z_]+)\s*|\s*)\|\s*([a-z_]+)\s*$/', $clean, $matches)) {
+                if ($matches[3]) {
+                    $keys[$matches[1]] = ['table' => $matches[3], 'schema' => $matches[2], 'column_name' => $matches[4]];
+                } else {
+                    $keys[$matches[1]] = ['table' => $matches[2], 'schema' => $datastore->schemaName, 'column_name' => $matches[4]];
+                }
             }
         }
         
@@ -89,7 +94,7 @@ class SchemaGenerator implements SchemaGeneratorInterface
     // Generate Schema
     public function generate()
     {
-        $data = $this->connection->connect();
+        $data = $this->connection->data;
         $database = $this->connection->schemaName;
         
         foreach ($this->generateTableList($data) as $tableName => $rows) {
@@ -113,11 +118,11 @@ class SchemaGenerator implements SchemaGeneratorInterface
                 if ($columnName == $key['column_name']) {
                     $model[$refTableName]['one-to-one'][Schema::underscoreCase($tableName)] = [
                         'table' => $tableName,
-                        'schema' => $database
+                        'schema' => $key['schema']
                     ];
                     $model[$tableName]['one-to-one'][Schema::underscoreCase($refTableName)] = [
                         'table' => $refTableName,
-                        'schema' => $database
+                        'schema' => $key['schema']
                     ];
                     $model[$tableName]['type'] = 'foreign';
                 } elseif ($key['column_name'] == 'id') {
@@ -126,7 +131,7 @@ class SchemaGenerator implements SchemaGeneratorInterface
                         $columnRoot = substr($columnName, 0, -3);
                         $model[$tableName]['many-to-one'][$columnRoot] = [
                             'table' => $refTableName,
-                            'schema' => $database
+                            'schema' => $key['schema']
                         ];
                         
                         // Add the key constraint in reverse, trying to make a sensible name.
@@ -140,13 +145,25 @@ class SchemaGenerator implements SchemaGeneratorInterface
                             $propertyName = Schema::underscoreCase($tableName) . '_' . $columnRoot;
                         }
                         
-                        $model[$refTableName]['one-to-many'][$propertyName] = [
-                            'schema' => $database,
+                        $value = [
+                            'schema' => $key['schema'],
                             'table' => $tableName,
                             'column_name' => $columnName
                         ];
+                        
+                        if ($key['schema'] != $database) {
+                            // This is a cross schema join - need to add this to the other schema
+                            $this->connection->getDataStore()->getData($key['schema'])->addCrossSchemaForeignKey($refTableName, 'one-to-many', $propertyName, $value);
+                        } else {
+                            $model[$refTableName]['one-to-many'][$propertyName] = $value;
+                        }
                     }
                 }
+            }
+            
+            $keys = $this->connection->data->getCrossSchemaForeignKeys();
+            foreach ($keys as $key) {
+                $model[$key['table']][$key['type']][$key['column']] = $key['data'];
             }
         }
         

@@ -18,24 +18,18 @@ class ModelTest extends \PHPUnit_Framework_TestCase
     
     public function setUp()
     {
-        $testdata = <<<TEST
-project|id:pk:int, title:text, description:text, date_created:date, account_id:int
-    1,'my project','blah','2016-01-01',2
-    2,'my project 2','blah2','2016-01-02',2
-    account_id->account|id
-
-account|id:pk:int, first_name:text, last_name:text
-    1,'nik','barham'
-    2,'craig','king'
-
-account_project|account_id:pk:int, project_id:pk:int
-    1,1
-    account_id->account|id
-    project_id->project|id    
-TEST;
-
-        $this->connection = new Fake\Connection($testdata, 'default');
-        $this->schema = Schema::generate($this->connection, "Automatorm\\UnitTest\\Fake");
+        // Create Fake Datastore
+        $default = new Fake\Data(file_get_contents(__DIR__ . '/ModelTest.default.data'), 'default');
+        $meta = new Fake\Data(file_get_contents(__DIR__ . '/ModelTest.meta.data'), 'meta');
+        $datastore = new Fake\DataStore([$default, $meta]);
+        
+        // Create Fake Connections to Datastore
+        $this->connection['default'] = new Fake\Connection($datastore, 'default');
+        $this->connection['meta'] = new Fake\Connection($datastore, 'meta');
+        
+        // Create ORM Schema
+        $this->schema['default'] = Schema::generate($this->connection['default'], "Automatorm\\UnitTest\\Fake");
+        $this->schema['meta'] = Schema::generate($this->connection['meta'], "Automatorm\\UnitTest\\FakeMeta");
     }
     
     // ::get
@@ -312,5 +306,14 @@ TEST;
         $this->assertInstanceOf(\Automatorm\Orm\Collection::class, $accounts);
         $this->assertInstanceOf(Account::class, $accounts[0]);
         $this->assertEquals($accounts->first()->id, "1");
+    }
+    
+    // CrossSchema
+    public function testCrossSchema()
+    {
+        $project = Project::get(1);
+        $name = $project->project_type->name;
+        
+        $this->assertEquals($name, "normal");
     }
 }

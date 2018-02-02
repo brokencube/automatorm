@@ -1,0 +1,3 @@
+project_type|id:pk:int, name:text
+    1,'normal'
+    2,'special'
