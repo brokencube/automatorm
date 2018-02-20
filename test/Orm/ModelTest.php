@@ -1,6 +1,7 @@
 <?php
 
 namespace Automatorm\UnitTest\Orm;
+use PHPUnit\Framework\TestCase;
 
 use Automatorm\DataLayer\Fake;
 use Automatorm\Orm\Schema;
@@ -8,10 +9,9 @@ use Automatorm\Orm\Schema;
 use Automatorm\UnitTest\Fake\Project;
 use Automatorm\UnitTest\Fake\Account;
 
-
 require_once('FakeModels.php');
 
-class ModelTest extends \PHPUnit_Framework_TestCase
+class ModelTest extends TestCase
 {
     protected $connection;
     protected $schema;

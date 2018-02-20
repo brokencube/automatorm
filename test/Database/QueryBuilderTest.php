@@ -4,8 +4,9 @@ namespace Automatorm\UnitTest\Database;
 
 use Automatorm\Database\QueryBuilder;
 use Automatorm\Exception\QueryBuilder as QueryBuilderException;
+use PHPUnit\Framework\TestCase;
 
-class QueryBuilderTest extends \PHPUnit_Framework_TestCase
+class QueryBuilderTest extends TestCase
 {
     public function testSimpleSelect()
     {

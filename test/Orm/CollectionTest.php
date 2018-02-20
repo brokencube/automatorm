@@ -1,10 +1,11 @@
 <?php
 
 namespace Automatorm\UnitTest\Orm;
+use PHPUnit\Framework\TestCase;
 
 use Automatorm\Orm\Collection;
 
-class CollectionTest extends \PHPUnit_Framework_TestCase
+class CollectionTest extends TestCase
 {
     /**
      * @dataProvider providerTestArray

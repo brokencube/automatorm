@@ -2,6 +2,9 @@
 
 namespace Automatorm\Orm;
 
+/**
+ * @codeCoverageIgnore
+ */
 class Dump
 {
     public static $url_prefix = null;
