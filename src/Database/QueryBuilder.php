@@ -166,7 +166,12 @@ class QueryBuilder
      */
     public function table($table) : self
     {
-        $this->table = new Table($table);
+        if ($table instanceof QueryBuilder) {
+            $this->table = new SubQuery($table);
+        } else {
+            $this->table = new Table($table);
+        }
+        
         return $this;
     }
     
