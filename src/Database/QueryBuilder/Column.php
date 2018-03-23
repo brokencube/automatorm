@@ -30,13 +30,15 @@ class Column implements Renderable
         }
         
         if (is_string($column)) {
-            preg_match('/^
+            preg_match(
+                '/^
                 (?:`(.+?)`|(\S+?))
                 (?:\.(?:`(.+?)`|(\S+?)))?
                 (?:\.(?:`(.+?)`|(\S+?)))?
                 (?:\s+(?:[Aa][Ss]\s+)?(?:`(.+?)`|(\S+?)))?
                 \s*$/x',
-                $column, $columnparts
+                $column,
+                $columnparts
             );
             
             // Normalise output
@@ -46,16 +48,15 @@ class Column implements Renderable
                 $this->database = $this->escape($columnparts[1] ?: $columnparts[2]);
                 $this->schema = $this->escape($columnparts[3] ?: $columnparts[4]);
                 $this->column = $this->escape($columnparts[5] ?: $columnparts[6]);
-            }
-            elseif ($columnparts[3] ?: $columnparts[4]) {
+            } elseif ($columnparts[3] ?: $columnparts[4]) {
                 $this->schema = $this->escape($columnparts[1] ?: $columnparts[2]);
                 $this->column = $this->escape($columnparts[3] ?: $columnparts[4]);
-            }
-            elseif ($columnparts[1] ?: $columnparts[2]) {
+            } elseif ($columnparts[1] ?: $columnparts[2]) {
                 $this->column = $this->escape($columnparts[1] ?: $columnparts[2]);
             } else {
                 throw new Exception\QueryBuilder('Column Regex did not match', $column);
             }
+            
             if ($columnparts[7] ?: $columnparts[8]) {
                 $this->alias = $this->escape($columnparts[7] ?: $columnparts[8]);
             }
@@ -95,7 +96,7 @@ class Column implements Renderable
                     $this->column = $this->escape(is_numeric($key3) ? $column[$key3] : $key3);
                     break;
                 default:
-                    throw new Exception\QueryBuilder('Incorrect number of array elements for column name', $table);
+                    throw new Exception\QueryBuilder('Incorrect number of array elements for column name', $column);
             }
             
             // Special case *
@@ -114,7 +115,7 @@ class Column implements Renderable
         if (!$name) {
             return '';
         }
-        return '`' . str_replace('`', '``', $name) . '`'; 
+        return '`' . str_replace('`', '``', $name) . '`';
     }
     
     public function getRenderedName() : string

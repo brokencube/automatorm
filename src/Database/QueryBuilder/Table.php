@@ -22,13 +22,15 @@ class Table implements Renderable
     public function __construct($table)
     {
         if (is_string($table)) {
-            preg_match('/^
+            preg_match(
+                '/^
                 (?:`(.+?)`|(\S+?))
                 (?:\.(?:`(.+?)`|(\S+?)))?
                 (?:\.(?:`(.+?)`|(\S+?)))?
                 (?:\s+(?:[Aa][Ss]\s+)?(?:`(.+?)`|(\S+?)))?
                 \s*$/x',
-                $table, $columnparts
+                $table,
+                $columnparts
             );
             
             // Normalise output
@@ -38,16 +40,15 @@ class Table implements Renderable
                 $this->database = $this->escape($columnparts[1] ?: $columnparts[2]);
                 $this->schema = $this->escape($columnparts[3] ?: $columnparts[4]);
                 $this->table = $this->escape($columnparts[5] ?: $columnparts[6]);
-            }
-            elseif ($columnparts[3] ?: $columnparts[4]) {
+            } elseif ($columnparts[3] ?: $columnparts[4]) {
                 $this->schema = $this->escape($columnparts[1] ?: $columnparts[2]);
                 $this->table = $this->escape($columnparts[3] ?: $columnparts[4]);
-            }
-            elseif ($columnparts[1] ?: $columnparts[2]) {
+            } elseif ($columnparts[1] ?: $columnparts[2]) {
                 $this->table = $this->escape($columnparts[1] ?: $columnparts[2]);
             } else {
                 throw new Exception\QueryBuilder('Table Regex did not match', $table);
             }
+            
             if ($columnparts[7] ?: $columnparts[8]) {
                 $this->alias = $this->escape($columnparts[7] ?: $columnparts[8]);
             }
@@ -94,13 +95,14 @@ class Table implements Renderable
         if (!$name) {
             return '';
         }
-        return '`' . str_replace('`', '``', $name) . '`'; 
+        return '`' . str_replace('`', '``', $name) . '`';
     }
     
     public function render(QueryBuilder $query) : string
     {
         if ($this->database) {
-            return $this->database . "." . $this->schema . "." . $this->table . ($this->alias ? " AS " . $this->alias : "");
+            return $this->database . "." . $this->schema . "." . $this->table .
+                ($this->alias ? " AS " . $this->alias : "");
         }
         if ($this->schema) {
             return $this->schema . "." . $this->table . ($this->alias ? " AS " . $this->alias : "");

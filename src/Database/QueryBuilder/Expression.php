@@ -63,7 +63,7 @@ class Expression implements Renderable
             if ($affix == '!') {
                 $this->comparitor = 'is not null';
             } else {
-               $this->comparitor = 'is null'; 
+                $this->comparitor = 'is null';
             }
         }
         
@@ -88,7 +88,6 @@ class Expression implements Renderable
                 $this->comparitor = $affix === '!' ? "not in" : "in";
             }
         }
-        
     }
     
     public function render(QueryBuilder $query) : string
