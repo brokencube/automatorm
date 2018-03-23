@@ -7,6 +7,7 @@
 
 namespace Automatorm\Database\QueryBuilder;
 
+use Automatorm\Database\SqlString;
 use Automatorm\Database\QueryBuilder;
 use Automatorm\Database\Interfaces\Renderable;
 use Automatorm\Exception;
@@ -105,7 +106,7 @@ class Column implements Renderable
             return;
         }
         
-        throw new Exception\QueryBuilder('Cannot resolve table name', $column);
+        throw new Exception\QueryBuilder('Cannot resolve column name', $column);
     }
 
     public function escape(string $name) : string

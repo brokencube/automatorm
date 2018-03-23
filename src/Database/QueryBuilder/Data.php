@@ -7,8 +7,8 @@
 
 namespace Automatorm\Database\QueryBuilder;
 
-use Automatorm\Database\QueryBuilder;
 use Automatorm\Database\SqlString;
+use Automatorm\Database\QueryBuilder;
 use Automatorm\Database\Interfaces\Renderable;
 use Automatorm\Exception;
 

@@ -8,8 +8,6 @@
 namespace Automatorm\Database\QueryBuilder;
 
 use Automatorm\Database\QueryBuilder;
-use Automatorm\Database\Interfaces\Renderable;
-use Automatorm\Exception;
 
 class CountColumn extends Column
 {
