@@ -19,10 +19,10 @@ class QueryBuilderTest extends TestCase
 
     public function testSimpleCount()
     {
-        $qb = QueryBuilder::count('test', '*');
+        $qb = QueryBuilder::count('test');
         list($sql, $data) = $qb->resolve();
         
-        $this->assertEquals('SELECT COUNT(*) as count FROM `test`', $sql);
+        $this->assertEquals('SELECT COUNT(*) AS `count` FROM `test`', $sql);
         $this->assertEquals(0, count($data));
     }
 
@@ -95,7 +95,7 @@ class QueryBuilderTest extends TestCase
             ->join(['join_table' => 'jt']);
         list($sql, $data) = $qb->resolve();
 
-        $this->assertEquals('SELECT `id` FROM `test` as `t` JOIN `join_table` as `jt`', $sql);
+        $this->assertEquals('SELECT `id` FROM `test` AS `t` JOIN `join_table` AS `jt`', $sql);
         $this->assertEquals(0, count($data));
     }
 
@@ -109,7 +109,7 @@ class QueryBuilderTest extends TestCase
         ;
         list($sql, $data) = $qb->resolve();
 
-        $this->assertEquals('SELECT `id` FROM `test` as `t` JOIN `join_table` as `jt` ON `jt`.`id` = ? AND `jt`.`id` = `t`.`id` WHERE `t`.`id` = ?', $sql);
+        $this->assertEquals('SELECT `id` FROM `test` AS `t` JOIN `join_table` AS `jt` ON `jt`.`id` = `t`.`id` AND `jt`.`id` = ? WHERE `t`.`id` = ?', $sql);
         $this->assertEquals(2, count($data));
         $this->assertEquals(1, $data[0]);
         $this->assertEquals(2, $data[1]);
@@ -120,7 +120,7 @@ class QueryBuilderTest extends TestCase
         $qb = QueryBuilder::select(['test' => 't'], ['id' => 'tid']);
         list($sql, $data) = $qb->resolve();
         
-        $this->assertEquals('SELECT `id` as `tid` FROM `test` as `t`', $sql);
+        $this->assertEquals('SELECT `id` AS `tid` FROM `test` AS `t`', $sql);
         $this->assertEquals(0, count($data));
     }
 
@@ -129,7 +129,7 @@ class QueryBuilderTest extends TestCase
         $qb = QueryBuilder::select(['test' => 't'], [['id' => 'tid']]);
         list($sql, $data) = $qb->resolve();
         
-        $this->assertEquals('SELECT `id` as `tid` FROM `test` as `t`', $sql);
+        $this->assertEquals('SELECT `id` AS `tid` FROM `test` AS `t`', $sql);
         $this->assertEquals(0, count($data));
     }
 
@@ -138,7 +138,7 @@ class QueryBuilderTest extends TestCase
         $qb = QueryBuilder::select(['test' => 't'], ['`t`.id']);
         list($sql, $data) = $qb->resolve();
         
-        $this->assertEquals('SELECT `t`.`id` FROM `test` as `t`', $sql);
+        $this->assertEquals('SELECT `t`.`id` FROM `test` AS `t`', $sql);
         $this->assertEquals(0, count($data));
     }
 
@@ -147,7 +147,7 @@ class QueryBuilderTest extends TestCase
         $qb = QueryBuilder::select(['test' => 't'], [['t', 'id']]);
         list($sql, $data) = $qb->resolve();
         
-        $this->assertEquals('SELECT `t`.`id` FROM `test` as `t`', $sql);
+        $this->assertEquals('SELECT `t`.`id` FROM `test` AS `t`', $sql);
         $this->assertEquals(0, count($data));
     }
 
@@ -156,7 +156,7 @@ class QueryBuilderTest extends TestCase
         $qb = QueryBuilder::select(['test' => 't'], [['t', 'id' => 'tid']]);
         list($sql, $data) = $qb->resolve();
         
-        $this->assertEquals('SELECT `t`.`id` as `tid` FROM `test` as `t`', $sql);
+        $this->assertEquals('SELECT `t`.`id` AS `tid` FROM `test` AS `t`', $sql);
         $this->assertEquals(0, count($data));
     }
 
@@ -165,7 +165,7 @@ class QueryBuilderTest extends TestCase
         $qb = QueryBuilder::select(['test' => 't'], [['database', 't', 'id' => 'tid']]);
         list($sql, $data) = $qb->resolve();
         
-        $this->assertEquals('SELECT `database`.`t`.`id` as `tid` FROM `test` as `t`', $sql);
+        $this->assertEquals('SELECT `database`.`t`.`id` AS `tid` FROM `test` AS `t`', $sql);
         $this->assertEquals(0, count($data));
     }
     
@@ -174,7 +174,7 @@ class QueryBuilderTest extends TestCase
         $qb = QueryBuilder::select(['schema', 'test' => 't'], ['id']);
         list($sql, $data) = $qb->resolve();
         
-        $this->assertEquals('SELECT `id` FROM `schema`.`test` as `t`', $sql);
+        $this->assertEquals('SELECT `id` FROM `schema`.`test` AS `t`', $sql);
         $this->assertEquals(0, count($data));
     }
 
@@ -183,7 +183,7 @@ class QueryBuilderTest extends TestCase
         $qb = QueryBuilder::select(['database', 'schema', 'test' => 't'], ['id']);
         list($sql, $data) = $qb->resolve();
         
-        $this->assertEquals('SELECT `id` FROM `database`.`schema`.`test` as `t`', $sql);
+        $this->assertEquals('SELECT `id` FROM `database`.`schema`.`test` AS `t`', $sql);
         $this->assertEquals(0, count($data));
     }
 
@@ -210,7 +210,7 @@ class QueryBuilderTest extends TestCase
         $qb->where(['t.data' => [1,2,3]]);
         list($sql, $data) = $qb->resolve();
         
-        $this->assertEquals('SELECT `id` FROM `database`.`schema`.`test` as `t` WHERE `t`.`data` in (?,?,?)', $sql);
+        $this->assertEquals('SELECT `id` FROM `database`.`schema`.`test` AS `t` WHERE `t`.`data` in (?,?,?)', $sql);
         $this->assertEquals(3, count($data));
     }
 
@@ -220,7 +220,7 @@ class QueryBuilderTest extends TestCase
         $qb->where(['t.data' => []]);
         list($sql, $data) = $qb->resolve();
         
-        $this->assertEquals('SELECT `id` FROM `database`.`schema`.`test` as `t` WHERE false', $sql);
+        $this->assertEquals('SELECT `id` FROM `database`.`schema`.`test` AS `t` WHERE false', $sql);
         $this->assertEquals(0, count($data));
     }
 
@@ -230,7 +230,7 @@ class QueryBuilderTest extends TestCase
         $qb->where(['!t.data' => []]);
         list($sql, $data) = $qb->resolve();
         
-        $this->assertEquals('SELECT `id` FROM `database`.`schema`.`test` as `t` WHERE true', $sql);
+        $this->assertEquals('SELECT `id` FROM `database`.`schema`.`test` AS `t` WHERE true', $sql);
         $this->assertEquals(0, count($data));
     }
 }

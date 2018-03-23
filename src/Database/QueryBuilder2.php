@@ -18,7 +18,7 @@ use Automatorm\Database\QueryBuilder\{
     Data
 };
 
-class QueryBuilder
+class QueryBuilder2
 {
     const ENGINES = ['mysql', 'postgres', 'mssql'];
     public static $engine = "mysql";
@@ -84,7 +84,7 @@ class QueryBuilder
      * @param string $column The column to count - for most uses, this should be '*'
      * @return \Automatorm\Database\QueryBuilder
      */
-    public static function count($table, $column = '* as count') : self
+    public static function count($table, $column = '*') : self
     {
         $query = new static('select', $table);
         $query->columns = [new CountColumn($column)];
@@ -178,11 +178,6 @@ class QueryBuilder
      */
     public function columns(array $columns) : self
     {
-        if (count($columns) and array_keys($columns)[0] !== 0) {
-            $this->columns = [new Column($columns)];
-            return $this;
-        }
-        
         $col = [];
         foreach ($columns as $column) {
             $col[] = new Column($column);
@@ -204,7 +199,7 @@ class QueryBuilder
                 $this->where[] = $value;
             } else {
                 [$column, $affix] = Expression::extractAffix($key);
-                $this->where[] = new Expression(new Column($column), $affix, $value);
+                $this->where[] = new Expression($column, $affix, $value);
             }
         }
         return $this;
@@ -223,7 +218,7 @@ class QueryBuilder
                 $this->having[] = $value;
             } else {
                 [$column, $affix] = Expression::extractAffix($key);
-                $this->having[] = new Expression(new Column($column), $affix, $value);
+                $this->having[] = new Expression($column, $affix, $value);
             }
         }
         return $this;
@@ -277,7 +272,7 @@ class QueryBuilder
     public function join($table, $rawtype = null) : self
     {
         $join = new Join($table, $rawtype);
-        $this->joins[] = $this->currentJoin = $join;
+        $this->currentJoin = $join;
         
         return $this;
     }
@@ -292,7 +287,7 @@ class QueryBuilder
     public function joinSubquery($subquery, $alias, $rawtype = null) : self
     {
         $join = new Join(new SubQuery($subquery, $alias), $rawtype);
-        $this->joins[] = $this->currentJoin = $join;
+        $this->currentJoin = $join;
         
         return $this;
     }
@@ -361,7 +356,7 @@ class QueryBuilder
     {
         $this->data = [];
         
-        $table = $this->table->render($this);
+        $table = $this->table->resolve($this);
         switch ($this->type) {
             case 'select':
                 $columns = $this->resolveColumns();
@@ -470,7 +465,7 @@ class QueryBuilder
     {
         $column = [];
         foreach ($this->set as $data) {
-            $column[] = $data->render($this);
+            $column = $data->render($this);
         }
         return ' SET ' . implode(', ', $column);
     }
