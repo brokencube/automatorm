@@ -25,7 +25,7 @@ class Column implements Renderable
     {
         // Cowardly refuse to process SqlStrings
         if ($column instanceof SqlString) {
-            $this->sqlstring = $column;
+            $this->column = (string) $column;
             return;
         }
         
