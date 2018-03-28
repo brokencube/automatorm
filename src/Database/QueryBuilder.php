@@ -179,14 +179,9 @@ class QueryBuilder
      */
     public function columns(array $columns) : self
     {
-        if (count($columns) and array_keys($columns)[0] !== 0) {
-            $this->columns = [new Column($columns)];
-            return $this;
-        }
-        
         $col = [];
         foreach ($columns as $column) {
-            $col[] = new Column($column);
+            $col[] = $column instanceof Column ? $column : new Column($column);
         }
         $this->columns = $col;
         return $this;

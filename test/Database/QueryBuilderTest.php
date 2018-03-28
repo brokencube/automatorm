@@ -117,7 +117,7 @@ class QueryBuilderTest extends TestCase
 
     public function testColumnName()
     {
-        $qb = QueryBuilder::select(['test' => 't'], ['id' => 'tid']);
+        $qb = QueryBuilder::select(['test' => 't'], ['id as tid']);
         list($sql, $data) = $qb->resolve();
         
         $this->assertEquals('SELECT `id` AS `tid` FROM `test` AS `t`', $sql);
