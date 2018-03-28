@@ -90,6 +90,14 @@ class Expression implements Renderable
         }
     }
     
+    public function __clone()
+    {
+        $this->column = clone $this->column;
+        if (is_object($this->value)) {
+            $this->value = clone $this->value;
+        }
+    }
+    
     public function render(QueryBuilder $query) : string
     {
         // Special case for tautological or contractdictory expressions (true / false)

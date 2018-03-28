@@ -25,6 +25,13 @@ class Where implements Renderable
         $this->setConjunction($conjunction);
     }
     
+    public function __clone()
+    {
+        foreach ($this->where as &$where) {
+            $where = clone $where;
+        }        
+    }
+    
     public function setConjunction($conjunction)
     {
         $conjunction = strtoupper($conjunction);

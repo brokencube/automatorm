@@ -14,6 +14,7 @@ use Automatorm\Exception;
 
 class SubQuery extends Table
 {
+    protected $sub;
     protected $sql;
     protected $data;
     protected $alias;
@@ -21,7 +22,7 @@ class SubQuery extends Table
     public function __construct($query, ?string $alias = 'subquery')
     {
         if ($query instanceof QueryBuilder) {
-            [$this->sql, $this->data] = $query->resolve();
+            $this->sub = $query;
         } elseif ($query instanceof SqlString) {
             $this->sql = (string) $query;
         } elseif (is_string($query)) {
@@ -33,8 +34,16 @@ class SubQuery extends Table
         $this->alias = $this->escape($alias);
     }
 
+    public function __clone()
+    {
+        $this->sub = clone $this->sub;
+    }
+
     public function render(QueryBuilder $query) : string
     {
+        if ($this->sub) {
+            [$this->sql, $this->data] = $query->resolve();
+        }
         $query->addData($this->data);
         return '(' . $this->sql . ') AS ' . $this->alias;
     }

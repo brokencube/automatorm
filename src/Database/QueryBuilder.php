@@ -45,6 +45,28 @@ class QueryBuilder
         $this->having = new Where();
     }
     
+    public function __clone()
+    {
+        if ($this->table) {
+            $this->table = clone $this->table;
+        }
+        $this->where = clone $this->where;
+        $this->having = clone $this->having;
+        foreach ($this->joins as &$join) {
+            $join = clone $join;
+        }
+        foreach ($this->columns as &$column) {
+            $column = clone $column;
+        }
+        foreach ($this->set as &$set) {
+            $set = clone $set;
+        }
+        foreach ($this->groupBy as &$group) {
+            $group = clone $group;
+        }
+        $this->currentJoin = end($this->joins);
+    }
+    
     // ENTRY POINTS
     /**
      * Build a "SELECT" query

@@ -21,6 +21,7 @@ class Join implements Renderable
     public function __construct($table, $rawtype = '')
     {
         $this->table = $table instanceof Table ? $table : new Table($table);
+        $this->where = new Where();
         
         switch (strtolower($rawtype)) {
             case '':
@@ -40,22 +41,21 @@ class Join implements Renderable
         }
     }
     
+    public function __clone()
+    {
+        $this->table = clone $this->table;
+        $this->where = clone $this->where;
+    }
+    
+    
     public function on(array $clauses) : self
     {
-        if (!$this->where) {
-            $this->where = new Where();
-        }
-        
         $this->where->addOnClauses($clauses);
         return $this;
     }
 
     public function where(array $clauses) : self
     {
-        if (!$this->where) {
-            $this->where = new Where();
-        }
-        
         $this->where->addClauses($clauses);
         return $this;
     }
@@ -64,7 +64,7 @@ class Join implements Renderable
     {
         $output = $this->type . " " . $this->table->render($query);
         
-        if ($this->where) {
+        if ($this->where->hasClauses()) {
             $output .= " ON " . $this->where->render($query);
         }
         
