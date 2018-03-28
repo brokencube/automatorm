@@ -9,7 +9,7 @@ namespace Automatorm\Database;
 
 use Automatorm\Exception;
 use Automatorm\Database\QueryBuilder\{
-    Table, SubQuery, Column, CountColumn, Join, Expression, Data, Where, Having
+    Table, SubQuery, Column, CountColumn, Join, Expression, Data, Where
 };
 
 class QueryBuilder
@@ -42,7 +42,7 @@ class QueryBuilder
         }
         
         $this->where = new Where();
-        $this->having = new Having();
+        $this->having = new Where();
     }
     
     // ENTRY POINTS
