@@ -23,8 +23,8 @@ class QueryBuilder
     protected $columns = [];
     protected $set = [];
     protected $joins = [];
-    protected $where = [];
-    protected $having = [];
+    protected $where;
+    protected $having;
     protected $limit;
     protected $offset;
     protected $sortBy = [];
@@ -40,6 +40,9 @@ class QueryBuilder
         if (!is_null($table)) {
             $this->table($table);
         }
+        
+        $this->where = new Where();
+        $this->having = new Having();
     }
     
     // ENTRY POINTS
@@ -201,10 +204,6 @@ class QueryBuilder
      */
     public function where(array $clauses) : self
     {
-        if (!$this->where) {
-            $this->where = new Where();
-        }
-        
         $this->where->addClauses($clauses);
         return $this;
     }
@@ -217,10 +216,6 @@ class QueryBuilder
      */
     public function having(array $clauses) : self
     {
-        if (!$this->having) {
-            $this->having = new Where();
-        }
-        
         $this->having->addClauses($clauses);
         return $this;
     }
