@@ -64,7 +64,7 @@ class QueryBuilderTest extends TestCase
         $qb = QueryBuilder::delete('test', ['id' => 1]);
         list($sql, $data) = $qb->resolve();
         
-        $this->assertEquals('DELETE FROM `test` WHERE `id` = ?', $sql);
+        $this->assertEquals('DELETE FROM `test` WHERE (`id` = ?)', $sql);
         $this->assertEquals(1, count($data));
         $this->assertEquals(1, $data[0]);
     }
@@ -109,7 +109,7 @@ class QueryBuilderTest extends TestCase
         ;
         list($sql, $data) = $qb->resolve();
 
-        $this->assertEquals('SELECT `id` FROM `test` AS `t` JOIN `join_table` AS `jt` ON `jt`.`id` = `t`.`id` AND `jt`.`id` = ? WHERE `t`.`id` = ?', $sql);
+        $this->assertEquals('SELECT `id` FROM `test` AS `t` JOIN `join_table` AS `jt` ON (`jt`.`id` = `t`.`id` AND `jt`.`id` = ?) WHERE (`t`.`id` = ?)', $sql);
         $this->assertEquals(2, count($data));
         $this->assertEquals(1, $data[0]);
         $this->assertEquals(2, $data[1]);
@@ -210,7 +210,7 @@ class QueryBuilderTest extends TestCase
         $qb->where(['t.data' => [1,2,3]]);
         list($sql, $data) = $qb->resolve();
         
-        $this->assertEquals('SELECT `id` FROM `database`.`schema`.`test` AS `t` WHERE `t`.`data` in (?,?,?)', $sql);
+        $this->assertEquals('SELECT `id` FROM `database`.`schema`.`test` AS `t` WHERE (`t`.`data` in (?,?,?))', $sql);
         $this->assertEquals(3, count($data));
     }
 
@@ -220,7 +220,7 @@ class QueryBuilderTest extends TestCase
         $qb->where(['t.data' => []]);
         list($sql, $data) = $qb->resolve();
         
-        $this->assertEquals('SELECT `id` FROM `database`.`schema`.`test` AS `t` WHERE false', $sql);
+        $this->assertEquals('SELECT `id` FROM `database`.`schema`.`test` AS `t` WHERE (false)', $sql);
         $this->assertEquals(0, count($data));
     }
 
@@ -230,7 +230,7 @@ class QueryBuilderTest extends TestCase
         $qb->where(['!t.data' => []]);
         list($sql, $data) = $qb->resolve();
         
-        $this->assertEquals('SELECT `id` FROM `database`.`schema`.`test` AS `t` WHERE true', $sql);
+        $this->assertEquals('SELECT `id` FROM `database`.`schema`.`test` AS `t` WHERE (true)', $sql);
         $this->assertEquals(0, count($data));
     }
 }

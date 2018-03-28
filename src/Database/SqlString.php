@@ -1,7 +1,10 @@
 <?php
 namespace Automatorm\Database;
 
-class SqlString
+use Automatorm\Database\Interfaces\Renderable;
+use Automatorm\Database\QueryBuilder;
+
+class SqlString implements Renderable
 {
     private $string;
     
@@ -11,6 +14,11 @@ class SqlString
     }
     
     public function __toString()
+    {
+        return $this->string;
+    }
+    
+    public function render(QueryBuilder $query) : string
     {
         return $this->string;
     }

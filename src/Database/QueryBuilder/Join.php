@@ -42,27 +42,21 @@ class Join implements Renderable
     
     public function on(array $clauses) : self
     {
-        foreach ($clauses as $key => $value) {
-            if (is_numeric($key) && $value instanceof SqlString) {
-                $this->where[] = $value;
-            } else {
-                [$column, $affix] = Expression::extractAffix($key);
-                $this->where[] = new Expression(new Column($column), $affix, new Column($value));
-            }
+        if (!$this->where) {
+            $this->where = new Where();
         }
+        
+        $this->where->addOnClauses($clauses);
         return $this;
     }
 
     public function where(array $clauses) : self
     {
-        foreach ($clauses as $key => $value) {
-            if (is_numeric($key) && $value instanceof SqlString) {
-                $this->where[] = $value;
-            } else {
-                [$column, $affix] = Expression::extractAffix($key);
-                $this->where[] = new Expression(new Column($column), $affix, $value);
-            }
+        if (!$this->where) {
+            $this->where = new Where();
         }
+        
+        $this->where->addClauses($clauses);
         return $this;
     }
     
@@ -71,13 +65,7 @@ class Join implements Renderable
         $output = $this->type . " " . $this->table->render($query);
         
         if ($this->where) {
-        $strings = [];
-            foreach ($this->where as $clause) {
-                $strings[] = $clause->render($query);
-            }
-            $clauses = implode(' AND ', $strings);
-            
-            $output .= " ON " . $clauses;
+            $output .= " ON " . $this->where->render($query);
         }
         
         return $output;

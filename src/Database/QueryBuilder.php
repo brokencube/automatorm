@@ -9,13 +9,7 @@ namespace Automatorm\Database;
 
 use Automatorm\Exception;
 use Automatorm\Database\QueryBuilder\{
-    Table,
-    SubQuery,
-    Column,
-    CountColumn,
-    Join,
-    Expression,
-    Data
+    Table, SubQuery, Column, CountColumn, Join, Expression, Data, Where
 };
 
 class QueryBuilder
@@ -166,7 +160,9 @@ class QueryBuilder
      */
     public function table($table) : self
     {
-        if ($table instanceof QueryBuilder) {
+        if ($table instanceof Table) {
+            $this->table = $table;
+        } else if ($table instanceof QueryBuilder) {
             $this->table = new SubQuery($table);
         } else {
             $this->table = new Table($table);
@@ -204,14 +200,11 @@ class QueryBuilder
      */
     public function where(array $clauses) : self
     {
-        foreach ($clauses as $key => $value) {
-            if (is_numeric($key) && $value instanceof SqlString) {
-                $this->where[] = $value;
-            } else {
-                [$column, $affix] = Expression::extractAffix($key);
-                $this->where[] = new Expression(new Column($column), $affix, $value);
-            }
+        if (!$this->where) {
+            $this->where = new Where();
         }
+        
+        $this->where->addClauses($clauses);
         return $this;
     }
     
@@ -223,14 +216,11 @@ class QueryBuilder
      */
     public function having(array $clauses) : self
     {
-        foreach ($clauses as $key => $value) {
-            if (is_numeric($key) && $value instanceof SqlString) {
-                $this->having[] = $value;
-            } else {
-                [$column, $affix] = Expression::extractAffix($key);
-                $this->having[] = new Expression(new Column($column), $affix, $value);
-            }
+        if (!$this->having) {
+            $this->having = new Where();
         }
+        
+        $this->having->addClauses($clauses);
         return $this;
     }
 
@@ -351,6 +341,13 @@ class QueryBuilder
 
     public function addData(array $data) : self
     {
+        // Flatten datetimes
+        foreach ($data as $key => $value) {
+            if ($data[$key] instanceof \DateTimeInterface) {
+                $data[$key] = $value->format('Y-m-d H:i:s.u');
+            }
+        }
+        
         $this->data = array_merge($this->data, $data);
         return $this;
     }
@@ -430,34 +427,12 @@ class QueryBuilder
     
     public function resolveWhere() : string
     {
-        if (!$this->where) {
-            return '';
-        }
-        $clauses = [];
-        foreach ($this->where as $where) {
-            if ($where instanceof SqlString) {
-                $clauses[] = (string) $where;
-            } elseif ($where instanceof Expression) {
-                $clauses[] = $where->render($this);
-            }
-        }
-        return ' WHERE ' . implode(' AND ', $clauses);
+        return $this->where ? ' WHERE ' . $this->where->render($this) : '';
     }
     
     public function resolveHaving() : string
     {
-        if (!$this->having) {
-            return '';
-        }
-        $clauses = [];
-        foreach ($this->having as $where) {
-            if ($where instanceof SqlString) {
-                $clauses[] = (string) $where;
-            } elseif ($where instanceof Expression) {
-                $clauses[] = $where->render($this);
-            }
-        }
-        return ' HAVING ' . implode(' AND ', $clauses);
+        return $this->having ? ' HAVING ' . $this->having->render($this) : '';
     }
     
     public function resolveLimit() : string
