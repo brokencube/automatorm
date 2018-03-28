@@ -79,4 +79,9 @@ class Where implements Renderable
         
         return $output;
     }
+    
+    public function hasClauses() : bool
+    {
+        return (bool) count($this->where);
+    }
 }

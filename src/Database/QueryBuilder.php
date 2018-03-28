@@ -187,6 +187,12 @@ class QueryBuilder
         return $this;
     }
     
+    public function addColumn($column) : self
+    {
+        $this->columns[] = $column instanceof Column ? $column : new Column($column);
+        return $this;
+    }
+    
     /**
      * Add where clauses to the query
      *
@@ -422,12 +428,12 @@ class QueryBuilder
     
     public function resolveWhere() : string
     {
-        return $this->where ? ' WHERE ' . $this->where->render($this) : '';
+        return $this->where->hasClauses() ? ' WHERE ' . $this->where->render($this) : '';
     }
     
     public function resolveHaving() : string
     {
-        return $this->having ? ' HAVING ' . $this->having->render($this) : '';
+        return $this->having->hasClauses() ? ' HAVING ' . $this->having->render($this) : '';
     }
     
     public function resolveLimit() : string
