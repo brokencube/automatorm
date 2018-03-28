@@ -9,7 +9,7 @@ namespace Automatorm\Database;
 
 use Automatorm\Exception;
 use Automatorm\Database\QueryBuilder\{
-    Table, SubQuery, Column, CountColumn, Join, Expression, Data, Where
+    Table, SubQuery, Column, CountColumn, Join, Expression, Data, Where, Having
 };
 
 class QueryBuilder
