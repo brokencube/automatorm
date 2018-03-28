@@ -42,7 +42,7 @@ class SubQuery extends Table
     public function render(QueryBuilder $query) : string
     {
         if ($this->sub) {
-            [$this->sql, $this->data] = $sub->resolve();
+            [$this->sql, $this->data] = $this->sub->resolve();
         }
         $query->addData($this->data);
         return '(' . $this->sql . ') AS ' . $this->alias;
