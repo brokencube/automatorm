@@ -125,7 +125,7 @@ class Expression implements Renderable
         }
         
         // Special case for null values - use "is null" / "is not null"
-        return $column . $this->comparitor;
+        return $column . " " . $this->comparitor;
     }
     
     public static function extractAffix(string $column) : array
