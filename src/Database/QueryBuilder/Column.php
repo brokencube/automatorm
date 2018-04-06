@@ -14,8 +14,6 @@ use Automatorm\Exception;
 
 class Column implements Renderable
 {
-    protected $sqlstring;
-    
     protected $database;
     protected $schema;
     protected $column;
@@ -108,11 +106,6 @@ class Column implements Renderable
         }
         
         throw new Exception\QueryBuilder('Cannot resolve column name', $column);
-    }
-
-    public function __clone()
-    {
-        $this->sqlstring = clone $this->sqlstring;
     }
     
     public function escape(string $name) : string
