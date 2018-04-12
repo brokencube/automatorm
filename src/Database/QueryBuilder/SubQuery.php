@@ -22,7 +22,7 @@ class SubQuery extends Table
     public function __construct($query, ?string $alias = 'subquery')
     {
         if ($query instanceof QueryBuilder) {
-            $this->sub = $query;
+            $this->sub = clone $query;
         } elseif ($query instanceof SqlString) {
             $this->sql = (string) $query;
         } elseif (is_string($query)) {
