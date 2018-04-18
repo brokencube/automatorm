@@ -50,10 +50,11 @@ class Where implements Renderable
     public function addClauses($clauses)
     {
         foreach ($clauses as $key => $value) {
+            if ($value instanceof QueryBuilder) {
+                $value = new InnerQuery($value);
+            }
             if (is_numeric($key) && $value instanceof Renderable) {
                 $this->where[] = $value;
-            } elseif (is_numeric($key) && $value instanceof QueryBuilder) {
-                $this->where[] = new InnerQuery($value);
             } else {
                 [$column, $affix] = Expression::extractAffix($key);
                 $this->where[] = new Expression(new Column($column), $affix, $value);
@@ -64,10 +65,11 @@ class Where implements Renderable
     public function addOnClauses($clauses)
     {
         foreach ($clauses as $key => $value) {
+            if ($value instanceof QueryBuilder) {
+                $value = new InnerQuery($value);
+            }
             if (is_numeric($key) && $value instanceof Renderable) {
                 $this->where[] = $value;
-            } elseif (is_numeric($key) && $value instanceof QueryBuilder) {
-                $this->where[] = new InnerQuery($value);
             } else {
                 [$column, $affix] = Expression::extractAffix($key);
                 $this->where[] = new Expression(new Column($column), $affix, new Column($value));

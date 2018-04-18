@@ -88,6 +88,10 @@ class Expression implements Renderable
                 $this->comparitor = $affix === '!' ? "not in" : "in";
             }
         }
+
+        if ($value instanceof InnerQuery) {
+            $this->comparitor = $affix === '!' ? "not in" : "in";
+        }
     }
     
     public function __clone()
