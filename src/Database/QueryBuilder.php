@@ -32,6 +32,14 @@ class QueryBuilder
     
     protected $data = [];
     
+    public function __get($var)
+    {
+        if (!property_exists($this, $var)) {
+            throw new \UnexpectedValueException('Unknown property');
+        }
+        return $this->{$var};
+    }
+    
     public function __construct($type = null, $table = null)
     {
         if (!is_null($type)) {

@@ -43,7 +43,7 @@ class Where implements Renderable
                 return;
             
             default:
-                throw new Exception('Unknown Conjuction Type: ' . $conjucntion);
+                throw new Exception('Unknown Conjuction Type: ' . $conjunction);
         }
     }
     
@@ -52,6 +52,8 @@ class Where implements Renderable
         foreach ($clauses as $key => $value) {
             if (is_numeric($key) && $value instanceof Renderable) {
                 $this->where[] = $value;
+            } elseif (is_numeric($key) && $value instanceof QueryBuilder) {
+                $this->where[] = new InnerQuery($value);
             } else {
                 [$column, $affix] = Expression::extractAffix($key);
                 $this->where[] = new Expression(new Column($column), $affix, $value);
@@ -64,6 +66,8 @@ class Where implements Renderable
         foreach ($clauses as $key => $value) {
             if (is_numeric($key) && $value instanceof Renderable) {
                 $this->where[] = $value;
+            } elseif (is_numeric($key) && $value instanceof QueryBuilder) {
+                $this->where[] = new InnerQuery($value);
             } else {
                 [$column, $affix] = Expression::extractAffix($key);
                 $this->where[] = new Expression(new Column($column), $affix, new Column($value));
